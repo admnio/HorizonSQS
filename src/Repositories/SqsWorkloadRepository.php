@@ -40,7 +40,7 @@ class SqsWorkloadRepository implements WorkloadRepository
         $promises = [];
         foreach ($this->queues as $queue) {
             $promises[$queue] = $this->sqs->getQueueAttributesAsync([
-                'QueueUrl' => $this->queuePrefix . '/' . $queue,
+                'QueueUrl' => rtrim($this->queuePrefix, '/') . '/' . $queue,
                 'AttributeNames' => ['ApproximateNumberOfMessages', 'ApproximateNumberOfMessagesNotVisible'],
             ]);
         }
