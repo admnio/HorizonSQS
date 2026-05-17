@@ -53,7 +53,7 @@ class HorizonSqsConnector implements ConnectorInterface
             extendedPayload: $extended,
             delayedStore: new DelayedJobStore($this->redis, $this->packageConfig['redis_connection']),
             maxNativeDelay: (int) ($this->packageConfig['sqs_max_delay'] ?? 900),
-            longPollSeconds: 20,
+            longPollSeconds: max(0, min(20, (int) ($config['wait_time'] ?? 20))),
         );
     }
 

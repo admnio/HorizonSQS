@@ -59,6 +59,7 @@ return [
 
 ## Operational notes
 
+- **Long polling (default — saves money):** workers poll SQS with `WaitTimeSeconds=20` (the maximum) by default. With short-polling, every empty receive is a billable API call; long polling drastically reduces the request count on idle queues. To override, set `wait_time` (0–20) on your `sqs` queue connection in `config/queue.php` — for example `'wait_time' => 10` for faster idle-worker shutdown at the cost of more requests. `wait_time => 0` disables long polling (not recommended).
 - **Visibility timeout:** set on each SQS queue to ≥ your job `timeout` × 1.5. (The `visibility_heartbeat` config knob is reserved for v0.2 — currently ignored.)
 - **Extended payload cleanup:** add a lifecycle rule to your S3 bucket prefix (default `horizon-sqs-payloads/`) to clean up orphans from worker crashes.
 - **Long-delay sweep:** auto-registered via Laravel's scheduler. Ensure `schedule:run` is wired in your cron.
