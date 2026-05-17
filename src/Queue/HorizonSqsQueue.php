@@ -26,6 +26,10 @@ class HorizonSqsQueue extends SqsQueue
         parent::__construct($sqs, $default, $prefix, $suffix);
     }
 
+    /**
+     * Public override so consumers/tests can directly access the enriched payload.
+     * Behavior is identical to parent.
+     */
     public function createPayload($job, $queue, $data = '', $delay = null)
     {
         return parent::createPayload($job, $queue, $data, $delay);
@@ -40,44 +44,50 @@ class HorizonSqsQueue extends SqsQueue
     public function pushRaw($payload, $queue = null, array $options = [])
     {
         $resolvedQueue = $queue ?: $this->default;
-        $queueUrl = $this->getQueue($queue);
 
         if ($this->extendedPayload) {
             $payload = $this->extendedPayload->maybeStore($payload);
         }
 
-        $args = [
-            'QueueUrl' => $queueUrl,
-            'MessageBody' => $payload,
-        ];
-
+        // Laravel passes 'delay' (seconds); SQS expects 'DelaySeconds'.
         if (isset($options['delay']) && $options['delay'] > 0) {
-            $args['DelaySeconds'] = (int) $options['delay'];
+            $options['DelaySeconds'] = (int) $options['delay'];
         }
+        unset($options['delay']);
 
-        $args = array_merge($args, $this->fifoAttributes->for($resolvedQueue, $payload, $options));
+        $args = [
+            'QueueUrl' => $this->getQueue($queue),
+            'MessageBody' => $payload,
+        ] + $this->fifoAttributes->for($resolvedQueue, $payload, $options) + $options;
 
-        $response = $this->sqs->sendMessage($args);
-        return $response->get('MessageId');
+        return $this->sqs->sendMessage($args)->get('MessageId');
     }
 
     public function later($delay, $job, $data = '', $queue = null)
     {
         $resolvedQueue = $queue ?: $this->default;
-        $payload = $this->createPayload($job, $resolvedQueue, $data);
-        $delaySeconds = $this->secondsUntil($delay);
 
-        if ($delaySeconds > $this->maxNativeDelay) {
-            $this->delayedStore->buffer(
-                $resolvedQueue,
-                $payload,
-                microtime(true) + $delaySeconds
-            );
-            $decoded = json_decode($payload, true);
-            return $decoded['id'] ?? null;
-        }
+        return $this->enqueueUsing(
+            $job,
+            $this->createPayload($job, $resolvedQueue, $data),
+            $queue,
+            $delay,
+            function ($payload, $queue, $delay) use ($resolvedQueue) {
+                $delaySeconds = $this->secondsUntil($delay);
 
-        return $this->pushRaw($payload, $queue, ['delay' => $delaySeconds]);
+                if ($delaySeconds > $this->maxNativeDelay) {
+                    $this->delayedStore->buffer(
+                        $resolvedQueue,
+                        $payload,
+                        microtime(true) + $delaySeconds
+                    );
+                    $decoded = json_decode($payload, true);
+                    return $decoded['id'] ?? null;
+                }
+
+                return $this->pushRaw($payload, $queue, ['delay' => $delaySeconds]);
+            }
+        );
     }
 
     public function pop($queue = null)

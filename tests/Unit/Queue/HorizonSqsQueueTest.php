@@ -45,7 +45,7 @@ class HorizonSqsQueueTest extends TestCase
         $this->assertSame('mid-1', $result);
     }
 
-    public function test_push_raw_buffers_long_delay_in_redis(): void
+    public function test_later_buffers_long_delay_in_redis(): void
     {
         $sqs = Mockery::mock(SqsClient::class);
         $sqs->shouldNotReceive('sendMessage');
@@ -71,8 +71,10 @@ class HorizonSqsQueueTest extends TestCase
             maxNativeDelay: 900,
             longPollSeconds: 20,
         );
+        $queue->setContainer($this->app);
 
-        $queue->later(3600, 'App\\Jobs\\Noop', '', 'default');
+        $result = $queue->later(3600, 'App\\Jobs\\Noop', '', 'default');
+        $this->assertIsString($result); // returned UUID id from buffered payload
     }
 
     public function test_push_raw_includes_fifo_attributes_for_fifo_queue(): void
@@ -89,7 +91,8 @@ class HorizonSqsQueueTest extends TestCase
 
         $queue = $this->makeQueueWithSqs($sqs);
 
-        $queue->pushRaw('{"id":"abc"}', 'orders.fifo');
+        $result = $queue->pushRaw('{"id":"abc"}', 'orders.fifo');
+        $this->assertSame('mid-2', $result);
     }
 
     public function test_push_raw_spills_large_payload_to_s3(): void
@@ -121,7 +124,8 @@ class HorizonSqsQueueTest extends TestCase
             longPollSeconds: 20,
         );
 
-        $queue->pushRaw(str_repeat('a', 300_000), 'default');
+        $result = $queue->pushRaw(str_repeat('a', 300_000), 'default');
+        $this->assertSame('mid-3', $result);
     }
 
     private function makeQueueWithSqs(SqsClient $sqs): HorizonSqsQueue
