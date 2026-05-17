@@ -140,6 +140,45 @@ class HorizonSqsQueueTest extends TestCase
         );
     }
 
+    public function test_pop_unwraps_extended_payload(): void
+    {
+        $sqs = Mockery::mock(SqsClient::class);
+        $sqs->shouldReceive('receiveMessage')
+            ->once()
+            ->andReturn(new \Aws\Result([
+                'Messages' => [[
+                    'MessageId' => 'mid-1',
+                    'ReceiptHandle' => 'rh-1',
+                    'Body' => '{"s3PointerKey":"horizon-sqs-payloads/abc","size":300000}',
+                    'Attributes' => ['ApproximateReceiveCount' => 1],
+                ]],
+            ]));
+
+        $extended = Mockery::mock(ExtendedPayloadHandler::class);
+        $extended->shouldReceive('maybeFetch')
+            ->once()
+            ->andReturn('{"id":"abc","tags":[]}');
+
+        $queue = new HorizonSqsQueue(
+            sqs: $sqs,
+            default: 'default',
+            prefix: 'http://localhost:4566/000000000000',
+            suffix: '',
+            enricher: new PayloadEnricher(),
+            fifoAttributes: new FifoMessageAttributes(['message_group_id' => 'queue-name', 'content_based_dedup' => true]),
+            extendedPayload: $extended,
+            delayedStore: Mockery::mock(DelayedJobStore::class),
+            maxNativeDelay: 900,
+            longPollSeconds: 20,
+        );
+        $queue->setContainer($this->app);
+
+        $job = $queue->pop('default');
+
+        $this->assertNotNull($job);
+        $this->assertSame('{"id":"abc","tags":[]}', $job->getRawBody());
+    }
+
     private function makeQueue(): HorizonSqsQueue
     {
         return new HorizonSqsQueue(

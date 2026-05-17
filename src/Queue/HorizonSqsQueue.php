@@ -79,4 +79,33 @@ class HorizonSqsQueue extends SqsQueue
 
         return $this->pushRaw($payload, $queue, ['delay' => $delaySeconds]);
     }
+
+    public function pop($queue = null)
+    {
+        $queueUrl = $this->getQueue($queue);
+
+        $response = $this->sqs->receiveMessage([
+            'QueueUrl' => $queueUrl,
+            'AttributeNames' => ['ApproximateReceiveCount'],
+            'WaitTimeSeconds' => $this->longPollSeconds,
+        ]);
+
+        if (! is_array($response['Messages']) || count($response['Messages']) === 0) {
+            return null;
+        }
+
+        $message = $response['Messages'][0];
+
+        if ($this->extendedPayload) {
+            $message['Body'] = $this->extendedPayload->maybeFetch($message['Body']);
+        }
+
+        return new \Illuminate\Queue\Jobs\SqsJob(
+            $this->container,
+            $this->sqs,
+            $message,
+            $this->connectionName,
+            $queueUrl
+        );
+    }
 }
