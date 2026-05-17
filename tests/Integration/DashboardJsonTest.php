@@ -54,4 +54,49 @@ class DashboardJsonTest extends IntegrationTestCase
         $this->assertGreaterThanOrEqual(2, $default['length']);
         $this->assertArrayHasKey('wait', $default);
     }
+
+    public function test_pending_jobs_endpoint_returns_pushed_job(): void
+    {
+        // Pre-clean Horizon's Redis state so prior test runs don't pollute counts.
+        app(\Laravel\Horizon\Contracts\JobRepository::class)->trimRecentJobs();
+
+        Queue::push(new RecordingJob('m1'));
+
+        sleep(1);
+
+        $response = $this->get('/horizon/api/jobs/pending');
+        $response->assertOk();
+
+        $body = $response->json();
+        $this->assertArrayHasKey('jobs', $body);
+        $this->assertArrayHasKey('total', $body);
+        $this->assertGreaterThanOrEqual(
+            1,
+            $body['total'],
+            'Expected at least one pending job recorded by Horizon after Queue::push',
+        );
+        $this->assertNotEmpty($body['jobs'], 'Expected pending jobs list to be non-empty');
+
+        // Verify the JobPayload-derived fields propagated through StoreJob.
+        $first = $body['jobs'][0];
+        $this->assertNotEmpty($first['id'] ?? null);
+        $this->assertSame('sqs', $first['connection'] ?? null);
+        $this->assertSame('default', $first['queue'] ?? null);
+    }
+
+    public function test_dashboard_stats_recent_jobs_count_reflects_pushed_jobs(): void
+    {
+        app(\Laravel\Horizon\Contracts\JobRepository::class)->trimRecentJobs();
+
+        Queue::push(new RecordingJob('m1'));
+
+        sleep(1);
+
+        $response = $this->get('/horizon/api/stats');
+        $response->assertOk();
+
+        $stats = $response->json();
+        $this->assertArrayHasKey('recentJobs', $stats);
+        $this->assertGreaterThanOrEqual(1, $stats['recentJobs']);
+    }
 }
