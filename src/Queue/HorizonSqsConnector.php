@@ -28,7 +28,14 @@ class HorizonSqsConnector implements ConnectorInterface
 
         $extended = null;
         if ($this->packageConfig['extended_payload']['enabled'] ?? false) {
-            $s3 = new S3Client($this->normalizeSqsConfig($config));
+            $s3Config = $this->normalizeSqsConfig($config);
+            // When an explicit endpoint is set (e.g. LocalStack, MinIO),
+            // force path-style addressing so requests target
+            // `host/bucket` instead of vhost-style `bucket.host`.
+            if (! empty($s3Config['endpoint'])) {
+                $s3Config['use_path_style_endpoint'] = true;
+            }
+            $s3 = new S3Client($s3Config);
             $extended = new ExtendedPayloadHandler(
                 $s3,
                 $this->packageConfig['extended_payload']['bucket'],
