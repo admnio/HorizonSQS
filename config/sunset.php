@@ -27,5 +27,11 @@ return [
                 'lifecycle_days' => 7,
             ],
         ],
+
+        'redis' => [
+            // Redis connection name (from config/database.php) used by Sunset's
+            // workload queries. Typically the same connection your queues live on.
+            'workload_connection' => env('SUNSET_REDIS_WORKLOAD_CONN', 'default'),
+        ],
     ],
 ];
