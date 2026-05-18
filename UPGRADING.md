@@ -154,3 +154,69 @@ The Redis key migration is one-way (the `RENAME` moved the key). To roll back da
 ## Issues
 
 File issues against the `admnio/sunset` repository.
+
+---
+
+# Upgrading from `admnio/sunset` v0.2.0 to v0.3.0
+
+v0.3.0 adds the Redis transport. SQS users have nothing to do. Redis users get Sunset's enrichment automatically — restart workers after the upgrade.
+
+## 1. Composer
+
+```bash
+composer update admnio/sunset
+```
+
+## 2. Config
+
+Republish the config to pick up the new `transports.redis` block (or manually add it):
+
+```bash
+php artisan vendor:publish --tag=sunset-config --force
+```
+
+If you don't want to overwrite your existing `config/sunset.php`, manually append a `redis` entry to your `transports` array:
+
+```php
+'transports' => [
+    'sqs' => [ /* unchanged */ ],
+    'redis' => [
+        'workload_connection' => env('SUNSET_REDIS_WORKLOAD_CONN', 'default'),
+    ],
+],
+```
+
+## 3. Queue config
+
+No changes to `config/queue.php`. Existing `'driver' => 'redis'` blocks Just Work — Sunset's connector overrides Laravel's stock Redis driver via load order.
+
+## 4. Horizon config
+
+No changes to `config/horizon.php`.
+
+## 5. Restart workers
+
+```bash
+php artisan horizon:terminate
+```
+
+Then restart your worker supervisor / systemd unit. New worker processes will go through Sunset's `Admnio\Sunset\Transports\Redis\RedisQueue` and dispatch Horizon events from there.
+
+## 6. Verify
+
+After workers come back up, dispatch a job to a Redis queue and confirm it shows up in Horizon's dashboard at `/horizon/jobs/pending`. The Recent Jobs and Tags pages should populate too.
+
+## What changed under the hood
+
+- New `Admnio\Sunset\Transports\Redis\` namespace with `RedisConnector`, `RedisQueue`, and `RedisTransport`.
+- `Queue::extend('redis', ...)` overrides Laravel's stock `RedisConnector` (and Horizon's too — Sunset's `boot()` runs after Horizon's).
+- The Redis transport delegates all connection management (cluster, sentinel, predis-vs-phpredis) to Laravel's `Illuminate\Contracts\Redis\Factory` — your `config/database.php` controls those.
+
+## Rollback
+
+If something breaks, pin the previous minor:
+```bash
+composer require admnio/sunset:0.2.*
+```
+
+No data migration to undo — Sunset's RedisQueue uses Laravel's same Redis schema.

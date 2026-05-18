@@ -4,11 +4,12 @@ Supercharged Laravel Horizon replacement. v0.2.0 ships the SQS transport.
 
 ## Why
 
-Sunset is the foundation for a multi-transport Horizon replacement: SQS, Redis, BullMQ, RabbitMQ, and LavinMQ all behind one consistent dashboard with deeper visibility into workers and queues than Horizon offers. v0.2.0 is the rename and `Transport` abstraction; later releases add Redis, our own supervisor, our own repositories, our own dashboard SPA, worker resource monitoring, real-time visibility, and per-queue pause/resume controls.
+Sunset is the foundation for a multi-transport Horizon replacement: SQS and Redis today (BullMQ, RabbitMQ, and LavinMQ planned) all behind one consistent dashboard with deeper visibility into workers and queues than Horizon offers. v0.3.0 adds Redis transport on top of v0.2.0's SQS support and `Transport` abstraction.
 
 This release ships:
 
 - Full Laravel Horizon support for Amazon SQS — same dashboard, same metrics, SQS underneath.
+- Full Laravel Horizon support for Redis queues too — same dashboard, same metrics, Sunset-managed event dispatch
 - Throughput metrics (jobs/min, jobs/hour)
 - Recent / Failed / Completed jobs lists with payloads + retry
 - Workload page (pending counts + estimated wait time)
@@ -21,9 +22,8 @@ This release ships:
 - Long polling on by default (max 20s WaitTimeSeconds — cheapest SQS setting)
 - `Transport` interface so future drivers plug in without touching SQS code
 
-## Not yet in v0.2.0 (planned)
+## Not yet in v0.3.0 (planned)
 
-- v0.3.0: Sunset's own Redis transport
 - v0.4.0: `sunset:work` supervisor replacing `php artisan horizon`
 - v0.5.0: Sunset repositories replacing Horizon's
 - v1.0.0: Full SPA dashboard, drops `laravel/horizon` dependency
@@ -63,6 +63,9 @@ return [
                 'prefix' => 'sunset-payloads/',
                 'lifecycle_days' => 7,
             ],
+        ],
+        'redis' => [
+            'workload_connection' => env('SUNSET_REDIS_WORKLOAD_CONN', 'default'),
         ],
     ],
 ];
