@@ -1,10 +1,10 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Integration;
+namespace Admnio\Sunset\Tests\Integration;
 
 use Aws\S3\S3Client;
 use Aws\Sqs\SqsClient;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Tests\TestCase;
 
 abstract class IntegrationTestCase extends TestCase
 {

@@ -1,9 +1,9 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Console;
+namespace Admnio\Sunset\Console;
 
 use Illuminate\Console\Command;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobReenqueuer;
+use Admnio\Sunset\Queue\Delay\DelayedJobReenqueuer;
 
 class SweepDelayedCommand extends Command
 {

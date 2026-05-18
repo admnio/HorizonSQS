@@ -1,9 +1,9 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Integration;
+namespace Admnio\Sunset\Tests\Integration;
 
 use Illuminate\Support\Facades\Queue;
-use MasonWorkforce\HorizonSqs\Tests\Fixtures\Jobs\RecordingJob;
+use Admnio\Sunset\Tests\Fixtures\Jobs\RecordingJob;
 
 class PushPopProcessTest extends IntegrationTestCase
 {

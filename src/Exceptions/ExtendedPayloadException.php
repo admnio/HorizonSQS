@@ -1,6 +1,6 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Exceptions;
+namespace Admnio\Sunset\Exceptions;
 
 use RuntimeException;
 

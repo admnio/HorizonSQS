@@ -1,6 +1,6 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Queue;
+namespace Admnio\Sunset\Queue;
 
 use Aws\Sqs\SqsClient;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -10,9 +10,9 @@ use Laravel\Horizon\Events\JobPending;
 use Laravel\Horizon\Events\JobPushed;
 use Laravel\Horizon\Events\JobReserved;
 use Laravel\Horizon\JobPayload;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobStore;
-use MasonWorkforce\HorizonSqs\Queue\Payload\ExtendedPayloadHandler;
-use MasonWorkforce\HorizonSqs\Support\FifoMessageAttributes;
+use Admnio\Sunset\Queue\Delay\DelayedJobStore;
+use Admnio\Sunset\Queue\Payload\ExtendedPayloadHandler;
+use Admnio\Sunset\Support\FifoMessageAttributes;
 
 class HorizonSqsQueue extends SqsQueue
 {

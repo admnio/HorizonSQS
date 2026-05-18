@@ -1,10 +1,10 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit\Console;
+namespace Admnio\Sunset\Tests\Unit\Console;
 
-use MasonWorkforce\HorizonSqs\Console\SweepDelayedCommand;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobReenqueuer;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Console\SweepDelayedCommand;
+use Admnio\Sunset\Queue\Delay\DelayedJobReenqueuer;
+use Admnio\Sunset\Tests\TestCase;
 use Mockery;
 
 class SweepDelayedCommandTest extends TestCase

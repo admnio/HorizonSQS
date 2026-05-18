@@ -1,6 +1,6 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs;
+namespace Admnio\Sunset;
 
 use Aws\Sqs\SqsClient;
 use Illuminate\Console\Scheduling\Schedule;
@@ -12,17 +12,17 @@ use Illuminate\Support\ServiceProvider;
 use Laravel\Horizon\Contracts\MetricsRepository;
 use Laravel\Horizon\Contracts\SupervisorRepository;
 use Laravel\Horizon\Contracts\WorkloadRepository;
-use MasonWorkforce\HorizonSqs\Console\SweepDelayedCommand;
-use MasonWorkforce\HorizonSqs\Exceptions\InvalidConfigurationException;
-use MasonWorkforce\HorizonSqs\Listeners\CleanupExtendedPayload;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobReenqueuer;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobStore;
-use MasonWorkforce\HorizonSqs\Queue\HorizonSqsConnector;
-use MasonWorkforce\HorizonSqs\Queue\Payload\ExtendedPayloadHandler;
-use MasonWorkforce\HorizonSqs\Repositories\SqsWorkloadRepository;
+use Admnio\Sunset\Console\SweepDelayedCommand;
+use Admnio\Sunset\Exceptions\InvalidConfigurationException;
+use Admnio\Sunset\Listeners\CleanupExtendedPayload;
+use Admnio\Sunset\Queue\Delay\DelayedJobReenqueuer;
+use Admnio\Sunset\Queue\Delay\DelayedJobStore;
+use Admnio\Sunset\Queue\HorizonSqsConnector;
+use Admnio\Sunset\Queue\Payload\ExtendedPayloadHandler;
+use Admnio\Sunset\Repositories\SqsWorkloadRepository;
 use Psr\Log\LoggerInterface;
 
-class HorizonSqsServiceProvider extends ServiceProvider
+class SunsetServiceProvider extends ServiceProvider
 {
     public function register(): void
     {

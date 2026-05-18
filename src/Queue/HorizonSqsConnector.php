@@ -1,15 +1,15 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Queue;
+namespace Admnio\Sunset\Queue;
 
 use Aws\S3\S3Client;
 use Aws\Sqs\SqsClient;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Queue\Connectors\ConnectorInterface;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobStore;
-use MasonWorkforce\HorizonSqs\Queue\Payload\ExtendedPayloadHandler;
-use MasonWorkforce\HorizonSqs\Support\FifoMessageAttributes;
+use Admnio\Sunset\Queue\Delay\DelayedJobStore;
+use Admnio\Sunset\Queue\Payload\ExtendedPayloadHandler;
+use Admnio\Sunset\Support\FifoMessageAttributes;
 
 class HorizonSqsConnector implements ConnectorInterface
 {

@@ -1,10 +1,10 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit\Queue;
+namespace Admnio\Sunset\Tests\Unit\Queue;
 
-use MasonWorkforce\HorizonSqs\Queue\HorizonSqsConnector;
-use MasonWorkforce\HorizonSqs\Queue\HorizonSqsQueue;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Queue\HorizonSqsConnector;
+use Admnio\Sunset\Queue\HorizonSqsQueue;
+use Admnio\Sunset\Tests\TestCase;
 
 class HorizonSqsConnectorTest extends TestCase
 {

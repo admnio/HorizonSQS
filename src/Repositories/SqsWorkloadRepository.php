@@ -1,6 +1,6 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Repositories;
+namespace Admnio\Sunset\Repositories;
 
 use Aws\Sqs\SqsClient;
 use Illuminate\Contracts\Cache\Repository as Cache;

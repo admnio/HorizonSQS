@@ -1,6 +1,6 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Queue\Payload;
+namespace Admnio\Sunset\Queue\Payload;
 
 use Ramsey\Uuid\Uuid;
 

@@ -1,14 +1,14 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit\Repositories;
+namespace Admnio\Sunset\Tests\Unit\Repositories;
 
 use Aws\Result;
 use Aws\Sqs\SqsClient;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Laravel\Horizon\Contracts\MetricsRepository;
 use Laravel\Horizon\Contracts\SupervisorRepository;
-use MasonWorkforce\HorizonSqs\Repositories\SqsWorkloadRepository;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Repositories\SqsWorkloadRepository;
+use Admnio\Sunset\Tests\TestCase;
 use Mockery;
 use Psr\Log\LoggerInterface;
 

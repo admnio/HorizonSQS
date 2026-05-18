@@ -1,11 +1,11 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit\Queue\Delay;
+namespace Admnio\Sunset\Tests\Unit\Queue\Delay;
 
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Redis\Connections\Connection as RedisConnection;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobStore;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Queue\Delay\DelayedJobStore;
+use Admnio\Sunset\Tests\TestCase;
 use Mockery;
 
 class DelayedJobStoreTest extends TestCase

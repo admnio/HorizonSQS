@@ -1,6 +1,6 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Integration;
+namespace Admnio\Sunset\Tests\Integration;
 
 use Illuminate\Support\Facades\Queue;
 

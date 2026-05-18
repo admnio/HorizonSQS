@@ -1,6 +1,6 @@
 {
-  "name": "masonworkforce/horizon-sqs",
-  "description": "Laravel Horizon support for Amazon SQS with full dashboard parity.",
+  "name": "admnio/sunset",
+  "description": "Sunset for Laravel — supercharged Horizon replacement. v0.2.0: SQS transport.",
   "type": "library",
   "license": "MIT",
   "require": {
@@ -19,18 +19,18 @@
   },
   "autoload": {
     "psr-4": {
-      "MasonWorkforce\\HorizonSqs\\": "src/"
+      "Admnio\\Sunset\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "MasonWorkforce\\HorizonSqs\\Tests\\": "tests/"
+      "Admnio\\Sunset\\Tests\\": "tests/"
     }
   },
   "extra": {
     "laravel": {
       "providers": [
-        "MasonWorkforce\\HorizonSqs\\HorizonSqsServiceProvider"
+        "Admnio\\Sunset\\SunsetServiceProvider"
       ]
     }
   },

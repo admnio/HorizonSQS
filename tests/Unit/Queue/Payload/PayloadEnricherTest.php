@@ -1,9 +1,9 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit\Queue\Payload;
+namespace Admnio\Sunset\Tests\Unit\Queue\Payload;
 
-use MasonWorkforce\HorizonSqs\Queue\Payload\PayloadEnricher;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Queue\Payload\PayloadEnricher;
+use Admnio\Sunset\Tests\TestCase;
 
 class PayloadEnricherTest extends TestCase
 {

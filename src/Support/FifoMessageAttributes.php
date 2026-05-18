@@ -1,6 +1,6 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Support;
+namespace Admnio\Sunset\Support;
 
 use InvalidArgumentException;
 

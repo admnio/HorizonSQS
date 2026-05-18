@@ -1,12 +1,12 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit\Queue\Delay;
+namespace Admnio\Sunset\Tests\Unit\Queue\Delay;
 
 use Illuminate\Contracts\Queue\Factory as QueueFactory;
 use Illuminate\Queue\Queue;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobReenqueuer;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobStore;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Queue\Delay\DelayedJobReenqueuer;
+use Admnio\Sunset\Queue\Delay\DelayedJobStore;
+use Admnio\Sunset\Tests\TestCase;
 use Mockery;
 use Psr\Log\LoggerInterface;
 

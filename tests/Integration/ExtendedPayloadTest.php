@@ -1,13 +1,13 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Integration;
+namespace Admnio\Sunset\Tests\Integration;
 
 use Aws\S3\Exception\S3Exception;
 use Aws\S3\S3Client;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
-use MasonWorkforce\HorizonSqs\Queue\HorizonSqsConnector;
+use Admnio\Sunset\Queue\HorizonSqsConnector;
 
 class ExtendedPayloadTest extends IntegrationTestCase
 {

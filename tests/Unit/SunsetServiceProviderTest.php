@@ -1,10 +1,10 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit;
+namespace Admnio\Sunset\Tests\Unit;
 
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Tests\TestCase;
 
-class HorizonSqsServiceProviderTest extends TestCase
+class SunsetServiceProviderTest extends TestCase
 {
     public function test_publishes_config(): void
     {
@@ -17,7 +17,7 @@ class HorizonSqsServiceProviderTest extends TestCase
         $resolved = $this->app->make(\Laravel\Horizon\Contracts\WorkloadRepository::class);
 
         $this->assertInstanceOf(
-            \MasonWorkforce\HorizonSqs\Repositories\SqsWorkloadRepository::class,
+            \Admnio\Sunset\Repositories\SqsWorkloadRepository::class,
             $resolved
         );
     }
@@ -27,7 +27,7 @@ class HorizonSqsServiceProviderTest extends TestCase
         $queue = $this->app['queue']->connection('sqs');
 
         $this->assertInstanceOf(
-            \MasonWorkforce\HorizonSqs\Queue\HorizonSqsQueue::class,
+            \Admnio\Sunset\Queue\HorizonSqsQueue::class,
             $queue
         );
     }
@@ -43,8 +43,8 @@ class HorizonSqsServiceProviderTest extends TestCase
         config(['horizon-sqs.redis_connection' => 'nonexistent-connection']);
         config(['database.redis.nonexistent-connection' => null]);
 
-        $this->expectException(\MasonWorkforce\HorizonSqs\Exceptions\InvalidConfigurationException::class);
-        $this->app->make(\MasonWorkforce\HorizonSqs\Queue\HorizonSqsConnector::class)
+        $this->expectException(\Admnio\Sunset\Exceptions\InvalidConfigurationException::class);
+        $this->app->make(\Admnio\Sunset\Queue\HorizonSqsConnector::class)
             ->connect(config('queue.connections.sqs'));
     }
 }

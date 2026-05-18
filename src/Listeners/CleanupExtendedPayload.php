@@ -1,9 +1,9 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Listeners;
+namespace Admnio\Sunset\Listeners;
 
 use Illuminate\Queue\Events\JobProcessed;
-use MasonWorkforce\HorizonSqs\Queue\Payload\ExtendedPayloadHandler;
+use Admnio\Sunset\Queue\Payload\ExtendedPayloadHandler;
 
 class CleanupExtendedPayload
 {

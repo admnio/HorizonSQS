@@ -1,6 +1,6 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Queue\Delay;
+namespace Admnio\Sunset\Queue\Delay;
 
 use Illuminate\Contracts\Queue\Factory as QueueFactory;
 use Psr\Log\LoggerInterface;

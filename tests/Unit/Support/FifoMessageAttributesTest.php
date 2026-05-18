@@ -1,9 +1,9 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit\Support;
+namespace Admnio\Sunset\Tests\Unit\Support;
 
-use MasonWorkforce\HorizonSqs\Support\FifoMessageAttributes;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Support\FifoMessageAttributes;
+use Admnio\Sunset\Tests\TestCase;
 
 class FifoMessageAttributesTest extends TestCase
 {

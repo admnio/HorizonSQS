@@ -1,10 +1,10 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Integration;
+namespace Admnio\Sunset\Tests\Integration;
 
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobReenqueuer;
+use Admnio\Sunset\Queue\Delay\DelayedJobReenqueuer;
 
 class LongDelaySweepTest extends IntegrationTestCase
 {

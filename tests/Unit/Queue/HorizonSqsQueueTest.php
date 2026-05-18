@@ -1,17 +1,17 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit\Queue;
+namespace Admnio\Sunset\Tests\Unit\Queue;
 
 use Aws\Sqs\SqsClient;
 use Illuminate\Support\Facades\Event;
 use Laravel\Horizon\Events\JobPending;
 use Laravel\Horizon\Events\JobPushed;
 use Laravel\Horizon\Events\JobReserved;
-use MasonWorkforce\HorizonSqs\Queue\Delay\DelayedJobStore;
-use MasonWorkforce\HorizonSqs\Queue\HorizonSqsQueue;
-use MasonWorkforce\HorizonSqs\Queue\Payload\ExtendedPayloadHandler;
-use MasonWorkforce\HorizonSqs\Support\FifoMessageAttributes;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Queue\Delay\DelayedJobStore;
+use Admnio\Sunset\Queue\HorizonSqsQueue;
+use Admnio\Sunset\Queue\Payload\ExtendedPayloadHandler;
+use Admnio\Sunset\Support\FifoMessageAttributes;
+use Admnio\Sunset\Tests\TestCase;
 use Mockery;
 
 class HorizonSqsQueueTest extends TestCase

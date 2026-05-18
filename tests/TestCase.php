@@ -1,8 +1,8 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests;
+namespace Admnio\Sunset\Tests;
 
-use MasonWorkforce\HorizonSqs\HorizonSqsServiceProvider;
+use Admnio\Sunset\SunsetServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
@@ -11,7 +11,7 @@ abstract class TestCase extends Orchestra
     {
         return [
             \Laravel\Horizon\HorizonServiceProvider::class,
-            HorizonSqsServiceProvider::class,
+            SunsetServiceProvider::class,
         ];
     }
 

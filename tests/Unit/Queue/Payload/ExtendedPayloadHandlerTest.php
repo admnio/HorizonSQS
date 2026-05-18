@@ -1,12 +1,12 @@
 <?php
 
-namespace MasonWorkforce\HorizonSqs\Tests\Unit\Queue\Payload;
+namespace Admnio\Sunset\Tests\Unit\Queue\Payload;
 
 use Aws\Result;
 use Aws\S3\S3Client;
-use MasonWorkforce\HorizonSqs\Exceptions\ExtendedPayloadException;
-use MasonWorkforce\HorizonSqs\Queue\Payload\ExtendedPayloadHandler;
-use MasonWorkforce\HorizonSqs\Tests\TestCase;
+use Admnio\Sunset\Exceptions\ExtendedPayloadException;
+use Admnio\Sunset\Queue\Payload\ExtendedPayloadHandler;
+use Admnio\Sunset\Tests\TestCase;
 use Mockery;
 
 class ExtendedPayloadHandlerTest extends TestCase
