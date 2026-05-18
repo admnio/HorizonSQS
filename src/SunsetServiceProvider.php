@@ -42,11 +42,23 @@ class SunsetServiceProvider extends ServiceProvider
                 logger: $app->make(LoggerInterface::class),
             ));
 
+            $registry->register(new \Admnio\Sunset\Transports\Redis\RedisTransport(
+                redis: $app->make(RedisFactory::class),
+                packageConfig: $this->validatedPackageConfig($app['config']->get('sunset')),
+                logger: $app->make(LoggerInterface::class),
+            ));
+
             return $registry;
         });
 
         $this->app->singleton(SqsConnector::class, function ($app) {
             return new SqsConnector($app->make(TransportRegistry::class));
+        });
+
+        $this->app->singleton(\Admnio\Sunset\Transports\Redis\RedisConnector::class, function ($app) {
+            return new \Admnio\Sunset\Transports\Redis\RedisConnector(
+                $app->make(TransportRegistry::class)
+            );
         });
 
         // Register the ExtendedPayloadHandler binding unconditionally so listener
@@ -122,6 +134,9 @@ class SunsetServiceProvider extends ServiceProvider
         $manager = $this->app->make('queue');
         if ($manager instanceof QueueManager) {
             $manager->addConnector('sqs', fn () => $this->app->make(SqsConnector::class));
+            $manager->addConnector('redis', fn () => $this->app->make(
+                \Admnio\Sunset\Transports\Redis\RedisConnector::class
+            ));
         }
 
         // Clean up S3 spillover objects when a job completes successfully on the
@@ -153,7 +168,6 @@ class SunsetServiceProvider extends ServiceProvider
         return function ($app) {
             return new SunsetWorkloadRepository(
                 transports: $app->make(TransportRegistry::class),
-                transportName: 'sqs',
                 metrics: $app->make(MetricsRepository::class),
                 supervisors: $app->make(SupervisorRepository::class),
                 cache: $app->make(Cache::class),

@@ -12,7 +12,6 @@ class SunsetWorkloadRepository implements WorkloadRepository
 {
     public function __construct(
         private TransportRegistry $transports,
-        private string $transportName,
         private MetricsRepository $metrics,
         private SupervisorRepository $supervisors,
         private Cache $cache,
@@ -32,7 +31,7 @@ class SunsetWorkloadRepository implements WorkloadRepository
 
     private function fetch(): array
     {
-        $rawWorkload = $this->transports->get($this->transportName)->workload($this->queues);
+        $rawWorkload = $this->mergeWorkloadAcrossTransports();
         $perQueueProcesses = $this->processesPerQueue();
 
         $records = [];
@@ -52,6 +51,34 @@ class SunsetWorkloadRepository implements WorkloadRepository
         }
 
         return $records;
+    }
+
+    /**
+     * Merge workload records across all registered transports.
+     *
+     * Each transport returns a record per queue we asked about. For queues that
+     * live in exactly one transport, the others report length=0 — so summing
+     * across transports is safe and correctly reports the actual depth. For a
+     * queue that somehow has jobs in multiple transports, summing is also the
+     * desired behavior (total pending work).
+     *
+     * @return array<int, array{name: string, length: int, wait: int, processes: int, split_queues: mixed}>
+     */
+    private function mergeWorkloadAcrossTransports(): array
+    {
+        $merged = [];
+        foreach ($this->transports->names() as $name) {
+            foreach ($this->transports->get($name)->workload($this->queues) as $record) {
+                $queue = $record['name'];
+                if (! isset($merged[$queue])) {
+                    $merged[$queue] = $record;
+                    continue;
+                }
+                $merged[$queue]['length'] += (int) $record['length'];
+                $merged[$queue]['split_queues'] = $merged[$queue]['split_queues'] ?? ($record['split_queues'] ?? null);
+            }
+        }
+        return array_values($merged);
     }
 
     /**

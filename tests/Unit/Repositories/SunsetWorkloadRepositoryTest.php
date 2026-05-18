@@ -37,7 +37,7 @@ class SunsetWorkloadRepositoryTest extends TestCase
         $cache->shouldReceive('remember')->andReturnUsing(fn ($k, $t, $cb) => $cb());
 
         $repo = new SunsetWorkloadRepository(
-            $registry, 'sqs', $metrics, $supervisors, $cache, ['orders', 'default'], 5
+            $registry, $metrics, $supervisors, $cache, ['orders', 'default'], 5
         );
 
         $workload = $repo->get();
@@ -69,7 +69,7 @@ class SunsetWorkloadRepositoryTest extends TestCase
         $cache->shouldReceive('remember')->andReturnUsing(fn ($k, $t, $cb) => $cb());
 
         $repo = new SunsetWorkloadRepository(
-            $registry, 'sqs', $metrics, $supervisors, $cache, ['default'], 5
+            $registry, $metrics, $supervisors, $cache, ['default'], 5
         );
 
         $workload = $repo->get();
@@ -93,7 +93,7 @@ class SunsetWorkloadRepositoryTest extends TestCase
         $cache->shouldReceive('remember')->with('sunset:workload', 5, Mockery::any())->andReturn($cached);
 
         $repo = new SunsetWorkloadRepository(
-            $registry, 'sqs', $metrics, $supervisors, $cache, ['default'], 5
+            $registry, $metrics, $supervisors, $cache, ['default'], 5
         );
 
         $this->assertSame($cached, $repo->get());
@@ -125,12 +125,54 @@ class SunsetWorkloadRepositoryTest extends TestCase
         $cache->shouldReceive('remember')->andReturnUsing(fn ($k, $t, $cb) => $cb());
 
         $repo = new SunsetWorkloadRepository(
-            $registry, 'sqs', $metrics, $supervisors, $cache, ['orders'], 5
+            $registry, $metrics, $supervisors, $cache, ['orders'], 5
         );
 
         $workload = $repo->get();
         $this->assertSame(5, $workload[0]['processes']);
         $this->assertSame(10, $workload[0]['wait']);
+    }
+
+    public function test_merges_workload_across_multiple_transports(): void
+    {
+        $sqsTransport = Mockery::mock(Transport::class);
+        $sqsTransport->shouldReceive('name')->andReturn('sqs');
+        $sqsTransport->shouldReceive('workload')->with(['orders', 'default'])->andReturn([
+            ['name' => 'orders', 'length' => 40, 'wait' => 0, 'processes' => 0, 'split_queues' => null],
+            ['name' => 'default', 'length' => 0, 'wait' => 0, 'processes' => 0, 'split_queues' => null],
+        ]);
+
+        $redisTransport = Mockery::mock(Transport::class);
+        $redisTransport->shouldReceive('name')->andReturn('redis');
+        $redisTransport->shouldReceive('workload')->with(['orders', 'default'])->andReturn([
+            ['name' => 'orders', 'length' => 0, 'wait' => 0, 'processes' => 0, 'split_queues' => null],
+            ['name' => 'default', 'length' => 10, 'wait' => 0, 'processes' => 0, 'split_queues' => null],
+        ]);
+
+        $registry = new TransportRegistry();
+        $registry->register($sqsTransport);
+        $registry->register($redisTransport);
+
+        $metrics = Mockery::mock(MetricsRepository::class);
+        $metrics->shouldReceive('runtimeForQueue')->andReturn(1.0);
+
+        $supervisors = Mockery::mock(SupervisorRepository::class);
+        $supervisors->shouldReceive('all')->andReturn([
+            (object) ['processes' => ['sqs:orders' => 2, 'redis:default' => 2]],
+        ]);
+
+        $cache = Mockery::mock(Cache::class);
+        $cache->shouldReceive('remember')->andReturnUsing(fn ($k, $t, $cb) => $cb());
+
+        $repo = new SunsetWorkloadRepository(
+            $registry, $metrics, $supervisors, $cache, ['orders', 'default'], 5
+        );
+
+        $workload = $repo->get();
+        $byName = collect($workload)->keyBy('name')->all();
+
+        $this->assertSame(40, $byName['orders']['length']);   // 40 (sqs) + 0 (redis)
+        $this->assertSame(10, $byName['default']['length']); // 0 (sqs) + 10 (redis)
     }
 
     protected function tearDown(): void

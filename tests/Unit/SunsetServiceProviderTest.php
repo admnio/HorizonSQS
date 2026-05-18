@@ -32,6 +32,25 @@ class SunsetServiceProviderTest extends TestCase
         );
     }
 
+    public function test_redis_driver_resolves_to_sunset_redis_queue(): void
+    {
+        config([
+            'queue.connections.redis' => [
+                'driver' => 'redis',
+                'connection' => 'default',
+                'queue' => 'default',
+                'retry_after' => 60,
+            ],
+        ]);
+
+        $queue = $this->app['queue']->connection('redis');
+
+        $this->assertInstanceOf(
+            \Admnio\Sunset\Transports\Redis\RedisQueue::class,
+            $queue
+        );
+    }
+
     public function test_artisan_command_registered(): void
     {
         $commands = array_keys($this->app->make(\Illuminate\Contracts\Console\Kernel::class)->all());

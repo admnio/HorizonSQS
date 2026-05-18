@@ -27,6 +27,13 @@ abstract class TestCase extends Orchestra
             'suffix' => '',
             'region' => 'us-east-1',
         ]);
+        $app['config']->set('queue.connections.redis', [
+            'driver' => 'redis',
+            'connection' => 'default',
+            'queue' => 'default',
+            'retry_after' => 60,
+            'block_for' => null,
+        ]);
         $app['config']->set('database.redis.default', [
             'host' => env('REDIS_HOST', '127.0.0.1'),
             'port' => env('REDIS_PORT', 6379),
