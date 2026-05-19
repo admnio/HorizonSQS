@@ -88,6 +88,8 @@ class RedisJobRepositoryTest extends TestCase
         $this->assertSame('completed', $hash['status']);
         $this->assertNotEmpty($hash['completed_at']);
         $this->assertSame(1, $this->redis->zcard('sunset:completed_jobs'));
+        $ttl = $this->redis->ttl('sunset:job:job-4');
+        $this->assertGreaterThan(0, $ttl, 'completed() should set a TTL on the job hash');
     }
 
     public function test_completed_silenced_routes_to_silenced_index(): void
@@ -110,6 +112,7 @@ class RedisJobRepositoryTest extends TestCase
         $this->assertSame(1, $this->redis->zcard('sunset:monitored_jobs'));
         $hash = $this->redis->hgetall('sunset:job:job-6');
         $this->assertSame('job-6', $hash['id']);
+        $this->assertSame('completed', $hash['status'], 'remember() records monitored jobs as completed');
     }
 
     public function test_migrated_replays_pushed_for_each_payload(): void

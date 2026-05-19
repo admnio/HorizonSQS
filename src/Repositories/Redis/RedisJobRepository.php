@@ -6,7 +6,6 @@ use Admnio\Sunset\Contracts\JobRepository;
 use Admnio\Sunset\JobPayload;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class RedisJobRepository implements JobRepository
@@ -60,7 +59,7 @@ class RedisJobRepository implements JobRepository
                 'payload' => $payload->value,
             ]);
             $pipe->expireat($this->key("job:{$payload->id()}"),
-                CarbonImmutable::now()->addMinutes($this->recentJobExpires)->getTimestamp());
+                CarbonImmutable::now()->addMinutes($this->pendingJobExpires)->getTimestamp());
         });
     }
 
@@ -92,6 +91,8 @@ class RedisJobRepository implements JobRepository
                 'status' => 'completed',
                 'completed_at' => CarbonImmutable::now()->getTimestamp(),
             ]);
+            $pipe->expireat($this->key("job:{$payload->id()}"),
+                CarbonImmutable::now()->addMinutes($this->completedJobExpires)->getTimestamp());
         });
     }
 
@@ -106,7 +107,7 @@ class RedisJobRepository implements JobRepository
                 'connection' => $connection,
                 'queue' => $queue,
                 'name' => $payload->decoded['displayName'] ?? '',
-                'status' => 'pending',
+                'status' => 'completed',
                 'payload' => $payload->value,
             ]);
             $pipe->expireat($this->key("job:{$payload->id()}"),
@@ -116,9 +117,24 @@ class RedisJobRepository implements JobRepository
 
     public function migrated(string $connection, string $queue, Collection $payloads): void
     {
-        foreach ($payloads as $payload) {
-            $this->pushed($connection, $queue, $payload);
-        }
+        $time = CarbonImmutable::now()->getPreciseTimestamp(3);
+
+        $this->connection()->pipeline(function ($pipe) use ($payloads, $connection, $queue, $time) {
+            foreach ($payloads as $payload) {
+                $pipe->zadd($this->key('recent_jobs'), (float) $time, $payload->id());
+                $pipe->zadd($this->key('pending_jobs'), (float) $time, $payload->id());
+                $pipe->hmset($this->key("job:{$payload->id()}"), [
+                    'id' => $payload->id(),
+                    'connection' => $connection,
+                    'queue' => $queue,
+                    'name' => $payload->decoded['displayName'] ?? '',
+                    'status' => 'pending',
+                    'payload' => $payload->value,
+                ]);
+                $pipe->expireat($this->key("job:{$payload->id()}"),
+                    CarbonImmutable::now()->addMinutes($this->pendingJobExpires)->getTimestamp());
+            }
+        });
     }
 
     public function getRecent(?string $afterIndex = null): Collection
