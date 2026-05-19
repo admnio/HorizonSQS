@@ -174,6 +174,32 @@ class MasterSupervisor implements Pausable, Restartable, Terminable
     }
 
     /**
+     * Add a new supervisor process to this master supervisor.
+     *
+     * @param  \Admnio\Sunset\Supervisor\SupervisorOptions  $options
+     * @return void
+     */
+    public function addSupervisor(SupervisorOptions $options): void
+    {
+        $command = $options->toSupervisorCommand();
+
+        $process = \Symfony\Component\Process\Process::fromShellCommandline(
+            $command,
+            $options->directory ?? base_path()
+        )->setTimeout(null)->disableOutput();
+
+        $this->supervisors->push(
+            new SupervisorProcess(
+                $options,
+                $process,
+                function ($type, $line) {
+                    $this->output($type, $line);
+                }
+            )
+        );
+    }
+
+    /**
      * Terminate this master supervisor and all of its supervisors.
      *
      * @param  int  $status
