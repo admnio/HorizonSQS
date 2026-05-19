@@ -220,3 +220,83 @@ composer require admnio/sunset:0.2.*
 ```
 
 No data migration to undo — Sunset's RedisQueue uses Laravel's same Redis schema.
+
+---
+
+# Upgrading from `admnio/sunset` v0.3.0 to v0.4.0
+
+v0.4.0 moves the queueing-and-recording subsystem out of `laravel/horizon` and into the `Admnio\Sunset` namespace. The Redis keyspace renames from `horizon:*` to `sunset:*`. Horizon's dashboard keeps working via adapter classes — no changes needed in your routes/views.
+
+## 1. Composer
+
+```bash
+composer update admnio/sunset
+```
+
+## 2. Republish the config
+
+```bash
+php artisan vendor:publish --tag=sunset-config --force
+```
+
+Or manually add the new keys to `config/sunset.php`:
+
+```php
+'key_prefix' => env('SUNSET_KEY_PREFIX', 'sunset'),
+
+'trim' => [
+    'recent' => 60,
+    'pending' => 60,
+    'completed' => 60,
+    'recent_failed' => 10080,
+    'failed' => 10080,
+    'monitored' => 10080,
+],
+```
+
+## 3. Migrate existing Redis keys
+
+Run the migration command. Always dry-run first on production data:
+
+```bash
+php artisan sunset:migrate-horizon-keys --dry-run
+php artisan sunset:migrate-horizon-keys
+```
+
+The command is idempotent — running it twice is a no-op.
+
+## 4. Restart workers
+
+```bash
+php artisan horizon:terminate
+```
+
+Then restart your worker supervisor. New worker processes will dispatch Sunset events and record to `sunset:*` keys.
+
+## 5. Verify
+
+After workers come back up:
+1. Dispatch a test job (e.g., `App\Jobs\TestJob::dispatch()`).
+2. Confirm it appears at `/horizon/jobs/pending` (the dashboard reads through our adapters).
+3. Inspect Redis: `redis-cli KEYS 'sunset:*'` should show your fresh records.
+4. `redis-cli KEYS 'horizon:*'` should return empty (or only pre-migration leftovers if some keys were skipped).
+
+## What changed under the hood
+
+- New `Admnio\Sunset\Events\Job{Queueing,Queued,Reserved,Released,Completed,Failed}` event classes. Transports dispatch ours; `Laravel\Horizon\Events\*` no longer imported anywhere in our code.
+- New `Admnio\Sunset\Contracts\{JobRepository,FailedJobRepository,TagRepository,MetricsRepository}` interfaces with focused, well-named methods (Horizon's mega-`JobRepository` is split into Job + FailedJob in our world).
+- New `Admnio\Sunset\Repositories\Redis\Redis*Repository` implementations writing to `sunset:*` keys.
+- New `Admnio\Sunset\Adapters\Horizon\Horizon*RepositoryAdapter` classes implement Horizon's contracts and delegate to ours, so the existing dashboard keeps reading our data.
+- New `Admnio\Sunset\Listeners\*` (9 classes) record the lifecycle. `Laravel\Horizon\Listeners\*` no longer appears in the runtime listener chain for any lifecycle event.
+- New `Admnio\Sunset\JobPayload` mirrors Horizon's `JobPayload` surface; transports use it. The `Laravel\Horizon\JobPayload` type is now only referenced inside `src/Adapters/Horizon/` at the dashboard boundary.
+
+## Rollback
+
+If something goes wrong:
+
+```bash
+composer require admnio/sunset:0.3.*
+php artisan sunset:migrate-horizon-keys --from=sunset --to=horizon
+```
+
+The migration is reversible — same algorithm, swapped prefixes. Note: the v0.3.0 code does NOT write to `sunset:*` keys, so any data dispatched against v0.4.0 between the swap and rollback would be lost from the dashboard's view. Roll back during a low-traffic window or drain queues first.
