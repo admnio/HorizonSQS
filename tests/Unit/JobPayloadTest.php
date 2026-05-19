@@ -73,8 +73,10 @@ class JobPayloadTest extends TestCase
 
         $payload['extra'] = 'baz';
         $this->assertSame('baz', $payload->decoded['extra']);
+        $this->assertSame('baz', json_decode($payload->value, true)['extra']);
 
         unset($payload['extra']);
         $this->assertArrayNotHasKey('extra', $payload->decoded);
+        $this->assertArrayNotHasKey('extra', json_decode($payload->value, true));
     }
 }

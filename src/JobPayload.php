@@ -131,10 +131,12 @@ class JobPayload implements ArrayAccess
     public function offsetSet($offset, $value): void
     {
         $this->decoded[$offset] = $value;
+        $this->value = json_encode($this->decoded);
     }
 
     public function offsetUnset($offset): void
     {
         unset($this->decoded[$offset]);
+        $this->value = json_encode($this->decoded);
     }
 }
