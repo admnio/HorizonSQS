@@ -300,3 +300,86 @@ php artisan sunset:migrate-horizon-keys --from=sunset --to=horizon
 ```
 
 The migration is reversible — same algorithm, swapped prefixes. Note: the v0.3.0 code does NOT write to `sunset:*` keys, so any data dispatched against v0.4.0 between the swap and rollback would be lost from the dashboard's view. Roll back during a low-traffic window or drain queues first.
+
+---
+
+# Upgrading from `admnio/sunset` v0.4.0 to v0.5.0
+
+v0.5.0 moves the supervisor + master + worker process tree out of `laravel/horizon` and into the `Admnio\Sunset` namespace. `php artisan horizon` is **removed** (replaced with a removal notice). Users must migrate to `sunset:work`.
+
+## 1. Composer
+
+```bash
+composer update admnio/sunset
+```
+
+## 2. Migrate your config
+
+Run the migration command to copy `config/horizon.php`'s `environments` block (and `memory_limit`, `fast_termination`, `wait` settings) into `config/sunset.php`:
+
+```bash
+php artisan sunset:migrate-horizon-config --dry-run
+php artisan sunset:migrate-horizon-config
+```
+
+If `config/sunset.php` already has a `supervisors` block (unlikely on first upgrade), use `--force` to overwrite.
+
+## 3. Update your supervisor process
+
+Change your systemd unit, Docker entrypoint, supervisord config, or whatever runs your queue workers:
+
+```diff
+- ExecStart=/usr/bin/php /var/www/app/artisan horizon
++ ExecStart=/usr/bin/php /var/www/app/artisan sunset:work
+```
+
+## 4. Update deploy scripts
+
+If your deploy script calls `php artisan horizon:terminate` for zero-downtime deploys, change to `sunset:terminate`:
+
+```diff
+- php artisan horizon:terminate
++ php artisan sunset:terminate
+```
+
+Similar for any other `horizon:*` commands you use in scripts.
+
+## 5. Restart workers
+
+After the new code is deployed:
+
+```bash
+php artisan sunset:terminate  # If you previously had `horizon` running, this won't work. Use `kill` instead.
+# Or for first start:
+systemctl restart your-sunset-worker  # Or whatever your supervisor is
+```
+
+## 6. Verify
+
+```bash
+php artisan sunset:status         # Expect exit code 0 if running
+php artisan sunset:supervisors    # Expect to see your configured supervisors
+```
+
+The Horizon dashboard at `/horizon` continues to work — the "Pause" button now routes through Sunset's adapter to your `sunset:work` process.
+
+## What changed under the hood
+
+- 8 new supervisor classes under `Admnio\Sunset\Supervisor\*` ported from `Laravel\Horizon\*`: `MasterSupervisor`, `Supervisor`, `SupervisorProcess`, `SupervisorOptions`, `SupervisorFactory`, `ProvisioningPlan`, `ProcessPool`, `ListensForSignals`.
+- 6 new `Admnio\Sunset\SupervisorCommands\*` (Pause, ContinueWorking, Restart, Terminate, Scale, Balance).
+- 1 new `Admnio\Sunset\MasterSupervisorCommands\AddSupervisor`.
+- 4 new `Admnio\Sunset\Contracts\*` (Master/Supervisor/Process repos + CommandQueue).
+- 4 new `Admnio\Sunset\Repositories\Redis\*` implementations.
+- 4 new `Admnio\Sunset\Adapters\Horizon\*` adapter classes so the dashboard's pause/restart buttons still work.
+- 19 new `Admnio\Sunset\Console\Sunset*Command` artisan commands.
+- `php artisan horizon` is replaced with `SunsetHorizonRemovedCommand` (prints removal notice and exits 1).
+
+## Rollback
+
+If something goes wrong, pin the previous minor:
+
+```bash
+composer require admnio/sunset:0.4.*
+```
+
+Then revert your systemd unit + deploy scripts to use `horizon` again.
