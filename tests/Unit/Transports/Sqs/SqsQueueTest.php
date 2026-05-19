@@ -3,11 +3,11 @@
 namespace Admnio\Sunset\Tests\Unit\Transports\Sqs;
 
 use Aws\Sqs\SqsClient;
-use Illuminate\Support\Facades\Event;
-use Laravel\Horizon\Events\JobPending;
-use Laravel\Horizon\Events\JobPushed;
-use Laravel\Horizon\Events\JobReserved;
+use Admnio\Sunset\Events\JobQueueing;
+use Admnio\Sunset\Events\JobQueued;
+use Admnio\Sunset\Events\JobReserved;
 use Admnio\Sunset\Transports\Sqs\Delay\DelayedJobStore;
+use Illuminate\Support\Facades\Event;
 use Admnio\Sunset\Transports\Sqs\SqsQueue;
 use Admnio\Sunset\Transports\Sqs\Payload\ExtendedPayloadHandler;
 use Admnio\Sunset\Transports\Sqs\FifoMessageAttributes;
@@ -32,7 +32,7 @@ class SqsQueueTest extends TestCase
         $this->assertSame($decoded['uuid'], $decoded['id']);
     }
 
-    public function test_push_raw_sends_to_sqs_and_fires_horizon_events(): void
+    public function test_push_raw_sends_to_sqs_and_fires_sunset_events(): void
     {
         Event::fake();
 
@@ -58,10 +58,10 @@ class SqsQueueTest extends TestCase
 
         $this->assertSame('mid-1', $result);
 
-        Event::assertDispatched(JobPending::class, function ($event) {
-            return $event->connectionName === null || is_string($event->connectionName);
+        Event::assertDispatched(JobQueueing::class, function ($event) {
+            return is_string($event->connectionName);
         });
-        Event::assertDispatched(JobPushed::class);
+        Event::assertDispatched(JobQueued::class);
     }
 
     public function test_later_buffers_long_delay_in_redis_and_fires_events(): void
@@ -101,8 +101,8 @@ class SqsQueueTest extends TestCase
         $result = $queue->later(3600, 'App\\Jobs\\Noop', '', 'default');
         $this->assertIsString($result); // returned UUID id from buffered payload
 
-        Event::assertDispatched(JobPending::class);
-        Event::assertDispatched(JobPushed::class);
+        Event::assertDispatched(JobQueueing::class);
+        Event::assertDispatched(JobQueued::class);
     }
 
     public function test_push_raw_includes_fifo_attributes_for_fifo_queue(): void

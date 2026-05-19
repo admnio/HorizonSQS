@@ -4,12 +4,14 @@ Supercharged Laravel Horizon replacement. v0.2.0 ships the SQS transport.
 
 ## Why
 
-Sunset is the foundation for a multi-transport Horizon replacement: SQS and Redis today (BullMQ, RabbitMQ, and LavinMQ planned) all behind one consistent dashboard with deeper visibility into workers and queues than Horizon offers. v0.3.0 adds Redis transport on top of v0.2.0's SQS support and `Transport` abstraction.
+Sunset is the foundation for a multi-transport Horizon replacement: SQS and Redis today (BullMQ, RabbitMQ, and LavinMQ planned) all behind one consistent dashboard with deeper visibility into workers and queues than Horizon offers. v0.4.0 owns the job lifecycle subsystem (events, listeners, repositories, payload type) end-to-end — under the hood the queueing path no longer touches any `Laravel\Horizon\Events\*` or `Laravel\Horizon\JobPayload` class. Horizon's dashboard continues to work via thin adapter classes bound to its repository contracts; `laravel/horizon` remains a dependency until v1.0.0 when we replace the dashboard outright.
 
 This release ships:
 
 - Full Laravel Horizon support for Amazon SQS — same dashboard, same metrics, SQS underneath.
 - Full Laravel Horizon support for Redis queues too — same dashboard, same metrics, Sunset-managed event dispatch
+- Sunset-owned job lifecycle: events, listeners, repositories, and `JobPayload` live under `Admnio\Sunset\*`. Transports dispatch Sunset events; Sunset listeners record to `sunset:*` Redis keys
+- `sunset:migrate-horizon-keys` artisan command for renaming legacy `horizon:*` keys to `sunset:*` (idempotent, supports `--dry-run`)
 - Throughput metrics (jobs/min, jobs/hour)
 - Recent / Failed / Completed jobs lists with payloads + retry
 - Workload page (pending counts + estimated wait time)
@@ -22,10 +24,9 @@ This release ships:
 - Long polling on by default (max 20s WaitTimeSeconds — cheapest SQS setting)
 - `Transport` interface so future drivers plug in without touching SQS code
 
-## Not yet in v0.3.0 (planned)
+## Not yet in v0.4.0 (planned)
 
-- v0.4.0: `sunset:work` supervisor replacing `php artisan horizon`
-- v0.5.0: Sunset repositories replacing Horizon's
+- v0.5.0: `sunset:work` supervisor replacing `php artisan horizon`
 - v1.0.0: Full SPA dashboard, drops `laravel/horizon` dependency
 - v1.1.0: Worker CPU/Memory monitoring
 - v1.2.0: Realtime worker activity stream
@@ -48,25 +49,17 @@ php artisan vendor:publish --tag=sunset-config
 return [
     'redis_connection' => env('SUNSET_REDIS', 'default'),
     'workload_cache_ttl' => 5,
+    'key_prefix' => env('SUNSET_KEY_PREFIX', 'sunset'),
+    'trim' => [
+        'recent' => 60,
+        'pending' => 60,
+        'completed' => 60,
+        'recent_failed' => 10080,
+        'failed' => 10080,
+        'monitored' => 10080,
+    ],
     'transports' => [
-        'sqs' => [
-            'sqs_max_delay' => 900,
-            'long_delay_sweep_interval' => 60,
-            'visibility_heartbeat' => false,
-            'fifo' => [
-                'message_group_id' => 'queue-name', // 'queue-name' | 'job-class' | callable
-                'content_based_dedup' => true,
-            ],
-            'extended_payload' => [
-                'enabled' => false,
-                'bucket' => env('SUNSET_S3_BUCKET'),
-                'prefix' => 'sunset-payloads/',
-                'lifecycle_days' => 7,
-            ],
-        ],
-        'redis' => [
-            'workload_connection' => env('SUNSET_REDIS_WORKLOAD_CONN', 'default'),
-        ],
+        // ... unchanged ...
     ],
 ];
 ```

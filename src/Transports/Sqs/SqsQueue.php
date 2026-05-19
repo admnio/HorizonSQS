@@ -2,17 +2,16 @@
 
 namespace Admnio\Sunset\Transports\Sqs;
 
-use Aws\Sqs\SqsClient;
-use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Queue\SqsQueue as LaravelSqsQueue;
-use Illuminate\Support\Str;
-use Laravel\Horizon\Events\JobPending;
-use Laravel\Horizon\Events\JobPushed;
-use Laravel\Horizon\Events\JobReserved;
-use Laravel\Horizon\JobPayload;
+use Admnio\Sunset\Events\JobQueueing;
+use Admnio\Sunset\Events\JobQueued;
+use Admnio\Sunset\Events\JobReserved;
+use Admnio\Sunset\JobPayload;
 use Admnio\Sunset\Transports\Sqs\Delay\DelayedJobStore;
 use Admnio\Sunset\Transports\Sqs\Payload\ExtendedPayloadHandler;
 use Admnio\Sunset\Transports\Sqs\FifoMessageAttributes;
+use Aws\Sqs\SqsClient;
+use Illuminate\Queue\SqsQueue as LaravelSqsQueue;
+use Illuminate\Support\Str;
 
 class SqsQueue extends LaravelSqsQueue
 {
@@ -79,7 +78,10 @@ class SqsQueue extends LaravelSqsQueue
         $jobPayload = (new JobPayload($payload))->prepare($this->lastPushed);
         $preparedJson = $jobPayload->value;
 
-        $this->raiseHorizonEvent($resolvedQueue, new JobPending($preparedJson));
+        $connection = $this->getConnectionName() ?? '';
+        $strippedQueue = $this->stripQueuesPrefix($resolvedQueue);
+
+        event(new JobQueueing($connection, $strippedQueue, $jobPayload));
 
         // Spill to S3 only AFTER prepare so the JSON we store contains the
         // canonical fields; the SQS body will be the S3 pointer.
@@ -101,7 +103,7 @@ class SqsQueue extends LaravelSqsQueue
 
         $messageId = $this->sqs->sendMessage($args)->get('MessageId');
 
-        $this->raiseHorizonEvent($resolvedQueue, new JobPushed($preparedJson));
+        event(new JobQueued($connection, $strippedQueue, $jobPayload));
 
         return $messageId;
     }
@@ -120,13 +122,15 @@ class SqsQueue extends LaravelSqsQueue
                 $delaySeconds = $this->secondsUntil($delay);
 
                 if ($delaySeconds > $this->maxNativeDelay) {
-                    // Buffered long-delay path. Fire JobPending/JobPushed now so
+                    // Buffered long-delay path. Fire JobQueueing/JobQueued now so
                     // the dashboard shows the job immediately; sweep promotion
                     // will NOT refire events.
                     $jobPayload = (new JobPayload($payload))->prepare($job);
                     $preparedJson = $jobPayload->value;
+                    $connection = $this->getConnectionName() ?? '';
+                    $strippedQueue = $this->stripQueuesPrefix($resolvedQueue);
 
-                    $this->raiseHorizonEvent($resolvedQueue, new JobPending($preparedJson));
+                    event(new JobQueueing($connection, $strippedQueue, $jobPayload));
 
                     $this->delayedStore->buffer(
                         $resolvedQueue,
@@ -134,7 +138,7 @@ class SqsQueue extends LaravelSqsQueue
                         microtime(true) + $delaySeconds
                     );
 
-                    $this->raiseHorizonEvent($resolvedQueue, new JobPushed($preparedJson));
+                    event(new JobQueued($connection, $strippedQueue, $jobPayload));
 
                     return $jobPayload->id();
                 }
@@ -168,12 +172,13 @@ class SqsQueue extends LaravelSqsQueue
             // like CleanupExtendedPayload can still see the pointer after the
             // job processes, when getRawBody() returns the expanded body.
             if ($originalBody !== $message['Body']) {
-                $message['HorizonSqsOriginalBody'] = $originalBody;
+                $message['SunsetSqsOriginalBody'] = $originalBody;
             }
         }
 
         // Fire JobReserved with the prepared payload JSON the worker will see.
-        $this->raiseHorizonEvent($resolvedQueue, new JobReserved($message['Body']));
+        $jobPayload = new JobPayload($message['Body']);
+        event(new JobReserved($this->getConnectionName() ?? '', $this->stripQueuesPrefix($resolvedQueue), $jobPayload));
 
         return new \Illuminate\Queue\Jobs\SqsJob(
             $this->container,
@@ -185,19 +190,10 @@ class SqsQueue extends LaravelSqsQueue
     }
 
     /**
-     * Dispatch a Horizon lifecycle event if a dispatcher is bound. Mirrors
-     * Horizon\RedisQueue::event() including the "queues:" prefix stripping.
+     * Strip the "queues:" prefix from a queue name, mirroring Horizon's convention.
      */
-    protected function raiseHorizonEvent(string $queue, $event): void
+    protected function stripQueuesPrefix(string $queue): string
     {
-        if (! $this->container || ! $this->container->bound(Dispatcher::class)) {
-            return;
-        }
-
-        $queue = Str::replaceFirst('queues:', '', $queue);
-
-        $this->container->make(Dispatcher::class)->dispatch(
-            $event->connection($this->getConnectionName())->queue($queue)
-        );
+        return Str::replaceFirst('queues:', '', $queue);
     }
 }

@@ -66,4 +66,89 @@ class SunsetServiceProviderTest extends TestCase
         $this->app->make(\Admnio\Sunset\Transports\Sqs\SqsConnector::class)
             ->connect(config('queue.connections.sqs'));
     }
+
+    public function test_sunset_contracts_resolve_to_redis_implementations(): void
+    {
+        $this->assertInstanceOf(
+            \Admnio\Sunset\Repositories\Redis\RedisJobRepository::class,
+            $this->app->make(\Admnio\Sunset\Contracts\JobRepository::class)
+        );
+        $this->assertInstanceOf(
+            \Admnio\Sunset\Repositories\Redis\RedisFailedJobRepository::class,
+            $this->app->make(\Admnio\Sunset\Contracts\FailedJobRepository::class)
+        );
+        $this->assertInstanceOf(
+            \Admnio\Sunset\Repositories\Redis\RedisTagRepository::class,
+            $this->app->make(\Admnio\Sunset\Contracts\TagRepository::class)
+        );
+        $this->assertInstanceOf(
+            \Admnio\Sunset\Repositories\Redis\RedisMetricsRepository::class,
+            $this->app->make(\Admnio\Sunset\Contracts\MetricsRepository::class)
+        );
+    }
+
+    public function test_horizon_repository_contracts_resolve_to_sunset_adapters(): void
+    {
+        $this->assertInstanceOf(
+            \Admnio\Sunset\Adapters\Horizon\HorizonJobRepositoryAdapter::class,
+            $this->app->make(\Laravel\Horizon\Contracts\JobRepository::class)
+        );
+        $this->assertInstanceOf(
+            \Admnio\Sunset\Adapters\Horizon\HorizonTagRepositoryAdapter::class,
+            $this->app->make(\Laravel\Horizon\Contracts\TagRepository::class)
+        );
+        $this->assertInstanceOf(
+            \Admnio\Sunset\Adapters\Horizon\HorizonMetricsRepositoryAdapter::class,
+            $this->app->make(\Laravel\Horizon\Contracts\MetricsRepository::class)
+        );
+    }
+
+    public function test_horizon_listeners_are_not_registered_for_sunset_events(): void
+    {
+        $events = $this->app['events'];
+        foreach ([
+            \Admnio\Sunset\Events\JobQueueing::class,
+            \Admnio\Sunset\Events\JobQueued::class,
+            \Admnio\Sunset\Events\JobReserved::class,
+            \Admnio\Sunset\Events\JobReleased::class,
+            \Admnio\Sunset\Events\JobCompleted::class,
+            \Admnio\Sunset\Events\JobFailed::class,
+        ] as $eventClass) {
+            foreach ($events->getListeners($eventClass) as $listener) {
+                $repr = is_object($listener) ? get_class($listener) : (string) $listener;
+                $this->assertStringNotContainsString(
+                    'Laravel\\Horizon\\Listeners',
+                    $repr,
+                    "Sunset event {$eventClass} should not have Horizon listeners"
+                );
+            }
+        }
+    }
+
+    public function test_sunset_listeners_are_registered_for_each_sunset_event(): void
+    {
+        $events = $this->app['events'];
+        $expected = [
+            \Admnio\Sunset\Events\JobQueueing::class => 2,
+            \Admnio\Sunset\Events\JobQueued::class => 1,
+            \Admnio\Sunset\Events\JobReserved::class => 1,
+            \Admnio\Sunset\Events\JobReleased::class => 1,
+            \Admnio\Sunset\Events\JobCompleted::class => 1,
+            \Admnio\Sunset\Events\JobFailed::class => 1,
+        ];
+        foreach ($expected as $eventClass => $minListeners) {
+            $count = count($events->getListeners($eventClass));
+            $this->assertGreaterThanOrEqual($minListeners, $count,
+                "{$eventClass} should have at least {$minListeners} listener(s), has {$count}");
+        }
+    }
+
+    public function test_metrics_snapshot_is_scheduled_every_five_minutes(): void
+    {
+        $schedule = $this->app->make(\Illuminate\Console\Scheduling\Schedule::class);
+        $events = collect($schedule->events());
+        $snapshot = $events->first(fn ($e) => $e->description === 'sunset-snapshot');
+        $this->assertNotNull($snapshot, 'sunset-snapshot should be scheduled');
+        $this->assertSame('*/5 * * * *', $snapshot->expression);
+    }
 }

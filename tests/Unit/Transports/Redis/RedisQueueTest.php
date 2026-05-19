@@ -5,16 +5,16 @@ namespace Admnio\Sunset\Tests\Unit\Transports\Redis;
 use Admnio\Sunset\Transports\Redis\RedisQueue;
 use Admnio\Sunset\Tests\TestCase;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
+use Admnio\Sunset\Events\JobQueueing;
+use Admnio\Sunset\Events\JobQueued;
+use Admnio\Sunset\Events\JobReserved;
 use Illuminate\Support\Facades\Event;
-use Laravel\Horizon\Events\JobPending;
-use Laravel\Horizon\Events\JobPushed;
-use Laravel\Horizon\Events\JobReserved;
 
 class RedisQueueTest extends TestCase
 {
-    public function test_push_raw_dispatches_horizon_events_around_send(): void
+    public function test_push_raw_dispatches_sunset_events_around_send(): void
     {
-        Event::fake([JobPending::class, JobPushed::class]);
+        Event::fake([JobQueueing::class, JobQueued::class]);
 
         $factory = $this->app->make(RedisFactory::class);
         $queue = new RedisQueue($factory, 'default', 'default');
@@ -25,10 +25,10 @@ class RedisQueueTest extends TestCase
         try {
             $queue->pushRaw(json_encode(['id' => 'abc', 'displayName' => 'TestJob', 'data' => []]), $queueName);
 
-            Event::assertDispatched(JobPending::class, function ($e) {
+            Event::assertDispatched(JobQueueing::class, function ($e) {
                 return $e->connectionName === 'redis';
             });
-            Event::assertDispatched(JobPushed::class, function ($e) {
+            Event::assertDispatched(JobQueued::class, function ($e) {
                 return $e->connectionName === 'redis';
             });
         } finally {

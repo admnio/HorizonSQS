@@ -11,10 +11,37 @@ use Illuminate\Support\ServiceProvider;
 use Laravel\Horizon\Contracts\MetricsRepository;
 use Laravel\Horizon\Contracts\SupervisorRepository;
 use Laravel\Horizon\Contracts\WorkloadRepository;
+use Admnio\Sunset\Adapters\Horizon\HorizonJobRepositoryAdapter;
+use Admnio\Sunset\Adapters\Horizon\HorizonTagRepositoryAdapter;
+use Admnio\Sunset\Adapters\Horizon\HorizonMetricsRepositoryAdapter;
+use Admnio\Sunset\Console\SunsetMigrateHorizonKeysCommand;
 use Admnio\Sunset\Console\SunsetMigrateRedisKeysCommand;
 use Admnio\Sunset\Console\SweepDelayedCommand;
+use Admnio\Sunset\Contracts\JobRepository as SunsetJobRepository;
+use Admnio\Sunset\Contracts\FailedJobRepository as SunsetFailedJobRepository;
+use Admnio\Sunset\Contracts\TagRepository as SunsetTagRepository;
+use Admnio\Sunset\Contracts\MetricsRepository as SunsetMetricsRepository;
+use Admnio\Sunset\Events\JobQueueing;
+use Admnio\Sunset\Events\JobQueued;
+use Admnio\Sunset\Events\JobReserved;
+use Admnio\Sunset\Events\JobReleased;
+use Admnio\Sunset\Events\JobCompleted;
+use Admnio\Sunset\Events\JobFailed as SunsetJobFailed;
 use Admnio\Sunset\Exceptions\InvalidConfigurationException;
 use Admnio\Sunset\Listeners\CleanupExtendedPayload;
+use Admnio\Sunset\Listeners\StorePendingJob;
+use Admnio\Sunset\Listeners\MonitorTag;
+use Admnio\Sunset\Listeners\StoreJob;
+use Admnio\Sunset\Listeners\MarkJobAsReserved;
+use Admnio\Sunset\Listeners\MarkJobAsReleased;
+use Admnio\Sunset\Listeners\MarkJobAsComplete;
+use Admnio\Sunset\Listeners\MarkJobAsFailed;
+use Admnio\Sunset\Listeners\TranslateJobProcessed;
+use Admnio\Sunset\Listeners\TranslateJobFailed;
+use Admnio\Sunset\Repositories\Redis\RedisJobRepository;
+use Admnio\Sunset\Repositories\Redis\RedisFailedJobRepository;
+use Admnio\Sunset\Repositories\Redis\RedisTagRepository;
+use Admnio\Sunset\Repositories\Redis\RedisMetricsRepository;
 use Admnio\Sunset\Transports\Sqs\Delay\DelayedJobReenqueuer;
 use Admnio\Sunset\Transports\Sqs\Delay\DelayedJobStore;
 use Admnio\Sunset\Support\TransportRegistry;
@@ -116,6 +143,17 @@ class SunsetServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(WorkloadRepository::class, $this->workloadRepositoryFactory());
+
+        // Bind Sunset contracts to Redis implementations.
+        $this->app->singleton(SunsetJobRepository::class, RedisJobRepository::class);
+        $this->app->singleton(SunsetFailedJobRepository::class, RedisFailedJobRepository::class);
+        $this->app->singleton(SunsetTagRepository::class, RedisTagRepository::class);
+        $this->app->singleton(SunsetMetricsRepository::class, RedisMetricsRepository::class);
+
+        // Bind Horizon contracts to our adapters (initial binding in register()).
+        // These will be re-bound in boot() to win against Horizon's own register()
+        // which runs after ours and overwrites these.
+        $this->bindHorizonAdapters();
     }
 
     public function boot(): void
@@ -128,6 +166,7 @@ class SunsetServiceProvider extends ServiceProvider
             $this->commands([
                 SunsetMigrateRedisKeysCommand::class,
                 SweepDelayedCommand::class,
+                SunsetMigrateHorizonKeysCommand::class,
             ]);
         }
 
@@ -154,13 +193,83 @@ class SunsetServiceProvider extends ServiceProvider
         // since Horizon's ServiceProvider registers after ours (alphabetical order).
         $this->app->singleton(WorkloadRepository::class, $this->workloadRepositoryFactory());
 
-        $this->app->booted(function () {
+        // Re-bind Horizon adapters in boot() to win against Horizon's own register(),
+        // which runs after ours and would otherwise overwrite our bindings.
+        $this->bindHorizonAdapters();
+
+        // Register Sunset event → listener map.
+        $events = $this->app['events'];
+
+        $sunsetListenerMap = [
+            JobQueueing::class  => [StorePendingJob::class, MonitorTag::class],
+            JobQueued::class    => [StoreJob::class],
+            JobReserved::class  => [MarkJobAsReserved::class],
+            JobReleased::class  => [MarkJobAsReleased::class],
+            JobCompleted::class => [MarkJobAsComplete::class],
+            SunsetJobFailed::class => [MarkJobAsFailed::class],
+        ];
+
+        foreach ($sunsetListenerMap as $event => $listeners) {
+            foreach ($listeners as $listener) {
+                $events->listen($event, $listener);
+            }
+        }
+
+        // Register translators on Laravel's stock queue events.
+        $events->listen(\Illuminate\Queue\Events\JobProcessed::class, TranslateJobProcessed::class);
+        $events->listen(\Illuminate\Queue\Events\JobFailed::class, TranslateJobFailed::class);
+
+        $this->app->booted(function () use ($events, $sunsetListenerMap) {
             $schedule = $this->app->make(Schedule::class);
+
             $schedule->command('sunset:sweep-delayed')
                 ->everyMinute()
                 ->withoutOverlapping()
                 ->name('sunset-sweep-delayed');
+
+            // Schedule MetricsRepository snapshot every 5 minutes.
+            // Note: ->name() must come before ->withoutOverlapping() for CallbackEvent.
+            $schedule->call(function () {
+                app(SunsetMetricsRepository::class)->snapshot();
+            })
+            ->everyFiveMinutes()
+            ->name('sunset-snapshot')
+            ->withoutOverlapping();
+
+            // Forget any Horizon listeners that may have registered on Sunset
+            // events, then re-register our own listeners.
+            foreach ($sunsetListenerMap as $event => $listeners) {
+                $events->forget($event);
+                foreach ($listeners as $listener) {
+                    $events->listen($event, $listener);
+                }
+            }
         });
+    }
+
+    private function bindHorizonAdapters(): void
+    {
+        $this->app->singleton(
+            \Laravel\Horizon\Contracts\JobRepository::class,
+            fn ($app) => new HorizonJobRepositoryAdapter(
+                $app->make(SunsetJobRepository::class),
+                $app->make(SunsetFailedJobRepository::class),
+            )
+        );
+
+        $this->app->singleton(
+            \Laravel\Horizon\Contracts\TagRepository::class,
+            fn ($app) => new HorizonTagRepositoryAdapter(
+                $app->make(SunsetTagRepository::class)
+            )
+        );
+
+        $this->app->singleton(
+            MetricsRepository::class,
+            fn ($app) => new HorizonMetricsRepositoryAdapter(
+                $app->make(SunsetMetricsRepository::class),
+            )
+        );
     }
 
     private function workloadRepositoryFactory(): \Closure

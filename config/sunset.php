@@ -5,6 +5,23 @@ return [
 
     'workload_cache_ttl' => 5,
 
+    // Redis key prefix for everything Sunset records (jobs, tags, metrics,
+    // failed-job index, etc.). Override only if 'sunset' collides with
+    // another namespace in your Redis instance.
+    'key_prefix' => env('SUNSET_KEY_PREFIX', 'sunset'),
+
+    // Trim windows (minutes) for the Sunset job index zsets. Match
+    // Horizon's defaults so existing Horizon-installed cron timing keeps
+    // working. Override per-deploy if needed.
+    'trim' => [
+        'recent' => 60,
+        'pending' => 60,
+        'completed' => 60,
+        'recent_failed' => 10080,
+        'failed' => 10080,
+        'monitored' => 10080,
+    ],
+
     'transports' => [
         'sqs' => [
             'sqs_max_delay' => 900,

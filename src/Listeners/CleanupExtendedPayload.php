@@ -25,8 +25,8 @@ class CleanupExtendedPayload
         $body = $event->job->getRawBody();
         if (method_exists($job, 'getSqsJob')) {
             $raw = $job->getSqsJob();
-            if (is_array($raw) && isset($raw['HorizonSqsOriginalBody'])) {
-                $body = $raw['HorizonSqsOriginalBody'];
+            if (is_array($raw) && isset($raw['SunsetSqsOriginalBody'])) {
+                $body = $raw['SunsetSqsOriginalBody'];
             }
         }
 
