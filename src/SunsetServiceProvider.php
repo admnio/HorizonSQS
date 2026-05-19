@@ -14,6 +14,7 @@ use Laravel\Horizon\Contracts\WorkloadRepository;
 use Admnio\Sunset\Adapters\Horizon\HorizonJobRepositoryAdapter;
 use Admnio\Sunset\Adapters\Horizon\HorizonTagRepositoryAdapter;
 use Admnio\Sunset\Adapters\Horizon\HorizonMetricsRepositoryAdapter;
+use Admnio\Sunset\Console\SunsetMigrateHorizonKeysCommand;
 use Admnio\Sunset\Console\SunsetMigrateRedisKeysCommand;
 use Admnio\Sunset\Console\SweepDelayedCommand;
 use Admnio\Sunset\Contracts\JobRepository as SunsetJobRepository;
@@ -165,6 +166,7 @@ class SunsetServiceProvider extends ServiceProvider
             $this->commands([
                 SunsetMigrateRedisKeysCommand::class,
                 SweepDelayedCommand::class,
+                SunsetMigrateHorizonKeysCommand::class,
             ]);
         }
 
