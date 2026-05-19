@@ -75,6 +75,7 @@ class RedisFailedJobRepositoryTest extends TestCase
 
         $this->assertSame(1, $removed);
         $this->assertSame(0, $this->redis->zcard('sunset:failed_jobs'));
+        $this->assertSame(0, $this->redis->zcard('sunset:recent_failed_jobs'));
         $this->assertSame([], $this->redis->hgetall('sunset:job:gone'));
     }
 

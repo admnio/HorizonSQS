@@ -47,6 +47,7 @@ class RedisFailedJobRepository implements FailedJobRepository
                 'status' => 'failed',
                 'payload' => $payload->value,
                 'exception' => $exception,
+                'context' => '',
                 'failed_at' => CarbonImmutable::now()->getTimestamp(),
             ]);
             $pipe->expireat($this->key("job:{$payload->id()}"),
