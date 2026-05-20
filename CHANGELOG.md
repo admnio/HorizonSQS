@@ -2,6 +2,22 @@
 
 All notable changes to Sunset are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and Sunset adheres to [Semantic Versioning](https://semver.org/).
 
+## v1.1.0
+
+Worker telemetry — per-worker RSS and CPU sampled on the queue Looping event and surfaced on the Supervisors dashboard page.
+
+### Added
+- `Admnio\Sunset\Contracts\WorkerMetricsRepository` (public contract) and `Admnio\Sunset\Telemetry\WorkerMetricsSnapshot` (public value object) for reading worker metrics.
+- `WorkerLoopListener` subscribes to `Illuminate\Queue\Events\Looping` and `JobProcessed`. Throttled sampling (default 5s) keeps Redis traffic bounded; `cpu_pct` uses `getrusage()` user+sys deltas over wall-clock deltas.
+- `RedisWorkerMetricsRepository` stores per-PID snapshot hash (TTL 30s) plus capped sorted-set series for RSS and CPU (default 60 points = 5 minutes at 5s interval).
+- `sunset:sweep-worker-metrics` artisan command, scheduled every minute, reconciles the `worker_metrics:pids` set against TTL-expired hashes and deletes orphan series.
+- `/sunset/supervisors` dashboard page renders new "Workers" section with RSS / CPU% columns and a click-to-toggle RSS↔CPU inline sparkline per PID.
+- Config block `sunset.telemetry.{enabled, interval_seconds, series_points}` with env-var hooks (`SUNSET_TELEMETRY_ENABLED`, `SUNSET_TELEMETRY_INTERVAL`, `SUNSET_TELEMETRY_SERIES_POINTS`).
+
+### Notes
+- CPU% reads as `null` on Windows where `getrusage()` returns zeros for user/sys time; RSS works everywhere.
+- Listener swallows Redis-down exceptions silently (debug-logged) — telemetry is observability, not load-bearing.
+
 ## v1.0.2
 
 Polish release. No public-API changes.

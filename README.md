@@ -28,11 +28,10 @@ This release ships:
 - 19 new `sunset:*` artisan commands covering the full Horizon CLI surface: process tree (`work`/`supervise`/`worker`), control (`pause`/`continue`/`pause-supervisor`/`continue-supervisor`/`terminate`/`status`/`supervisors`/`supervisor-status`), maintenance (`clear`/`purge`/`snapshot`/`forget-failed`), operator (`install`/`publish`), migration (`migrate-horizon-config`).
 - `sunset:migrate-horizon-config` artisan command for moving `config/horizon.php`'s `environments` block to `config/sunset.php`'s `supervisors`.
 - Fluent rate limiting via the `Admnio\Sunset\Facades\Sunset` facade — sliding-window throttle, concurrency semaphores, per-(queue|job-class) limits, dynamic bucket keys, conditional `when()` guards, and three over-limit strategies (release-computed / release-fixed / drop). Zero overhead when no limits are registered.
+- Worker telemetry (v1.1.0): each `sunset:worker` samples its own RSS and CPU usage on the queue Looping event, throttled to once per 5 seconds (configurable). The Supervisors dashboard page renders per-worker RSS / CPU% columns plus a click-to-toggle sparkline showing the last ~100 seconds. CPU% is best-effort on Windows (PHP's `getrusage()` returns zeros there); RSS works everywhere. Disable entirely with `SUNSET_TELEMETRY_ENABLED=false` if you don't want the Redis traffic.
 
-## Not yet in v0.7.0 (planned)
+## Not yet in v1.1.0 (planned)
 
-- v1.0.0: Full SPA dashboard, drops `laravel/horizon` dependency
-- v1.1.0: Worker CPU/Memory monitoring
 - v1.2.0: Realtime worker activity stream
 - v1.3.0: Queue pause/resume controls
 
@@ -118,7 +117,7 @@ All published config keys are stable. Adding new keys is non-breaking; removing 
 
 Interfaces are stable; consumer code should depend on these rather than on concrete implementations:
 
-- `Limiter`, `WorkloadRepository`, `MetricsRepository`, `JobRepository`, `FailedJobRepository`, `TagRepository`, `SupervisorRepository`, `MasterSupervisorRepository`, `ProcessRepository`, `SupervisorCommandQueue`, `Silenced`, `Transport`, `Pausable`, `Restartable`, `Terminable`
+- `Limiter`, `WorkloadRepository`, `MetricsRepository`, `JobRepository`, `FailedJobRepository`, `TagRepository`, `SupervisorRepository`, `MasterSupervisorRepository`, `ProcessRepository`, `SupervisorCommandQueue`, `Silenced`, `Transport`, `Pausable`, `Restartable`, `Terminable`, `WorkerMetricsRepository`
 
 ### Events (`Admnio\Sunset\Events\*`)
 
@@ -139,6 +138,7 @@ Catchable by consumer code:
 - `Admnio\Sunset\Manager`
 - `Admnio\Sunset\RateLimiting\Limit`, `LimitBuilder`, `ThrottleSpec`, `ConcurrencySpec`, `Decision`
 - `Admnio\Sunset\RateLimiting\Targets\QueueTarget`, `JobClassTarget`
+- `Admnio\Sunset\Telemetry\WorkerMetricsSnapshot`
 
 ### Artisan commands
 
