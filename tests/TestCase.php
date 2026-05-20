@@ -47,6 +47,24 @@ abstract class TestCase extends Orchestra
             'retry_after' => 60,
             'block_for' => null,
         ]);
+        $app['config']->set('queue.connections.rabbitmq', [
+            'driver' => 'rabbitmq',
+            'queue' => 'default',
+            'connection' => env('RABBITMQ_QUEUE_CONNECTION', 'default'),
+            'hosts' => [[
+                'host' => env('RABBITMQ_HOST', '127.0.0.1'),
+                'port' => (int) env('RABBITMQ_PORT', 5672),
+                'user' => env('RABBITMQ_USER', 'guest'),
+                'password' => env('RABBITMQ_PASSWORD', 'guest'),
+                'vhost' => env('RABBITMQ_VHOST', '/'),
+            ]],
+            'options' => [
+                'queue' => [
+                    'exchange' => env('RABBITMQ_EXCHANGE', 'amq.direct'),
+                    'exchange_type' => 'direct',
+                ],
+            ],
+        ]);
         $app['config']->set('database.redis.default', [
             'host' => env('REDIS_HOST', '127.0.0.1'),
             'port' => env('REDIS_PORT', 6379),

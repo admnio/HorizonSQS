@@ -76,6 +76,11 @@ class SqsQueueTest extends TestCase
             ->once()
             ->with(
                 'default',
+                // SqsQueue passes its connection name so the reenqueuer can
+                // route the swept job back to SQS. With no container-set
+                // connection name in this unit test, SqsQueue falls back to
+                // the literal 'sqs'.
+                'sqs',
                 Mockery::on(function ($p) {
                     $decoded = json_decode($p, true);
                     return is_array($decoded)

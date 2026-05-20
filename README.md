@@ -1,15 +1,16 @@
 # Sunset for Laravel
 
-Supercharged Laravel Horizon replacement. v0.2.0 ships the SQS transport.
+Supercharged Laravel Horizon replacement. v0.6.0 ships the RabbitMQ transport alongside SQS (v0.2.0) and Redis (v0.3.0).
 
 ## Why
 
-Sunset is the foundation for a multi-transport Horizon replacement: SQS and Redis today (BullMQ, RabbitMQ, and LavinMQ planned) all behind one consistent dashboard with deeper visibility into workers and queues than Horizon offers. v0.5.0 owns the supervisor process tree — `sunset:work` replaces `php artisan horizon`. v0.4.0 owns the job lifecycle subsystem. The only remaining Horizon dependency is the dashboard (replaced in v1.0.0).
+Sunset is the foundation for a multi-transport Horizon replacement: SQS, Redis, and RabbitMQ today (BullMQ and LavinMQ planned) all behind one consistent dashboard with deeper visibility into workers and queues than Horizon offers. v0.6.0 adds RabbitMQ as a third first-class transport. v0.5.0 owns the supervisor process tree — `sunset:work` replaces `php artisan horizon`. v0.4.0 owns the job lifecycle subsystem. The only remaining Horizon dependency is the dashboard (replaced in v1.0.0).
 
 This release ships:
 
 - Full Laravel Horizon support for Amazon SQS — same dashboard, same metrics, SQS underneath.
 - Full Laravel Horizon support for Redis queues too — same dashboard, same metrics, Sunset-managed event dispatch
+- Full Laravel Horizon support for RabbitMQ queues — same dashboard, same metrics, Sunset-managed event dispatch and delayed-job routing
 - Sunset-owned job lifecycle: events, listeners, repositories, and `JobPayload` live under `Admnio\Sunset\*`. Transports dispatch Sunset events; Sunset listeners record to `sunset:*` Redis keys
 - `sunset:migrate-horizon-keys` artisan command for renaming legacy `horizon:*` keys to `sunset:*` (idempotent, supports `--dry-run`)
 - Throughput metrics (jobs/min, jobs/hour)
@@ -27,7 +28,7 @@ This release ships:
 - 19 new `sunset:*` artisan commands covering the full Horizon CLI surface: process tree (`work`/`supervise`/`worker`), control (`pause`/`continue`/`pause-supervisor`/`continue-supervisor`/`terminate`/`status`/`supervisors`/`supervisor-status`), maintenance (`clear`/`purge`/`snapshot`/`forget-failed`), operator (`install`/`publish`), migration (`migrate-horizon-config`).
 - `sunset:migrate-horizon-config` artisan command for moving `config/horizon.php`'s `environments` block to `config/sunset.php`'s `supervisors`.
 
-## Not yet in v0.5.0 (planned)
+## Not yet in v0.6.0 (planned)
 
 - v1.0.0: Full SPA dashboard, drops `laravel/horizon` dependency
 - v1.1.0: Worker CPU/Memory monitoring
@@ -82,6 +83,92 @@ return [
 ```
 
 `config/horizon.php` — set your supervisor connection to `sqs`.
+
+## RabbitMQ
+
+Sunset supports RabbitMQ as a peer transport to SQS and Redis. Jobs go through the same Sunset event lifecycle, show the same depth/throughput/payload data on the dashboard, and delayed dispatch routes through Sunset's `DelayedJobStore` (the same store SQS uses since v0.2.0) — so you get arbitrary-length delays even though RabbitMQ has no native delayed-message primitive.
+
+### Installation
+
+```bash
+composer require admnio/sunset
+```
+
+The `vladimir-yuldashev/laravel-queue-rabbitmq` driver ships transitively — no separate require needed.
+
+### `config/queue.php`
+
+Add a `rabbitmq` connection block:
+
+```php
+'connections' => [
+    // ... existing connections ...
+    'rabbitmq' => [
+        'driver' => 'rabbitmq',
+        'queue' => 'default',
+        'connection' => 'default',
+        'hosts' => [[
+            'host' => env('RABBITMQ_HOST', '127.0.0.1'),
+            'port' => (int) env('RABBITMQ_PORT', 5672),
+            'user' => env('RABBITMQ_USER', 'guest'),
+            'password' => env('RABBITMQ_PASSWORD', 'guest'),
+            'vhost' => env('RABBITMQ_VHOST', '/'),
+        ]],
+        'options' => [
+            'queue' => [
+                'exchange' => env('RABBITMQ_EXCHANGE', ''),
+                'exchange_type' => 'direct',
+            ],
+        ],
+    ],
+],
+```
+
+Env-var fallbacks: `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD`, `RABBITMQ_VHOST`.
+
+### `config/sunset.php`
+
+The published config exposes a `transports.rabbitmq` block:
+
+```php
+'transports' => [
+    // ... sqs, redis ...
+    'rabbitmq' => [
+        // Connection name (from config/queue.php) used by RabbitTransport
+        // for dashboard workload (depth) queries.
+        'workload_connection' => env('SUNSET_RABBITMQ_WORKLOAD_CONN', 'rabbitmq'),
+
+        // Opt-in dead-letter exchange. Scaffolded in v0.6.0; full
+        // nack-on-drop routing lands in v0.7.0.
+        'dead_letter' => [
+            'enabled' => env('SUNSET_RABBITMQ_DLX_ENABLED', false),
+            'exchange' => env('SUNSET_RABBITMQ_DLX_EXCHANGE', null),
+        ],
+    ],
+],
+```
+
+### Production operations — queue bindings
+
+**IMPORTANT:** RabbitMQ does NOT auto-bind queues to non-default exchanges. If you configure `options.queue.exchange` to a named exchange (e.g. `'amq.direct'`), you must declare the queue-to-exchange binding out-of-band (CLI, terraform, infrastructure-as-code). Otherwise messages published to that exchange will be silently dropped (no error, no retry — RabbitMQ's "no route" default).
+
+For each queue you intend to publish to, declare a binding once per environment:
+
+```bash
+rabbitmqadmin declare binding source=amq.direct destination=<queue-name> routing_key=<queue-name>
+```
+
+Or use the equivalent HTTP management API call.
+
+If you set `options.queue.exchange = ''` (the empty / default exchange), no binding setup is required — RabbitMQ routes by queue name automatically. **For simple deployments, prefer the default exchange.**
+
+### Delayed jobs
+
+```php
+Queue::connection('rabbitmq')->later(60, $job);
+```
+
+Delays route through Sunset's `DelayedJobStore` (Redis-backed ZSET). The auto-scheduled `sunset:sweep-delayed` command — the same one v0.2.0 added for SQS — pops due jobs back into RabbitMQ. Make sure your Laravel scheduler (`schedule:run`) is wired in cron; no consumer-side changes from the SQS setup.
 
 ## Operational notes
 

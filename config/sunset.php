@@ -50,5 +50,20 @@ return [
             // workload queries. Typically the same connection your queues live on.
             'workload_connection' => env('SUNSET_REDIS_WORKLOAD_CONN', 'default'),
         ],
+
+        'rabbitmq' => [
+            // Connection name (from config/queue.php) used by RabbitTransport
+            // for workload queries.
+            'workload_connection' => env('SUNSET_RABBITMQ_WORKLOAD_CONN', 'rabbitmq'),
+
+            // Opt-in dead-letter exchange. When enabled, jobs nacked without
+            // requeue land in a DLX queue. The DLX assertion runs on first
+            // RabbitTransport::connect(). The 'exchange' value defaults to
+            // "<vhost>.dlx" when null.
+            'dead_letter' => [
+                'enabled' => env('SUNSET_RABBITMQ_DLX_ENABLED', false),
+                'exchange' => env('SUNSET_RABBITMQ_DLX_EXCHANGE', null),
+            ],
+        ],
     ],
 ];

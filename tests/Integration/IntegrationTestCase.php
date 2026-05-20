@@ -52,4 +52,28 @@ abstract class IntegrationTestCase extends TestCase
             $this->markTestSkipped('LocalStack not available at ' . env('LOCALSTACK_ENDPOINT'));
         }
     }
+
+    /**
+     * Skip the current test cleanly when RabbitMQ isn't reachable. Opens and
+     * immediately closes an AMQP connection against the docker-compose service
+     * defined in docker-compose.yml. Used by Rabbit integration tests to keep
+     * the suite green on developer machines that haven't booted the container.
+     */
+    protected function ensureRabbitMQAvailable(): void
+    {
+        try {
+            $connection = new \PhpAmqpLib\Connection\AMQPStreamConnection(
+                env('RABBITMQ_HOST', '127.0.0.1'),
+                (int) env('RABBITMQ_PORT', 5672),
+                env('RABBITMQ_USER', 'guest'),
+                env('RABBITMQ_PASSWORD', 'guest'),
+                env('RABBITMQ_VHOST', '/'),
+            );
+            $connection->close();
+        } catch (\Throwable $e) {
+            $this->markTestSkipped(
+                'RabbitMQ not reachable at 127.0.0.1:5672 — run docker compose up -d rabbitmq'
+            );
+        }
+    }
 }

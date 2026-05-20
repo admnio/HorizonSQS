@@ -134,6 +134,7 @@ class SqsQueue extends LaravelSqsQueue
 
                     $this->delayedStore->buffer(
                         $resolvedQueue,
+                        $this->getConnectionName() ?? 'sqs',
                         $preparedJson,
                         microtime(true) + $delaySeconds
                     );

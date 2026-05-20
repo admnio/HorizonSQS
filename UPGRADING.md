@@ -383,3 +383,76 @@ composer require admnio/sunset:0.4.*
 ```
 
 Then revert your systemd unit + deploy scripts to use `horizon` again.
+
+---
+
+## From v0.5.0 to v0.6.0
+
+v0.6.0 adds **RabbitMQ as a third first-class transport** alongside SQS (v0.2.0) and Redis (v0.3.0). No breaking changes for existing SQS or Redis consumers — this is purely additive.
+
+### What's new
+
+- `Admnio\Sunset\Transports\Rabbit\{RabbitTransport, RabbitQueue, RabbitConnector}` — a new transport with the same lifecycle event firing as SQS and Redis.
+- `config/sunset.php` gains a `transports.rabbitmq` block with `workload_connection` and an opt-in `dead_letter` sub-block. The DLX scaffold is wired but full nack-on-drop routing lands in v0.7.0.
+- `Queue::connection('rabbitmq')->later(60, $job)` is supported. Delays route through Sunset's `DelayedJobStore` (same store SQS uses since v0.2.0).
+
+### Internal change worth knowing
+
+The `DelayedJobStore` Redis ZSET member format changed from `queue|nonce|payload` to `queue|connection|nonce|payload` so reaped jobs return to their source transport. Old format entries continue to parse correctly during the upgrade window (they default to `connection='sqs'`, which matches pre-v0.6.0 reality since only SQS used the store). No consumer migration required.
+
+### Migration steps
+
+1. **Update composer:**
+
+   ```bash
+   composer require admnio/sunset:^0.6
+   ```
+
+   This pulls in `vladimir-yuldashev/laravel-queue-rabbitmq` transitively.
+
+2. **Add a `rabbitmq` connection to `config/queue.php`:**
+
+   ```php
+   'connections' => [
+       // ... existing connections ...
+       'rabbitmq' => [
+           'driver' => 'rabbitmq',
+           'queue' => 'default',
+           'connection' => 'default',
+           'hosts' => [[
+               'host' => env('RABBITMQ_HOST', '127.0.0.1'),
+               'port' => (int) env('RABBITMQ_PORT', 5672),
+               'user' => env('RABBITMQ_USER', 'guest'),
+               'password' => env('RABBITMQ_PASSWORD', 'guest'),
+               'vhost' => env('RABBITMQ_VHOST', '/'),
+           ]],
+           'options' => [
+               'queue' => [
+                   'exchange' => env('RABBITMQ_EXCHANGE', ''),
+                   'exchange_type' => 'direct',
+               ],
+           ],
+       ],
+   ],
+   ```
+
+   **Pick one of two exchange strategies:**
+   - **Empty exchange (`''`)** — Laravel-style, no binding setup required. Recommended for simple deployments.
+   - **Named exchange (`'amq.direct'` etc.)** — production-style, requires you to declare queue-to-exchange bindings out-of-band:
+     ```bash
+     rabbitmqadmin declare binding source=amq.direct destination=<queue-name> routing_key=<queue-name>
+     ```
+
+3. **Switch a job to RabbitMQ:**
+
+   ```php
+   Queue::connection('rabbitmq')->push(new GeocodeAddress($address));
+   ```
+
+   Or set `QUEUE_CONNECTION=rabbitmq` and dispatch normally.
+
+4. **Confirm the dashboard sees it:** the Horizon (or Sunset, post-v1.0.0) workload page should list the rabbitmq queue with a real depth count.
+
+### Nothing else changes
+
+SQS and Redis transports, supervisor commands, dashboard adapters, lifecycle events — all unchanged. UPGRADING from v0.5.0 is the simple "add the new transport if you want it" path.

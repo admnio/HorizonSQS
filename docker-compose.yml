@@ -11,3 +11,18 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: sunset-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
