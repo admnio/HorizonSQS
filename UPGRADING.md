@@ -456,3 +456,80 @@ The `DelayedJobStore` Redis ZSET member format changed from `queue|nonce|payload
 ### Nothing else changes
 
 SQS and Redis transports, supervisor commands, dashboard adapters, lifecycle events — all unchanged. UPGRADING from v0.5.0 is the simple "add the new transport if you want it" path.
+
+---
+
+## From v0.6.0 to v0.7.0
+
+v0.7.0 adds **queue rate limiting** — fluent throttle + concurrency limits declared per queue or per job class, with multiple over-limit strategies. No breaking changes; rate limiting is opt-in and adds zero overhead when not used.
+
+### What's new
+
+- New facade: `Admnio\Sunset\Facades\Sunset` with `for(string $queueName)` and `limit(string $jobClass)` returning a `LimitBuilder`.
+- New value objects: `Admnio\Sunset\RateLimiting\{Limit, ThrottleSpec, ConcurrencySpec, Decision, LimitBuilder, LimitRegistry}`.
+- New Redis-backed limiter: `Admnio\Sunset\Contracts\Limiter` (interface) → `Admnio\Sunset\RateLimiting\RedisLimiter`.
+- New gate that runs inside each transport's `pop()`: `Admnio\Sunset\RateLimiting\RateLimitGate`.
+- New listener: `Admnio\Sunset\RateLimiting\Listeners\ReleaseConcurrencySlots` (registered on `JobProcessed`/`JobFailed`/`JobExceptionOccurred`).
+- New scheduled command: `sunset:sweep-rate-limit-slots` (every minute) reconciles orphaned concurrency slots from killed workers.
+- New event: `Admnio\Sunset\Events\JobRateLimited` fires on every rejection.
+- New exception: `Admnio\Sunset\Exceptions\RateLimitExceededException` (used by the drop-as-failure strategy).
+- New config block: `sunset.rate_limits` with `count_releases_by_default`, `fail_closed`, `sweep_interval_seconds`.
+
+### Migration steps
+
+1. **Update composer:**
+
+   ```bash
+   composer require admnio/sunset:^0.7
+   ```
+
+2. **(Optional) Publish the updated config:**
+
+   The new `config/sunset.php` includes a `rate_limits` block with sensible defaults. If you want to publish it:
+
+   ```bash
+   php artisan vendor:publish --tag=sunset-config --force
+   ```
+
+   Re-apply any local edits afterwards. If you skip this step, Sunset falls back to the defaults baked into the package.
+
+3. **Declare rate limits in any service provider:**
+
+   ```php
+   use Admnio\Sunset\Facades\Sunset;
+
+   public function boot(): void
+   {
+       Sunset::for('geocode')->throttle(perMinute: 10)->concurrency(3);
+   }
+   ```
+
+   No limits = no behavior change. The gate short-circuits when the registry is empty.
+
+4. **Confirm the sweep is scheduled.** The service provider auto-schedules `sunset:sweep-rate-limit-slots` every minute. If you run a custom scheduler binary or override Sunset's scheduler hooks, verify the command is invoked.
+
+### Internal Redis keyspace additions
+
+v0.7.0 adds the following key patterns:
+
+- `sunset:rl:t:<limit-name>:<bucket-key>` — sliding-window throttle sorted set (entries: timestamped reservation IDs).
+- `sunset:rl:c:<limit-name>:<bucket-key>` — concurrency semaphore set (members: slot IDs).
+- `sunset:rl:slot:<slot-id>` — TTL'd slot key (paired with each concurrency-set member; the sweep command reconciles when these expire without the corresponding set member being removed).
+- `sunset:rl:reservations:<job-id>` — JSON-encoded list of held reservations per popped job (used by the release listener).
+- `sunset:rl:rejects:<connection>:<queue>:<limit-name>` — rejection counter for dashboard observability (TTL = throttle window).
+
+None of these keys collide with existing Sunset keys. All have TTLs and self-clean.
+
+### Nothing else changes
+
+Existing SQS, Redis, and RabbitMQ transports, supervisor commands, dashboard adapters, lifecycle events — all unchanged. The `pop()` path adds one method call (gate → admit → `isEmpty()` short-circuit) when no limits are registered.
+
+### Rollback
+
+If v0.7.0 doesn't work for you, pin v0.6.x:
+
+```bash
+composer require admnio/sunset:^0.6
+```
+
+No data migration is required. The new Redis keys (`sunset:rl:*`) self-expire and are unreferenced by older Sunset code.
