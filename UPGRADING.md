@@ -645,3 +645,46 @@ If you previously relied on a class marked `@internal` in v1.0.0:
 ### Release stability commitment
 
 We will not make breaking changes to the public API listed in README's "Public API" section without bumping to v2.0.0. Patches (v1.0.x) ship bug fixes only. Minors (v1.1, v1.2, …) ship additive features and may deprecate (but not remove) APIs.
+
+---
+
+# Upgrading from `admnio/sunset` v1.0.x to v1.1.0
+
+**No action required.** v1.1.0 is purely additive over v1.0.x.
+
+## What you get for free
+
+The `/sunset/supervisors` page now renders per-worker RSS and CPU% columns plus a click-to-toggle inline sparkline. Workers start reporting telemetry automatically the next time you restart them (the listener is wired in the service provider, no opt-in needed).
+
+## New config block
+
+A new `telemetry` block is published in `config/sunset.php` if you re-publish the config file. If you don't re-publish, the defaults apply (telemetry enabled, 5-second interval, 60 sparkline points).
+
+```php
+'telemetry' => [
+    'enabled' => env('SUNSET_TELEMETRY_ENABLED', true),
+    'interval_seconds' => (int) env('SUNSET_TELEMETRY_INTERVAL', 5),
+    'series_points' => (int) env('SUNSET_TELEMETRY_SERIES_POINTS', 60),
+],
+```
+
+## When to disable
+
+Each worker writes ~3 Redis keys per `interval_seconds` (default 5s). For a fleet of N workers that's ~`0.6 * N` writes/second. For most deployments this is negligible. If your Redis is already pressured, set `SUNSET_TELEMETRY_ENABLED=false` to short-circuit the listener entirely.
+
+## Windows note
+
+`getrusage()` returns zeros for ru_utime/ru_stime on Windows. The listener detects this and writes `cpu_pct: null` after the second consecutive zero reading. RSS works everywhere. The dashboard renders `—` for unavailable CPU%.
+
+## New public API surface
+
+These are stable for the lifetime of v1.x:
+
+- `Admnio\Sunset\Contracts\WorkerMetricsRepository` — interface with `all()`, `find(int $pid)`, `series(int $pid, string $kind, int $maxPoints = 60)`.
+- `Admnio\Sunset\Telemetry\WorkerMetricsSnapshot` — readonly value object.
+
+The Supervisors dashboard route gains two new top-level props (`worker_metrics`, `worker_metric_series`); existing prop shapes are unchanged.
+
+## Scheduled command
+
+`sunset:sweep-worker-metrics` is auto-registered with the scheduler at `everyMinute()->withoutOverlapping()`. Make sure `php artisan schedule:run` is wired in your cron (it already needs to be for the existing `sunset:sweep-rate-limit-slots` and long-delay sweep).
