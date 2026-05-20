@@ -2,6 +2,26 @@
 
 All notable changes to Sunset are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and Sunset adheres to [Semantic Versioning](https://semver.org/).
 
+## v1.0.2
+
+Polish release. No public-API changes.
+
+### Added
+- `CONTRIBUTING.md` — quickstart, testsuites, bundle rebuild, conventions, PR workflow, public-API scope.
+- `SECURITY.md` — vulnerability reporting to security@admn.io, supported-versions table, scope.
+- README Octane note — `Sunset::auth()` static-callback semantics across Octane worker boots.
+
+### Fixed
+- `SunsetServiceProvider` binds `Illuminate\Queue\Worker::class` via `singletonIf` so `vendor/bin/testbench list` and consumer-side tooling resolve `SunsetWorkerCommand` (which extends Laravel's `WorkCommand`) without app-level wiring.
+- `tests/TestCase` forces `cache.default=array`. Testbench's default `database` driver needs the `cache` migration; `SunsetWorkloadRepository`'s cache and Laravel's queue-restart signal both write through it.
+
+## v1.0.1
+
+Polish release. No public-API changes.
+
+### Fixed
+- Batches-page configuration banner and `Toast` component use theme-aware status colors so amber/red pills meet WCAG 2.1 AA contrast in both light and dark themes.
+
 ## v1.0.0
 
 First stable release. Backwards-compatible public API commitment.
