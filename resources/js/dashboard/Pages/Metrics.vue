@@ -32,39 +32,31 @@ const snapshotLabel = computed(() => {
 const jobSeries = ref({});
 const queueSeries = ref({});
 
-async function loadJobSeries(name) {
+// Batched fetch: a single request for every name on the page rather than one
+// HTTP round-trip per job/queue. Apps with hundreds of job classes pay a
+// significant cost on mount otherwise.
+async function loadAllSeries() {
+  const params = new URLSearchParams();
+  for (const j of jobNames.value) params.append('jobs[]', j);
+  for (const q of queueNames.value) params.append('queues[]', q);
+
+  if (! params.toString()) return;
+
   try {
-    const resp = await axios.get(`/sunset/metrics/jobs/${encodeURIComponent(name)}`);
-    jobSeries.value[name] = resp.data?.points ?? [];
+    const resp = await axios.get('/sunset/metrics/series', { params });
+    jobSeries.value = { ...jobSeries.value, ...(resp.data?.jobs || {}) };
+    queueSeries.value = { ...queueSeries.value, ...(resp.data?.queues || {}) };
   } catch (e) {
-    jobSeries.value[name] = [];
+    // Leave any previously-loaded series in place; missing series stay missing.
   }
 }
 
-async function loadQueueSeries(name) {
-  try {
-    const resp = await axios.get(`/sunset/metrics/queues/${encodeURIComponent(name)}`);
-    queueSeries.value[name] = resp.data?.points ?? [];
-  } catch (e) {
-    queueSeries.value[name] = [];
-  }
-}
-
-async function refreshAll() {
-  for (const name of jobNames.value) {
-    await loadJobSeries(name);
-  }
-  for (const name of queueNames.value) {
-    await loadQueueSeries(name);
-  }
-}
-
-onMounted(refreshAll);
+onMounted(loadAllSeries);
 
 // When a new snapshot lands (or the measured-name lists change), refetch the
 // per-name series so the sparklines stay in sync with the polled summary.
-watch(snapshotAt, refreshAll);
-watch([jobNames, queueNames], refreshAll);
+watch(snapshotAt, loadAllSeries);
+watch([jobNames, queueNames], loadAllSeries, { flush: 'post' });
 </script>
 
 <template>
