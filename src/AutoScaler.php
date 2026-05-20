@@ -7,6 +7,11 @@ use Admnio\Sunset\Supervisor\Supervisor;
 use Illuminate\Contracts\Queue\Factory as QueueFactory;
 use Illuminate\Support\Collection;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class AutoScaler
 {
     /**

@@ -13,6 +13,10 @@ use Symfony\Component\HttpFoundation\Response;
  * config (which would affect the consumer's whole app). Inertia caches the
  * root view per-instance; since the middleware container is rebuilt on every
  * request, calling setRootView() here is request-scoped.
+ *
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
  */
 class SetSunsetInertiaRoot
 {

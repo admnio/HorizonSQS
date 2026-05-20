@@ -8,6 +8,11 @@ use Carbon\CarbonImmutable;
 use Closure;
 use Symfony\Component\Process\Exception\ExceptionInterface;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class WorkerProcess
 {
     /**

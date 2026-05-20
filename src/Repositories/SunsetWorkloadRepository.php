@@ -8,6 +8,11 @@ use Admnio\Sunset\Contracts\WorkloadRepository;
 use Admnio\Sunset\Support\TransportRegistry;
 use Illuminate\Contracts\Cache\Repository as Cache;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class SunsetWorkloadRepository implements WorkloadRepository
 {
     public function __construct(

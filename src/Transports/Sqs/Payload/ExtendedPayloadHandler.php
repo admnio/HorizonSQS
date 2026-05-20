@@ -8,6 +8,11 @@ use Admnio\Sunset\Exceptions\ExtendedPayloadException;
 use Ramsey\Uuid\Uuid;
 use Throwable;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class ExtendedPayloadHandler
 {
     private const SIZE_THRESHOLD = 256 * 1024;

@@ -13,6 +13,10 @@ use Throwable;
  * The TTL on each counter matches the throttle window so old data ages out
  * naturally — this repository simply lists what's currently live and sorts
  * the most-rejected limits first for dashboard display.
+ *
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
  */
 class RateLimitStatsRepository
 {

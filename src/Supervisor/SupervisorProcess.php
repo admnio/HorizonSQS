@@ -6,6 +6,11 @@ use Admnio\Sunset\Contracts\SupervisorCommandQueue;
 use Admnio\Sunset\Contracts\SupervisorRepository;
 use Closure;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class SupervisorProcess extends WorkerProcess
 {
     /**

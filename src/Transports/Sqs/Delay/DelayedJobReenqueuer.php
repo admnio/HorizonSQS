@@ -6,6 +6,11 @@ use Illuminate\Contracts\Queue\Factory as QueueFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class DelayedJobReenqueuer
 {
     public function __construct(

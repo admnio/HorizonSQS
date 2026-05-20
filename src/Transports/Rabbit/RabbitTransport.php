@@ -25,6 +25,10 @@ use VladimirYuldashev\LaravelQueueRabbitMQ\Queue\QueueConfigFactory;
  *   message count. It NEVER throws: if AMQP is unreachable it logs a
  *   warning and returns rows with `length: 0`. The dashboard polls workload
  *   frequently and one transport's outage shouldn't break it.
+ *
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
  */
 class RabbitTransport implements Transport
 {

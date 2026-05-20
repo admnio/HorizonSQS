@@ -8,6 +8,11 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Support\Collection;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class RedisJobRepository implements JobRepository
 {
     public array $keys = [

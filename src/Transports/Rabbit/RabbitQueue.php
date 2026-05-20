@@ -27,6 +27,10 @@ use VladimirYuldashev\LaravelQueueRabbitMQ\Queue\RabbitMQQueue as VendorQueue;
  * The parent vendor queue only accepts a {@see QueueConfig} object. The
  * AMQP connection itself is attached after construction via
  * {@see VendorQueue::setConnection()} — handled by the RabbitTransport.
+ *
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
  */
 class RabbitQueue extends VendorQueue
 {

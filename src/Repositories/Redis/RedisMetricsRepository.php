@@ -6,6 +6,11 @@ use Admnio\Sunset\Contracts\MetricsRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class RedisMetricsRepository implements MetricsRepository
 {
     public function __construct(private RedisFactory $redis)

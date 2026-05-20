@@ -7,6 +7,11 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Support\Str;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class SunsetSweepRateLimitSlotsCommand extends Command
 {
     protected $signature = 'sunset:sweep-rate-limit-slots';

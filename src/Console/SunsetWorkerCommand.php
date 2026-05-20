@@ -4,6 +4,11 @@ namespace Admnio\Sunset\Console;
 
 use Illuminate\Queue\Console\WorkCommand as BaseWorkCommand;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class SunsetWorkerCommand extends BaseWorkCommand
 {
     /**

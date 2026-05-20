@@ -6,6 +6,11 @@ use Admnio\Sunset\Events\JobFailed as SunsetJobFailed;
 use Admnio\Sunset\JobPayload;
 use Illuminate\Queue\Events\JobFailed as LaravelJobFailed;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class TranslateJobFailed
 {
     public function handle(LaravelJobFailed $event): void

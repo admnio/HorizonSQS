@@ -5,6 +5,11 @@ namespace Admnio\Sunset\Repositories\Redis;
 use Admnio\Sunset\Contracts\SupervisorCommandQueue;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class RedisSupervisorCommandQueue implements SupervisorCommandQueue
 {
     public function __construct(private RedisFactory $redis) {}

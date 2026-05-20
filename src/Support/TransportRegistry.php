@@ -5,6 +5,11 @@ namespace Admnio\Sunset\Support;
 use Admnio\Sunset\Contracts\Transport;
 use Admnio\Sunset\Exceptions\InvalidConfigurationException;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class TransportRegistry
 {
     /** @var array<string, Transport> */

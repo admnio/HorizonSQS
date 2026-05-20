@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Response as InertiaResponse;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 final class FailedJobsController extends Controller
 {
     public function show(Request $request, FailedJobRepository $store): InertiaResponse|JsonResponse

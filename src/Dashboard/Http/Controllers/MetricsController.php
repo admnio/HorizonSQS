@@ -7,6 +7,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Response as InertiaResponse;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 final class MetricsController extends Controller
 {
     public function show(Request $request, MetricsRepository $metrics): InertiaResponse|JsonResponse

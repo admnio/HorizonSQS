@@ -5,6 +5,11 @@ namespace Admnio\Sunset\Console;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 
+/**
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. Consumers should depend
+ *           on the published Admnio\Sunset\Contracts\* interfaces instead.
+ */
 class SunsetMigrateRedisKeysCommand extends Command
 {
     protected $signature = 'sunset:migrate-redis-keys';
