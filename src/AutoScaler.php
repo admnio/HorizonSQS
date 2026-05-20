@@ -79,7 +79,14 @@ class AutoScaler
     {
         return $pools->mapWithKeys(function ($pool, $queue) use ($supervisor) {
             $queues = collect(explode(',', $queue))->map(function ($_queue) use ($supervisor) {
-                $size = $this->queue->connection($supervisor->options->connection)->readyNow($_queue);
+                // Use Laravel's native Queue::size() instead of Horizon's readyNow() macro.
+                // size() includes delayed + reserved jobs on Redis, which over-counts for
+                // pure autoscaling purposes; in practice the discrepancy only matters when
+                // many jobs are sitting in delayed state and the over-count just makes
+                // autoscaling a little eager. Acceptable trade-off for v0.8.x; revisit if
+                // a precise "ready now" count becomes critical (would require per-transport
+                // logic against the underlying queue stores).
+                $size = $this->queue->connection($supervisor->options->connection)->size($_queue);
 
                 return [
                     'size' => $size,

@@ -1,11 +1,23 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 
-export function usePolling(url, intervalMs = 3000) {
+export function usePolling(url, intervalMs = null) {
   const data = ref(null);
   const error = ref(null);
   let timer = null;
   let inFlight = false;
+
+  // Resolve interval from Inertia shared props if not explicitly passed.
+  function resolveInterval() {
+    if (intervalMs !== null && intervalMs !== undefined) return intervalMs;
+    try {
+      const page = usePage();
+      const cfg = page?.props?.sunset?.pollIntervalSeconds;
+      if (typeof cfg === 'number' && cfg > 0) return cfg * 1000;
+    } catch (e) { /* not inside an Inertia page context */ }
+    return 3000;  // ultimate fallback
+  }
 
   async function tick() {
     if (inFlight) return;
@@ -23,7 +35,7 @@ export function usePolling(url, intervalMs = 3000) {
 
   onMounted(() => {
     tick();
-    timer = setInterval(tick, intervalMs);
+    timer = setInterval(tick, resolveInterval());
   });
   onBeforeUnmount(() => { if (timer) clearInterval(timer); });
 

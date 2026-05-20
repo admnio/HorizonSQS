@@ -7,7 +7,7 @@ import Empty from '../components/Empty.vue';
 
 const page = usePage();
 const initial = page.props;
-const { data } = usePolling(page.url, 3000);
+const { data } = usePolling(page.url);
 const current = computed(() => data.value ?? initial);
 
 const batches = computed(() => current.value.batches ?? []);
