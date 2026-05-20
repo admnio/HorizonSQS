@@ -20,6 +20,11 @@ class SetSunsetInertiaRoot
     {
         Inertia::setRootView('sunset::sunset-app');
 
+        Inertia::share('sunset', [
+            'pollIntervalSeconds' => (int) config('sunset.dashboard.poll_interval_seconds', 3),
+            'path'                => config('sunset.dashboard.path', 'sunset'),
+        ]);
+
         return $next($request);
     }
 }

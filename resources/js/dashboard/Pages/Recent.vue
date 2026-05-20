@@ -8,7 +8,7 @@ import Empty from '../components/Empty.vue';
 
 const page = usePage();
 const initial = page.props;
-const { data } = usePolling(page.url, 3000);
+const { data } = usePolling(page.url);
 const current = computed(() => data.value ?? initial);
 const jobs = computed(() => current.value.jobs ?? []);
 const total = computed(() => current.value.total ?? jobs.value.length);
