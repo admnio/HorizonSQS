@@ -450,13 +450,19 @@ class SunsetServiceProvider extends ServiceProvider
     private function resolveQueueList($app): array
     {
         $env = $app->environment();
-        $supervisors = $app['config']->get("horizon.environments.{$env}", []);
+        $config = $app['config'];
+
+        // Prefer sunset.environments. Fall back to horizon.environments for
+        // backwards compatibility — remove the fallback in v0.9.0+.
+        $supervisors = (array) ($config->get("sunset.environments.{$env}")
+            ?: $config->get("horizon.environments.{$env}", []));
+
         $queues = [];
         foreach ($supervisors as $supervisor) {
             foreach ((array) ($supervisor['queue'] ?? []) as $q) {
                 $queues[] = $q;
             }
         }
-        return array_values(array_unique($queues)) ?: [$app['config']->get('queue.connections.sqs.queue', 'default')];
+        return array_values(array_unique($queues)) ?: [$config->get('queue.connections.sqs.queue', 'default')];
     }
 }

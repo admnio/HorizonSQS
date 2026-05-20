@@ -20,6 +20,30 @@ return [
         'poll_interval_seconds' => (int) env('SUNSET_DASHBOARD_POLL', 3),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Supervisor environments
+    |--------------------------------------------------------------------------
+    |
+    | Sunset reads supervisor queue definitions from this block first. For
+    | backwards compatibility during the transition off Horizon, it falls back
+    | to config('horizon.environments.<env>') if sunset.environments.<env>
+    | is empty. The fallback will be removed in a future release; consumers
+    | should migrate their environments block to sunset.environments.
+    |
+    | Shape mirrors Horizon's:
+    |   'environments' => [
+    |       'production' => [
+    |           'supervisor-1' => [
+    |               'connection' => 'redis',
+    |               'queue' => ['default', 'high-priority'],
+    |               ...
+    |           ],
+    |       ],
+    |   ],
+    */
+    'environments' => [],
+
     // Redis key prefix for everything Sunset records (jobs, tags, metrics,
     // failed-job index, etc.). Override only if 'sunset' collides with
     // another namespace in your Redis instance.
