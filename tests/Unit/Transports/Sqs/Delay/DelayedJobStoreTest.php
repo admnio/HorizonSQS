@@ -23,6 +23,8 @@ class DelayedJobStoreTest extends TestCase
 
         $store = new DelayedJobStore($factory, 'default');
         $store->buffer('orders', 'sqs', '{"id":"abc"}', 1_700_000_000);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_buffer_encodes_connection_segment(): void
@@ -39,6 +41,8 @@ class DelayedJobStoreTest extends TestCase
 
         $store = new DelayedJobStore($factory, 'default');
         $store->buffer('orders', 'rabbitmq', '{"id":"abc"}', 1_700_000_000);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_due_returns_entries_below_threshold_with_connection(): void
@@ -106,6 +110,8 @@ class DelayedJobStoreTest extends TestCase
 
         $store = new DelayedJobStore($factory, 'default');
         $store->remove('orders|sqs|nonce|{"id":"a"}');
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     protected function tearDown(): void

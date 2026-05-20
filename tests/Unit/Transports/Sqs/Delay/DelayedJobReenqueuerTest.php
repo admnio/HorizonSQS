@@ -54,6 +54,8 @@ class DelayedJobReenqueuerTest extends TestCase
 
         $reenqueuer = new DelayedJobReenqueuer($store, $queues, $logger, 60);
         $reenqueuer->sweep($now);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_partial_failure_leaves_entry(): void
@@ -94,6 +96,10 @@ class DelayedJobReenqueuerTest extends TestCase
         $reenqueuer->sweep($now);
 
         $logger->shouldHaveReceived('warning')->once();
+
+        // shouldHaveReceived and Mockery's shouldReceive expectations don't
+        // register with PHPUnit; account for them explicitly.
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount() + 1);
     }
 
     protected function tearDown(): void

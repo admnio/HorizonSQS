@@ -20,6 +20,8 @@ class MarkJobAsReservedTest extends TestCase
         $jobs->shouldReceive('reserved')->once()->with('sqs', 'orders', $payload);
 
         (new MarkJobAsReserved($jobs))->handle($event);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     protected function tearDown(): void { Mockery::close(); parent::tearDown(); }

@@ -20,6 +20,8 @@ class StoreJobTest extends TestCase
         $jobs->shouldReceive('pushed')->once()->with('sqs', 'orders', $payload);
 
         (new StoreJob($jobs))->handle($event);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     protected function tearDown(): void { Mockery::close(); parent::tearDown(); }

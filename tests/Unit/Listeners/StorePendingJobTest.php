@@ -25,6 +25,8 @@ class StorePendingJobTest extends TestCase
             ->withArgs(fn ($expiresAt, $id, $tagArr) => $id === 'p-1' && $tagArr === ['a', 'b']);
 
         (new StorePendingJob($jobs, $tags))->handle($event);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_skips_tag_write_when_no_tags(): void
@@ -38,6 +40,9 @@ class StorePendingJobTest extends TestCase
         $tags->shouldNotReceive('addTemporary');
 
         (new StorePendingJob($jobs, $tags))->handle($event);
+
+        // Combination of shouldReceive('pushed')->once() and shouldNotReceive('addTemporary').
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     protected function tearDown(): void { Mockery::close(); parent::tearDown(); }

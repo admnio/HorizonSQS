@@ -20,6 +20,8 @@ class MarkJobAsReleasedTest extends TestCase
         $jobs->shouldReceive('released')->once()->with('sqs', 'orders', $payload, 30);
 
         (new MarkJobAsReleased($jobs))->handle($event);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_defaults_delay_to_zero_when_absent(): void
@@ -31,6 +33,8 @@ class MarkJobAsReleasedTest extends TestCase
         $jobs->shouldReceive('released')->once()->with('sqs', 'orders', $payload, 0);
 
         (new MarkJobAsReleased($jobs))->handle($event);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     protected function tearDown(): void { Mockery::close(); parent::tearDown(); }

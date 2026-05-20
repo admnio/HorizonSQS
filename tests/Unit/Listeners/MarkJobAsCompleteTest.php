@@ -32,6 +32,8 @@ class MarkJobAsCompleteTest extends TestCase
                 $job === 'App\\Jobs\\SendEmail' && $queue === 'orders' && $runtime > 0);
 
         (new MarkJobAsComplete($jobs, $metrics))->handle($event);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_passes_silenced_flag_through(): void
@@ -51,6 +53,8 @@ class MarkJobAsCompleteTest extends TestCase
         $metrics->shouldReceive('incrementThroughput')->once();
 
         (new MarkJobAsComplete($jobs, $metrics))->handle($event);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     protected function tearDown(): void { Mockery::close(); parent::tearDown(); }

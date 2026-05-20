@@ -83,6 +83,8 @@ class ExtendedPayloadHandlerTest extends TestCase
         $pointer = json_encode(['s3PointerKey' => 'sunset-payloads/abc', 'size' => 300_000]);
 
         $handler->deleteIfPointer($pointer);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     protected function tearDown(): void

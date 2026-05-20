@@ -44,6 +44,8 @@ class MarkJobAsFailedTest extends TestCase
             ->withArgs(fn ($p, $silenced) => $silenced === false);
 
         (new MarkJobAsFailed($failed, $jobs))->handle($event);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     protected function tearDown(): void { Mockery::close(); parent::tearDown(); }

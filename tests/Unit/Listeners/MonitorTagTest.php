@@ -21,6 +21,8 @@ class MonitorTagTest extends TestCase
         $tags->shouldReceive('addPermanent')->once()->with('m-1', ['vip', 'other']);
 
         (new MonitorTag($tags))->handle($event);
+
+        $this->addToAssertionCount(Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_does_nothing_when_no_payload_tags_are_monitored(): void
@@ -33,6 +35,10 @@ class MonitorTagTest extends TestCase
         $tags->shouldNotReceive('addPermanent');
 
         (new MonitorTag($tags))->handle($event);
+
+        // shouldNotReceive('addPermanent') is verified by Mockery on tearDown;
+        // mark this run as one assertion so PHPUnit doesn't flag it as risky.
+        $this->addToAssertionCount(1);
     }
 
     protected function tearDown(): void { Mockery::close(); parent::tearDown(); }
