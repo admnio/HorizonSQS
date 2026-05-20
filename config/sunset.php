@@ -115,6 +115,26 @@ return [
     | Sunset facade in service providers.
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Worker telemetry (v1.1.0)
+    |--------------------------------------------------------------------------
+    |
+    | Each Sunset worker samples its own RSS and CPU usage on the queue Looping
+    | event and writes a throttled snapshot to Redis for the dashboard. Set
+    | `enabled` to false to disable telemetry collection entirely (the listener
+    | short-circuits before doing any work). `interval_seconds` controls how
+    | often each worker reports — 5s is a good balance between freshness and
+    | Redis traffic. `series_points` caps how many sparkline points are kept
+    | per worker per metric (60 = 5 minutes at 5s interval).
+    */
+
+    'telemetry' => [
+        'enabled' => env('SUNSET_TELEMETRY_ENABLED', true),
+        'interval_seconds' => (int) env('SUNSET_TELEMETRY_INTERVAL', 5),
+        'series_points' => (int) env('SUNSET_TELEMETRY_SERIES_POINTS', 60),
+    ],
+
     'rate_limits' => [
         // When true, every pop attempt (admit OR reject) consumes a throttle
         // token. Default false: rejected jobs don't burn tokens.
