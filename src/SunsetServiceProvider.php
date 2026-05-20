@@ -69,6 +69,7 @@ use Admnio\Sunset\Listeners\MarkJobAsComplete;
 use Admnio\Sunset\Listeners\MarkJobAsFailed;
 use Admnio\Sunset\Listeners\TranslateJobProcessed;
 use Admnio\Sunset\Listeners\TranslateJobFailed;
+use Admnio\Sunset\Manager;
 use Admnio\Sunset\Repositories\Redis\RedisJobRepository;
 use Admnio\Sunset\Repositories\Redis\RedisFailedJobRepository;
 use Admnio\Sunset\Repositories\Redis\RedisTagRepository;
@@ -87,6 +88,8 @@ class SunsetServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/sunset.php', 'sunset');
+
+        $this->app->singleton(Manager::class, fn ($app) => new Manager($app));
 
         $this->app->singleton(TransportRegistry::class, function ($app) {
             $registry = new TransportRegistry();
