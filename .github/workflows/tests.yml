@@ -37,6 +37,18 @@ jobs:
       redis:
         image: redis:7-alpine
         ports: ['6379:6379']
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports: ['5672:5672', '15672:15672']
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+          RABBITMQ_DEFAULT_VHOST: /
+        options: >-
+          --health-cmd "rabbitmq-diagnostics ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -48,3 +60,82 @@ jobs:
         env:
           LOCALSTACK_ENDPOINT: http://localhost:4566
           REDIS_HOST: 127.0.0.1
+          RABBITMQ_HOST: 127.0.0.1
+          RABBITMQ_PORT: 5672
+          RABBITMQ_USER: guest
+          RABBITMQ_PASSWORD: guest
+          RABBITMQ_VHOST: /
+
+  browser:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+      localstack:
+        image: localstack/localstack:3
+        ports: ['4566:4566']
+        env:
+          SERVICES: sqs,s3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: pcntl, posix, redis
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+      - name: Composer install
+        run: composer install --no-interaction
+      - name: Verify ChromeDriver matches Chrome
+        run: |
+          CHROME_VERSION=$("${{ steps.setup-chrome.outputs.chrome-path }}" --version | awk '{print $3}')
+          echo "Chrome version: $CHROME_VERSION"
+          # Use a ChromeDriver matching the major. Many actions-runner images include
+          # chromedriver via the chrome setup action; verify it's reachable.
+          which chromedriver || true
+      - name: Start ChromeDriver
+        run: chromedriver --port=9515 &
+      - name: Start PHP dev server
+        run: php -S 127.0.0.1:8000 -t public/ &
+        env:
+          APP_ENV: testing
+      - name: Wait for services
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://127.0.0.1:9515/status > /dev/null && break
+            sleep 1
+          done
+          for i in $(seq 1 30); do
+            curl -s http://127.0.0.1:8000 > /dev/null 2>&1 && break
+            sleep 1
+          done
+      - name: Run Dusk
+        run: vendor/bin/phpunit --testsuite Browser
+        env:
+          LOCALSTACK_ENDPOINT: http://localhost:4566
+          REDIS_HOST: 127.0.0.1
+          APP_URL: http://127.0.0.1:8000
+
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Node deps
+        run: npm install
+      - name: Rebuild bundle
+        run: npm run build
+      - name: Verify committed bundle matches build output
+        run: |
+          if ! git diff --exit-code public-dist/; then
+            echo "::error::Committed public-dist/ does not match npm run build output."
+            echo "::error::Run 'npm run build' locally and commit the resulting files before tagging."
+            exit 1
+          fi
