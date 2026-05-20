@@ -8,6 +8,7 @@ const currentPath = computed(() => page.url || (typeof window !== 'undefined' ? 
 const groups = [
   { label: 'Overview', items: [
     { href: '/sunset',           label: 'home' },
+    { href: '/sunset/activity',  label: 'activity' },
     { href: '/sunset/workload',  label: 'workload' },
     { href: '/sunset/metrics',   label: 'metrics' },
   ]},
