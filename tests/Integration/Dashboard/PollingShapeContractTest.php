@@ -82,6 +82,7 @@ class PollingShapeContractTest extends IntegrationTestCase
             ['/sunset/supervisors'],
             ['/sunset/batches'],
             ['/sunset/health'],
+            ['/sunset/activity'],
         ];
     }
 }

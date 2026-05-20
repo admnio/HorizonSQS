@@ -52,7 +52,10 @@ final class ActivityController extends Controller
             // Pre-built absolute URL so the Vue page can construct an
             // EventSource without re-deriving the dashboard prefix on the
             // client side (it may have been customised via SUNSET_PATH).
-            'stream_url' => $this->streamUrl(),
+            'stream_url' => $this->urlFor('stream'),
+            // Pre-built absolute URL for "Load older" paginate; honors a
+            // customised dashboard prefix the same way stream_url does.
+            'page_url' => $this->urlFor('page'),
         ];
 
         return $this->inertiaOrJson($request, 'Activity', $props);
@@ -141,14 +144,15 @@ final class ActivityController extends Controller
     }
 
     /**
-     * Absolute URL to the SSE endpoint, built from the configured dashboard
-     * path. Lives on its own so the show() Inertia branch and the JSON
-     * branch agree on the value emitted to the SPA.
+     * Absolute URL to an Activity sub-route, built from the configured
+     * dashboard prefix. Both Inertia branches emit the same URLs so the SPA
+     * doesn't have to re-derive the prefix client-side (it may have been
+     * customised via SUNSET_PATH).
      */
-    private function streamUrl(): string
+    private function urlFor(string $suffix): string
     {
         $prefix = trim((string) config('sunset.dashboard.path', config('sunset.path', 'sunset')), '/');
 
-        return url($prefix . '/activity/stream');
+        return url($prefix . '/activity/' . $suffix);
     }
 }

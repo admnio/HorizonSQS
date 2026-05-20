@@ -8,6 +8,7 @@ const page = usePage();
 const initial = page.props;
 const enabled = computed(() => initial.enabled ?? true);
 const streamUrl = computed(() => initial.stream_url ?? '/sunset/activity/stream');
+const pageUrl = computed(() => initial.page_url ?? '/sunset/activity/page');
 
 const MAX_CLIENT_BUFFER = 1000;
 
@@ -20,9 +21,9 @@ const stream = useActivityStream();
 
 const FILTERS = {
   all:        () => true,
-  errors:     (e) => ['job_failed', 'job_rate_limited', 'unable_to_launch_process', 'long_wait_detected'].includes(e.type),
+  errors:     (e) => ['job_failed', 'job_rate_limited', 'unable_to_launch_process'].includes(e.type),
   lifecycle:  (e) => ['job_queued', 'job_completed'].includes(e.type),
-  supervisor: (e) => ['worker_process_restarting', 'master_supervisor_deployed'].includes(e.type),
+  supervisor: (e) => ['worker_process_restarting', 'master_supervisor_deployed', 'long_wait_detected'].includes(e.type),
 };
 
 const visibleEvents = computed(() => events.value.filter(FILTERS[filter.value]));
@@ -86,7 +87,7 @@ function toggleExpand(id) {
 async function loadOlder() {
   const oldest = events.value[events.value.length - 1];
   if (!oldest) return;
-  const res = await fetch(`/sunset/activity/page?before_id=${oldest.id}`, { headers: { 'Accept': 'application/json' } });
+  const res = await fetch(`${pageUrl.value}?before_id=${oldest.id}`, { headers: { 'Accept': 'application/json' } });
   if (!res.ok) return;
   const json = await res.json();
   events.value.push(...(json.events ?? []));
