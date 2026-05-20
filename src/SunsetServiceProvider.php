@@ -241,6 +241,11 @@ class SunsetServiceProvider extends ServiceProvider
         // (falling back to top-level 'path' for users mid-upgrade).
         $this->loadRoutesFrom(__DIR__ . '/../routes/sunset.php');
 
+        // v0.8.0: Register the package views under the `sunset` namespace so
+        // the Inertia root view (`sunset::sunset-app`) can be resolved by the
+        // dashboard middleware without forcing consumers to publish them.
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'sunset');
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/../config/sunset.php' => config_path('sunset.php'),

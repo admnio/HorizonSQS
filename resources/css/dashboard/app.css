@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sunset-bg: 250 250 247;
+  --sunset-rail: 245 244 239;
+  --sunset-card: 255 255 255;
+  --sunset-border: 231 229 220;
+  --sunset-text: 24 24 27;
+  --sunset-muted: 113 113 122;
+  --sunset-accent: 245 158 11;
+}
+
+html.dark {
+  --sunset-bg: 17 22 29;
+  --sunset-rail: 13 18 24;
+  --sunset-card: 10 13 18;
+  --sunset-border: 31 38 48;
+  --sunset-text: 228 231 236;
+  --sunset-muted: 154 163 173;
+  --sunset-accent: 245 158 11;
+}
+
+body {
+  background: rgb(var(--sunset-bg));
+  color: rgb(var(--sunset-text));
+}

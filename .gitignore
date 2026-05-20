@@ -7,3 +7,6 @@ composer.lock
 /build/
 .DS_Store
 /.superpowers/
+/node_modules/
+package-lock.json
+/public-dist/

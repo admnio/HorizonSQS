@@ -2,9 +2,10 @@
 
 use Admnio\Sunset\Dashboard\Http\Controllers as C;
 use Admnio\Sunset\Dashboard\Http\Middleware\Authorize;
+use Admnio\Sunset\Dashboard\Http\Middleware\SetSunsetInertiaRoot;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware([Authorize::class, \Inertia\Middleware::class])
+Route::middleware([Authorize::class, \Inertia\Middleware::class, SetSunsetInertiaRoot::class])
     ->prefix(config('sunset.dashboard.path', config('sunset.path', 'sunset')))
     ->name('sunset.')
     ->group(function () {
