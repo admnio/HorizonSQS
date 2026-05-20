@@ -463,6 +463,7 @@ Both `/horizon` and `/sunset` will work independently. If you run both `horizon`
 - **Visibility timeout:** set on each SQS queue to ≥ your job `timeout` × 1.5. (The `visibility_heartbeat` config knob is reserved for a later release — currently ignored.)
 - **Extended payload cleanup:** add a lifecycle rule to your S3 bucket prefix (default `sunset-payloads/`) to clean up orphans from worker crashes.
 - **Long-delay sweep:** auto-registered via Laravel's scheduler. Ensure `schedule:run` is wired in your cron.
+- **Octane note:** `Sunset::auth(...)` stores its callback in a static property. This is intentional and Octane-safe: each Octane worker boots its service providers once (registering the gate), then reuses the callback across the worker's lifetime of requests. Don't add `Admnio\Sunset\Manager` to Octane's "flush" list — flushing the static would lose the gate. If you need request-scoped auth logic, do it inside the callback (it receives `$request` per-call); don't rely on per-request callback registration.
 
 ## Migrating from `masonworkforce/horizon-sqs` v0.1.x
 

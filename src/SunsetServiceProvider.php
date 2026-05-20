@@ -81,6 +81,22 @@ class SunsetServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/sunset.php', 'sunset');
 
+        // Defensive: sunset:worker / sunset:supervise extend Laravel's
+        // WorkCommand which type-hints Illuminate\Queue\Worker. Laravel binds
+        // 'queue.worker' (string key) but not the FQCN. In Testbench and
+        // arbitrary CLI tooling (e.g. `vendor/bin/testbench list`) this leaves
+        // Worker unresolvable because its constructor needs a callable
+        // $isDownForMaintenance. Bind-if-unbound so consumer apps and tooling
+        // both resolve Sunset's commands without further setup.
+        $this->app->singletonIf(\Illuminate\Queue\Worker::class, function ($app) {
+            return new \Illuminate\Queue\Worker(
+                $app->make(\Illuminate\Contracts\Queue\Factory::class),
+                $app->make(\Illuminate\Contracts\Events\Dispatcher::class),
+                $app->make(\Illuminate\Contracts\Debug\ExceptionHandler::class),
+                fn () => $app->isDownForMaintenance(),
+            );
+        });
+
         $this->app->singleton(Manager::class, fn ($app) => new Manager($app));
 
         // v0.7.0: Rate-limit infrastructure. LimitRegistry MUST be a singleton

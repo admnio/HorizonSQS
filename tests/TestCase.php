@@ -30,6 +30,12 @@ abstract class TestCase extends Orchestra
             );
         });
 
+        // Testbench's default cache driver is `database`, which needs the
+        // `cache` migration. SunsetWorkloadRepository::workload() and Laravel's
+        // queue:restart signal both write through the cache, so use array
+        // storage to keep the suite self-contained.
+        $app['config']->set('cache.default', 'array');
+
         $app['config']->set('queue.default', 'sqs');
         $app['config']->set('queue.connections.sqs', [
             'driver' => 'sqs',
