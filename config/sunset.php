@@ -66,4 +66,29 @@ return [
             ],
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Rate limits (v0.7.0)
+    |--------------------------------------------------------------------------
+    |
+    | Configure global behaviors for rate-limit declarations made via the
+    | Sunset facade in service providers.
+    */
+
+    'rate_limits' => [
+        // When true, every pop attempt (admit OR reject) consumes a throttle
+        // token. Default false: rejected jobs don't burn tokens.
+        'count_releases_by_default' => env('SUNSET_RATE_LIMITS_COUNT_RELEASES', false),
+
+        // When true, Redis-unavailable during a limit check releases the job
+        // with a 30s fixed backoff. When false (default), the gate fails open
+        // — admit the job and log a warning. Pick false when uptime > quota
+        // protection; true when quota > uptime.
+        'fail_closed' => env('SUNSET_RATE_LIMITS_FAIL_CLOSED', false),
+
+        // Cadence (seconds) of the safety-net Lua reconciliation that cleans
+        // up leaked concurrency slots. Used by sunset:sweep-rate-limit-slots.
+        'sweep_interval_seconds' => (int) env('SUNSET_RATE_LIMITS_SWEEP_INTERVAL', 60),
+    ],
 ];
