@@ -106,6 +106,12 @@ class SunsetServiceProvider extends ServiceProvider
                 logger: $app->make(LoggerInterface::class),
             ));
 
+            $registry->register(new \Admnio\Sunset\Transports\Rabbit\RabbitTransport(
+                container: $app,
+                packageConfig: $this->validatedPackageConfig($app['config']->get('sunset')),
+                logger: $app->make(LoggerInterface::class),
+            ));
+
             return $registry;
         });
 
@@ -115,6 +121,12 @@ class SunsetServiceProvider extends ServiceProvider
 
         $this->app->singleton(\Admnio\Sunset\Transports\Redis\RedisConnector::class, function ($app) {
             return new \Admnio\Sunset\Transports\Redis\RedisConnector(
+                $app->make(TransportRegistry::class)
+            );
+        });
+
+        $this->app->singleton(\Admnio\Sunset\Transports\Rabbit\RabbitConnector::class, function ($app) {
+            return new \Admnio\Sunset\Transports\Rabbit\RabbitConnector(
                 $app->make(TransportRegistry::class)
             );
         });
@@ -251,6 +263,9 @@ class SunsetServiceProvider extends ServiceProvider
             $manager->addConnector('sqs', fn () => $this->app->make(SqsConnector::class));
             $manager->addConnector('redis', fn () => $this->app->make(
                 \Admnio\Sunset\Transports\Redis\RedisConnector::class
+            ));
+            $manager->addConnector('rabbitmq', fn () => $this->app->make(
+                \Admnio\Sunset\Transports\Rabbit\RabbitConnector::class
             ));
         }
 
