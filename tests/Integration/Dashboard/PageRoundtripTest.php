@@ -63,7 +63,7 @@ class PageRoundtripTest extends IntegrationTestCase
             'rate-limits'   => ['/sunset/rate-limits',    ['limits', 'rejects']],
             'supervisors'   => ['/sunset/supervisors',    ['supervisors', 'masters']],
             'batches'       => ['/sunset/batches',        ['batches', 'configured']],
-            'health'        => ['/sunset/health',         ['config', 'transports', 'version']],
+            'health'        => ['/sunset/health',         ['versions', 'transports', 'redis', 'rate_limits', 'schedule']],
         ];
     }
 
