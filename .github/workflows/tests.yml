@@ -66,60 +66,21 @@ jobs:
           RABBITMQ_PASSWORD: guest
           RABBITMQ_VHOST: /
 
-  browser:
-    runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis:7-alpine
-        ports: ['6379:6379']
-      localstack:
-        image: localstack/localstack:3
-        ports: ['4566:4566']
-        env:
-          SERVICES: sqs,s3
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          coverage: none
-          extensions: pcntl, posix, redis
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - uses: browser-actions/setup-chrome@v1
-        id: setup-chrome
-      - name: Composer install
-        run: composer install --no-interaction
-      - name: Verify ChromeDriver matches Chrome
-        run: |
-          CHROME_VERSION=$("${{ steps.setup-chrome.outputs.chrome-path }}" --version | awk '{print $3}')
-          echo "Chrome version: $CHROME_VERSION"
-          # Use a ChromeDriver matching the major. Many actions-runner images include
-          # chromedriver via the chrome setup action; verify it's reachable.
-          which chromedriver || true
-      - name: Start ChromeDriver
-        run: chromedriver --port=9515 &
-      - name: Start PHP dev server
-        run: php -S 127.0.0.1:8000 -t public/ &
-        env:
-          APP_ENV: testing
-      - name: Wait for services
-        run: |
-          for i in $(seq 1 30); do
-            curl -s http://127.0.0.1:9515/status > /dev/null && break
-            sleep 1
-          done
-          for i in $(seq 1 30); do
-            curl -s http://127.0.0.1:8000 > /dev/null 2>&1 && break
-            sleep 1
-          done
-      - name: Run Dusk
-        run: vendor/bin/phpunit --testsuite Browser
-        env:
-          LOCALSTACK_ENDPOINT: http://localhost:4566
-          REDIS_HOST: 127.0.0.1
-          APP_URL: http://127.0.0.1:8000
+  # browser:
+  #   The Browser/Dusk job is intentionally not wired into CI yet. Running
+  #   Dusk against a Laravel PACKAGE (vs a Laravel APP) requires a real host
+  #   to serve /sunset routes — `php -S` against a non-existent public/
+  #   directory in this repo will not work. The proper integration uses
+  #   orchestra/testbench-dusk, which provides a TestCase that boots the
+  #   package providers into a temporary Laravel app and serves it for
+  #   Dusk. Wiring that requires:
+  #     1. composer require --dev orchestra/testbench-dusk
+  #     2. Have DuskTestCase extend Orchestra\Testbench\Dusk\TestCase
+  #        instead of Laravel\Dusk\TestCase
+  #     3. Override getPackageProviders() (already done in TestCase.php)
+  #     4. Use Testbench's serve helpers instead of php -S
+  #   Tracked as a v0.9+ follow-up; Dusk tests skip cleanly locally in the
+  #   meantime via DuskTestCase's ChromeDriver-reachability guard.
 
   bundle:
     runs-on: ubuntu-latest
