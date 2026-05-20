@@ -55,7 +55,7 @@ class WorkerLoopListener
         $snapshot = $this->sampler()->sample(
             supervisor: $this->resolveSupervisor(),
             connection: $event->connectionName,
-            queues: $this->resolveQueues(),
+            queues: $this->resolveQueues($event->queue ?? null),
         );
 
         if ($snapshot === null) {
@@ -127,16 +127,20 @@ class WorkerLoopListener
     }
 
     /**
-     * Supervisor name comes from the env var the master supervisor sets when
-     * spawning workers. Absent in standalone artisan queue:work — null is
-     * fine, the dashboard renders "—" cells in that case.
+     * Supervisor name. Sunset's WorkerCommandString passes `--supervisor=<name>`
+     * to every spawned worker, so we parse argv first. SUNSET_SUPERVISOR env
+     * is honored as an override path (eg. for custom spawners). Absent in
+     * standalone `artisan queue:work` — null is fine, the dashboard renders
+     * "—" cells in that case.
      */
     private function resolveSupervisor(): ?string
     {
-        $raw = $_SERVER['SUNSET_SUPERVISOR']
-            ?? getenv('SUNSET_SUPERVISOR')
-            ?: null;
+        $fromArgv = $this->parseArgvOption('--supervisor=');
+        if ($fromArgv !== null) {
+            return $fromArgv;
+        }
 
+        $raw = $_SERVER['SUNSET_SUPERVISOR'] ?? getenv('SUNSET_SUPERVISOR');
         if (! is_string($raw) || $raw === '') {
             return null;
         }
@@ -145,12 +149,35 @@ class WorkerLoopListener
     }
 
     /**
-     * Best-effort parse of `--queue=foo,bar` out of the current process's argv.
-     * Returns null if nothing parseable is present so the snapshot stays honest.
+     * Queue list for this worker. The Looping event carries the comma-separated
+     * queue string the worker is actually consuming; argv `--queue=` is a
+     * fallback for events that arrive without that field populated.
      *
      * @return list<string>|null
      */
-    private function resolveQueues(): ?array
+    private function resolveQueues(?string $eventQueue): ?array
+    {
+        $value = is_string($eventQueue) && $eventQueue !== ''
+            ? $eventQueue
+            : $this->parseArgvOption('--queue=');
+
+        if ($value === null) {
+            return null;
+        }
+
+        $queues = array_values(array_filter(
+            array_map('trim', explode(',', $value)),
+            static fn (string $q) => $q !== ''
+        ));
+
+        return $queues === [] ? null : $queues;
+    }
+
+    /**
+     * Best-effort scan of $_SERVER['argv'] for `--key=value` style options.
+     * Returns null when not present or argv is unreadable.
+     */
+    private function parseArgvOption(string $prefix): ?string
     {
         $argv = $_SERVER['argv'] ?? null;
         if (! is_array($argv)) {
@@ -158,20 +185,12 @@ class WorkerLoopListener
         }
 
         foreach ($argv as $arg) {
-            if (! is_string($arg)) {
+            if (! is_string($arg) || ! str_starts_with($arg, $prefix)) {
                 continue;
             }
-            if (str_starts_with($arg, '--queue=')) {
-                $value = substr($arg, strlen('--queue='));
-                if ($value === '') {
-                    return null;
-                }
-                $queues = array_values(array_filter(
-                    array_map('trim', explode(',', $value)),
-                    static fn (string $q) => $q !== ''
-                ));
-                return $queues === [] ? null : $queues;
-            }
+
+            $value = substr($arg, strlen($prefix));
+            return $value === '' ? null : $value;
         }
 
         return null;

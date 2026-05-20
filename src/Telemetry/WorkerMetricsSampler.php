@@ -13,6 +13,11 @@ use Closure;
  *
  * The resource-usage closure must return an array shaped:
  *   ['user_sec' => float, 'sys_sec' => float, 'rss_bytes' => int, 'pid' => int]
+ *
+ * @internal This class is part of Sunset's internal implementation; signatures
+ *           may change between minor releases of v1.x. The public API for
+ *           reading per-worker telemetry is
+ *           Admnio\Sunset\Contracts\WorkerMetricsRepository.
  */
 class WorkerMetricsSampler
 {
@@ -64,6 +69,9 @@ class WorkerMetricsSampler
             $wallDelta = max($now - $this->lastWall, 0.001);
 
             if ($cpuDelta <= 0.0) {
+                // Zero delta = no CPU progress this window (typical for Windows where
+                // getrusage() returns ru_utime=0/ru_stime=0). Negative delta would
+                // indicate a clock jump or counter reset — treat both as zero.
                 $this->consecutiveZeroCpuSamples++;
                 $cpuPct = $this->consecutiveZeroCpuSamples >= 2 ? null : 0.0;
             } else {

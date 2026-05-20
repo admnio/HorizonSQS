@@ -249,6 +249,72 @@ class WorkerLoopListenerTest extends TestCase
         $this->assertTrue(true);
     }
 
+    public function test_handle_looping_passes_event_queue_to_sampler(): void
+    {
+        $snapshot = $this->makeSnapshot();
+
+        $sampler = Mockery::mock(WorkerMetricsSampler::class);
+        $sampler->shouldReceive('sample')
+            ->once()
+            ->withArgs(function ($supervisor, $connection, $queues) {
+                return $queues === ['high', 'default'];
+            })
+            ->andReturn($snapshot);
+
+        $repo = Mockery::mock(WorkerMetricsRepository::class);
+        $repo->shouldReceive('record')->once()->with($snapshot);
+
+        $listener = new WorkerLoopListener(
+            repository: $repo,
+            logger: new NullLogger(),
+            enabled: true,
+            intervalSeconds: 5,
+            samplerOverride: $sampler,
+        );
+
+        $listener->handleLooping(new Looping('redis', 'high,default'));
+
+        $this->assertTrue(true);
+    }
+
+    public function test_handle_looping_parses_supervisor_from_argv(): void
+    {
+        $snapshot = $this->makeSnapshot();
+        $originalArgv = $_SERVER['argv'] ?? null;
+        $_SERVER['argv'] = ['artisan', 'sunset:worker', 'redis', '--supervisor=master-1:web', '--queue=default'];
+
+        try {
+            $sampler = Mockery::mock(WorkerMetricsSampler::class);
+            $sampler->shouldReceive('sample')
+                ->once()
+                ->withArgs(function ($supervisor, $connection, $queues) {
+                    return $supervisor === 'master-1:web';
+                })
+                ->andReturn($snapshot);
+
+            $repo = Mockery::mock(WorkerMetricsRepository::class);
+            $repo->shouldReceive('record')->once()->with($snapshot);
+
+            $listener = new WorkerLoopListener(
+                repository: $repo,
+                logger: new NullLogger(),
+                enabled: true,
+                intervalSeconds: 5,
+                samplerOverride: $sampler,
+            );
+
+            $listener->handleLooping(new Looping('redis', 'default'));
+
+            $this->assertTrue(true);
+        } finally {
+            if ($originalArgv === null) {
+                unset($_SERVER['argv']);
+            } else {
+                $_SERVER['argv'] = $originalArgv;
+            }
+        }
+    }
+
     private function makeSnapshot(): WorkerMetricsSnapshot
     {
         return new WorkerMetricsSnapshot(
