@@ -92,4 +92,42 @@ class MetricsSeriesTest extends IntegrationTestCase
         $this->getJson('/sunset/metrics/jobs/X')->assertStatus(403);
         $this->getJson('/sunset/metrics/queues/X')->assertStatus(403);
     }
+
+    public function test_series_endpoint_returns_jobs_and_queues_batched(): void
+    {
+        $response = $this->getJson('/sunset/metrics/series?' . http_build_query([
+            'jobs'   => ['App\\Jobs\\Foo', 'App\\Jobs\\Bar'],
+            'queues' => ['default', 'high'],
+        ]));
+
+        $response->assertStatus(200);
+        $data = $response->json();
+        $this->assertArrayHasKey('jobs', $data);
+        $this->assertArrayHasKey('queues', $data);
+        $this->assertIsArray($data['jobs']);
+        $this->assertIsArray($data['queues']);
+        // Each requested name should have a (possibly empty) points array.
+        $this->assertArrayHasKey('App\\Jobs\\Foo', $data['jobs']);
+        $this->assertArrayHasKey('default', $data['queues']);
+    }
+
+    public function test_series_endpoint_is_authorized(): void
+    {
+        Manager::flushAuth();
+        Sunset::auth(fn () => false);
+
+        $this->getJson('/sunset/metrics/series')->assertStatus(403);
+    }
+
+    public function test_series_endpoint_caps_input_size(): void
+    {
+        $bigList = array_map(fn ($i) => "Job{$i}", range(1, 200));
+        $response = $this->getJson('/sunset/metrics/series?' . http_build_query([
+            'jobs' => $bigList,
+        ]));
+
+        $response->assertStatus(200);
+        // Only the first 100 should be processed.
+        $this->assertCount(100, $response->json('jobs'));
+    }
 }
