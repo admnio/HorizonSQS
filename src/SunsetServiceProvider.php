@@ -46,12 +46,22 @@ use Admnio\Sunset\Repositories\Redis\RedisMasterSupervisorRepository;
 use Admnio\Sunset\Repositories\Redis\RedisSupervisorRepository;
 use Admnio\Sunset\Repositories\Redis\RedisProcessRepository;
 use Admnio\Sunset\Repositories\Redis\RedisSupervisorCommandQueue;
+use Admnio\Sunset\Activity\ActivityEventFactory;
+use Admnio\Sunset\Activity\ActivityRecorder;
+use Admnio\Sunset\Activity\ActivityStreamer;
+use Admnio\Sunset\Contracts\ActivityRepository as SunsetActivityRepository;
 use Admnio\Sunset\Events\JobQueueing;
 use Admnio\Sunset\Events\JobQueued;
 use Admnio\Sunset\Events\JobReserved;
 use Admnio\Sunset\Events\JobReleased;
 use Admnio\Sunset\Events\JobCompleted;
 use Admnio\Sunset\Events\JobFailed as SunsetJobFailed;
+use Admnio\Sunset\Events\JobRateLimited;
+use Admnio\Sunset\Events\LongWaitDetected;
+use Admnio\Sunset\Events\MasterSupervisorDeployed;
+use Admnio\Sunset\Events\UnableToLaunchProcess;
+use Admnio\Sunset\Events\WorkerProcessRestarting;
+use Admnio\Sunset\Repositories\Redis\RedisActivityRepository;
 use Admnio\Sunset\Exceptions\InvalidConfigurationException;
 use Admnio\Sunset\Listeners\CleanupExtendedPayload;
 use Admnio\Sunset\Listeners\StorePendingJob;
@@ -277,6 +287,64 @@ class SunsetServiceProvider extends ServiceProvider
             fn ($app) => $app->make(SunsetWorkerMetricsRepository::class)
         );
 
+        // v1.2.0: Activity stream — bindings for the recorder, repository,
+        // factory, and SSE streamer. Pattern mirrors the Limiter/RedisLimiter
+        // pair above: bind the contract to a singleton building the concrete
+        // class, then alias the concrete class to the contract so anything
+        // type-hinting the concrete name resolves to the same singleton (the
+        // recorder type-hints RedisActivityRepository because record() is
+        // intentionally not part of the public contract).
+        $this->app->singleton(SunsetActivityRepository::class, function ($app) {
+            return new RedisActivityRepository(
+                $app->make(RedisFactory::class),
+            );
+        });
+        $this->app->singleton(
+            RedisActivityRepository::class,
+            fn ($app) => $app->make(SunsetActivityRepository::class)
+        );
+
+        $this->app->singleton(ActivityEventFactory::class, function () {
+            // Unix-seconds clock — matches the ActivityEvent::occurredAt
+            // contract. Injected as a closure so unit tests can pin the time.
+            return new ActivityEventFactory(static fn (): int => time());
+        });
+
+        $this->app->singleton(ActivityRecorder::class, function ($app) {
+            return new ActivityRecorder(
+                factory: $app->make(ActivityEventFactory::class),
+                repository: $app->make(RedisActivityRepository::class),
+                events: $app->make(\Illuminate\Contracts\Events\Dispatcher::class),
+                logger: $app->make(LoggerInterface::class),
+                enabled: (bool) $app['config']->get('sunset.activity.enabled', true),
+            );
+        });
+
+        // bind() (not singleton()) — the streamer captures request-scoped
+        // emit/clock/sleep closures and must be reconstructed per request so
+        // those don't leak across SSE connections.
+        $this->app->bind(ActivityStreamer::class, function ($app) {
+            return new ActivityStreamer(
+                repository: $app->make(SunsetActivityRepository::class),
+                maxConnectionSeconds: (int) $app['config']->get('sunset.activity.max_connection_seconds', 60),
+                heartbeatIntervalSeconds: (int) $app['config']->get('sunset.activity.heartbeat_interval_seconds', 15),
+                pollIntervalSeconds: (int) $app['config']->get('sunset.activity.poll_interval_seconds', 5),
+                clock: static fn (): float => microtime(true),
+                sleep: static function (int $seconds): void {
+                    sleep($seconds);
+                },
+                emit: static function (string $frame): void {
+                    echo $frame;
+                    // ob_flush() errors on `output_buffering=Off`. The
+                    // controller disables buffering before invoking stream(),
+                    // so we expect the @-suppression to be a no-op-on-no-op
+                    // rather than masking a real failure.
+                    @ob_flush();
+                    flush();
+                },
+            );
+        });
+
         // Per-process listener singleton. The sampler it lazily constructs
         // accumulates state (lastWall, jobsProcessed, etc.) across events,
         // which is essential for CPU-delta math — making the singleton scope
@@ -445,6 +513,28 @@ class SunsetServiceProvider extends ServiceProvider
             $events->listen(
                 \Illuminate\Queue\Events\JobProcessed::class,
                 [WorkerLoopListener::class, 'handleJobProcessed']
+            );
+        }
+
+        // v1.2.0: Activity stream — one recorder subscribed to the eight
+        // events that make it into the dashboard's Activity log. Skipping
+        // the subscription when disabled is consistent with the telemetry
+        // pattern above: ActivityRecorder::handle() short-circuits on the
+        // same config flag, but not subscribing at all keeps the event
+        // dispatcher's listener registry tidy on opt-out deployments.
+        if ((bool) $this->app['config']->get('sunset.activity.enabled', true)) {
+            $events->listen(
+                [
+                    SunsetJobFailed::class,
+                    JobCompleted::class,
+                    JobRateLimited::class,
+                    JobQueued::class,
+                    WorkerProcessRestarting::class,
+                    UnableToLaunchProcess::class,
+                    LongWaitDetected::class,
+                    MasterSupervisorDeployed::class,
+                ],
+                [ActivityRecorder::class, 'handle'],
             );
         }
 
