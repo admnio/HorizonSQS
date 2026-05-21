@@ -10,6 +10,8 @@ use Admnio\Sunset\Events\JobQueued;
 use Admnio\Sunset\Events\JobRateLimited;
 use Admnio\Sunset\Events\LongWaitDetected;
 use Admnio\Sunset\Events\MasterSupervisorDeployed;
+use Admnio\Sunset\Events\QueuePaused;
+use Admnio\Sunset\Events\QueueResumed;
 use Admnio\Sunset\Events\UnableToLaunchProcess;
 use Admnio\Sunset\Events\WorkerProcessRestarting;
 use Admnio\Sunset\JobPayload;
@@ -213,6 +215,45 @@ class ActivityEventFactoryTest extends TestCase
 
         $this->assertSame('master_supervisor_deployed', $activity->type);
         $this->assertSame('master-abc', $activity->payload['master_name']);
+    }
+
+    public function test_translates_queue_paused(): void
+    {
+        $activity = $this->factory(1_700_002_222)->from(new QueuePaused('redis', 'default', 'cli'));
+
+        $this->assertInstanceOf(ActivityEvent::class, $activity);
+        $this->assertSame(0, $activity->id);
+        $this->assertSame('queue_paused', $activity->type);
+        $this->assertSame(1_700_002_222, $activity->occurredAt);
+        $this->assertSame(
+            ['connection' => 'redis', 'queue' => 'default', 'actor' => 'cli'],
+            $activity->payload,
+        );
+    }
+
+    public function test_translates_queue_paused_with_null_actor(): void
+    {
+        $activity = $this->factory()->from(new QueuePaused('sqs', 'orders'));
+
+        $this->assertSame('queue_paused', $activity->type);
+        $this->assertSame(
+            ['connection' => 'sqs', 'queue' => 'orders', 'actor' => null],
+            $activity->payload,
+        );
+    }
+
+    public function test_translates_queue_resumed(): void
+    {
+        $activity = $this->factory(1_700_003_333)->from(new QueueResumed('redis', 'default', 'dashboard'));
+
+        $this->assertInstanceOf(ActivityEvent::class, $activity);
+        $this->assertSame(0, $activity->id);
+        $this->assertSame('queue_resumed', $activity->type);
+        $this->assertSame(1_700_003_333, $activity->occurredAt);
+        $this->assertSame(
+            ['connection' => 'redis', 'queue' => 'default', 'actor' => 'dashboard'],
+            $activity->payload,
+        );
     }
 
     public function test_uses_injected_clock_for_occurred_at(): void

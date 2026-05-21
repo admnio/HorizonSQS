@@ -39,7 +39,7 @@ const FILTERS = {
   all:        () => true,
   errors:     (e) => ['job_failed', 'job_rate_limited', 'unable_to_launch_process'].includes(e.type),
   lifecycle:  (e) => ['job_queued', 'job_completed'].includes(e.type),
-  supervisor: (e) => ['worker_process_restarting', 'master_supervisor_deployed', 'long_wait_detected'].includes(e.type),
+  supervisor: (e) => ['worker_process_restarting', 'master_supervisor_deployed', 'long_wait_detected', 'queue_paused', 'queue_resumed'].includes(e.type),
 };
 
 const visibleEvents = computed(() => events.value.filter(FILTERS[filter.value]));
@@ -48,6 +48,7 @@ const pillClass = (type) => {
   if (type === 'job_failed' || type === 'unable_to_launch_process') return 'pill-error';
   if (type === 'job_rate_limited' || type === 'long_wait_detected' || type === 'worker_process_restarting') return 'pill-warn';
   if (type === 'job_completed' || type === 'master_supervisor_deployed') return 'pill-ok';
+  if (type === 'queue_paused' || type === 'queue_resumed') return 'pill-info';
   return 'pill-info';
 };
 
@@ -70,6 +71,10 @@ const summary = (event) => {
       return `${p.connection}:${p.queue} idle ${p.seconds}s`;
     case 'master_supervisor_deployed':
       return `master ${p.master_name} deployed`;
+    case 'queue_paused':
+      return `${p.connection}:${p.queue} paused${p.actor ? ` by ${p.actor}` : ''}`;
+    case 'queue_resumed':
+      return `${p.connection}:${p.queue} resumed${p.actor ? ` by ${p.actor}` : ''}`;
     default:
       return event.type;
   }

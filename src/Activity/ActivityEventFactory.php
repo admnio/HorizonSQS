@@ -8,6 +8,8 @@ use Admnio\Sunset\Events\JobQueued;
 use Admnio\Sunset\Events\JobRateLimited;
 use Admnio\Sunset\Events\LongWaitDetected;
 use Admnio\Sunset\Events\MasterSupervisorDeployed;
+use Admnio\Sunset\Events\QueuePaused;
+use Admnio\Sunset\Events\QueueResumed;
 use Admnio\Sunset\Events\UnableToLaunchProcess;
 use Admnio\Sunset\Events\WorkerProcessRestarting;
 use Closure;
@@ -49,6 +51,8 @@ final class ActivityEventFactory
             $event instanceof UnableToLaunchProcess    => $this->fromWorkerProcessEvent($event, 'unable_to_launch_process'),
             $event instanceof LongWaitDetected         => $this->fromLongWaitDetected($event),
             $event instanceof MasterSupervisorDeployed => $this->fromMasterSupervisorDeployed($event),
+            $event instanceof QueuePaused              => $this->fromQueuePauseEvent($event, 'queue_paused'),
+            $event instanceof QueueResumed             => $this->fromQueuePauseEvent($event, 'queue_resumed'),
             default                                    => null,
         };
     }
@@ -186,6 +190,28 @@ final class ActivityEventFactory
             occurredAt: $this->now(),
             payload: [
                 'master_name' => $event->master,
+            ],
+        );
+    }
+
+    /**
+     * v1.3.0 — pause/resume share the same payload shape (connection, queue,
+     * actor); only the activity type string differs. Collapsed into one helper
+     * so the divergence stays at the single line in the match() chain above
+     * rather than being scattered across two near-identical methods.
+     *
+     * @param QueuePaused|QueueResumed $event
+     */
+    private function fromQueuePauseEvent(object $event, string $type): ActivityEvent
+    {
+        return new ActivityEvent(
+            id: 0,
+            type: $type,
+            occurredAt: $this->now(),
+            payload: [
+                'connection' => $event->connection,
+                'queue'      => $event->queue,
+                'actor'      => $event->actor,
             ],
         );
     }

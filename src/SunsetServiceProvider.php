@@ -60,6 +60,8 @@ use Admnio\Sunset\Events\JobFailed as SunsetJobFailed;
 use Admnio\Sunset\Events\JobRateLimited;
 use Admnio\Sunset\Events\LongWaitDetected;
 use Admnio\Sunset\Events\MasterSupervisorDeployed;
+use Admnio\Sunset\Events\QueuePaused;
+use Admnio\Sunset\Events\QueueResumed;
 use Admnio\Sunset\Events\UnableToLaunchProcess;
 use Admnio\Sunset\Events\WorkerProcessRestarting;
 use Admnio\Sunset\Repositories\Redis\RedisActivityRepository;
@@ -521,12 +523,16 @@ class SunsetServiceProvider extends ServiceProvider
             );
         }
 
-        // v1.2.0: Activity stream — one recorder subscribed to the eight
-        // events that make it into the dashboard's Activity log. Skipping
-        // the subscription when disabled is consistent with the telemetry
+        // v1.2.0: Activity stream — one recorder subscribed to the events
+        // that make it into the dashboard's Activity log. Skipping the
+        // subscription when disabled is consistent with the telemetry
         // pattern above: ActivityRecorder::handle() short-circuits on the
         // same config flag, but not subscribing at all keeps the event
         // dispatcher's listener registry tidy on opt-out deployments.
+        //
+        // v1.3.0 extended this list with QueuePaused / QueueResumed so the
+        // activity stream captures operator pause/resume actions alongside
+        // job and supervisor lifecycle events.
         if ((bool) $this->app['config']->get('sunset.activity.enabled', true)) {
             $events->listen(
                 [
@@ -538,6 +544,8 @@ class SunsetServiceProvider extends ServiceProvider
                     UnableToLaunchProcess::class,
                     LongWaitDetected::class,
                     MasterSupervisorDeployed::class,
+                    QueuePaused::class,
+                    QueueResumed::class,
                 ],
                 [ActivityRecorder::class, 'handle'],
             );
