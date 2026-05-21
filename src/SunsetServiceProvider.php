@@ -319,6 +319,31 @@ class SunsetServiceProvider extends ServiceProvider
             );
         });
 
+        // v1.3.0: Queue pause/resume — minimal bindings to make the gate
+        // resolvable from the transports' pop() hot path. The contract is
+        // bound to RedisQueuePauseRepository; the concrete class is aliased
+        // to the contract (mirrors the Limiter/RedisLimiter pattern above).
+        // Task 5 of the v1.3.0 plan will extend this section with the
+        // activity-stream subscription for QueuePaused/QueueResumed.
+        $this->app->singleton(
+            \Admnio\Sunset\Contracts\QueuePauseRepository::class,
+            fn ($app) => new \Admnio\Sunset\Repositories\Redis\RedisQueuePauseRepository(
+                $app->make(\Illuminate\Contracts\Redis\Factory::class),
+                $app->make(\Illuminate\Contracts\Events\Dispatcher::class),
+            )
+        );
+        $this->app->singleton(
+            \Admnio\Sunset\Repositories\Redis\RedisQueuePauseRepository::class,
+            fn ($app) => $app->make(\Admnio\Sunset\Contracts\QueuePauseRepository::class)
+        );
+        $this->app->singleton(\Admnio\Sunset\QueuePause\QueuePauseGate::class, function ($app) {
+            return new \Admnio\Sunset\QueuePause\QueuePauseGate(
+                repository: $app->make(\Admnio\Sunset\Contracts\QueuePauseRepository::class),
+                logger: $app->make(\Psr\Log\LoggerInterface::class),
+                clock: static fn (): float => microtime(true),
+            );
+        });
+
         // Per-process listener singleton. The sampler it lazily constructs
         // accumulates state (lastWall, jobsProcessed, etc.) across events,
         // which is essential for CPU-delta math — making the singleton scope

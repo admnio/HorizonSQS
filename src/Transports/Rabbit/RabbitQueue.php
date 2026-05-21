@@ -6,6 +6,7 @@ use Admnio\Sunset\Events\JobQueued;
 use Admnio\Sunset\Events\JobQueueing;
 use Admnio\Sunset\Events\JobReserved;
 use Admnio\Sunset\JobPayload;
+use Admnio\Sunset\QueuePause\QueuePauseGate;
 use Admnio\Sunset\RateLimiting\RateLimitGate;
 use Admnio\Sunset\Transports\Sqs\Delay\DelayedJobStore;
 use VladimirYuldashev\LaravelQueueRabbitMQ\Queue\Jobs\RabbitMQJob;
@@ -116,6 +117,17 @@ class RabbitQueue extends VendorQueue
 
     public function pop($queue = null)
     {
+        // v1.3.0 queue-pause gate. Consulted BEFORE the AMQP basic_get call so
+        // a paused queue costs zero broker round-trips per poll. Mirrors the
+        // rate-limit gate's lazy-resolve-per-pop pattern; the gate fails open
+        // on Redis errors so a pause-storage outage doesn't silently stop the
+        // fleet.
+        $queueName = $queue ?: $this->default;
+        if ($this->container->make(QueuePauseGate::class)
+                ->isPaused((string) $this->getConnectionName(), $queueName)) {
+            return null;
+        }
+
         $job = parent::pop($queue);
 
         if ($job instanceof RabbitMQJob) {

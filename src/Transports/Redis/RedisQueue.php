@@ -6,6 +6,7 @@ use Admnio\Sunset\Events\JobQueueing;
 use Admnio\Sunset\Events\JobQueued;
 use Admnio\Sunset\Events\JobReserved;
 use Admnio\Sunset\JobPayload;
+use Admnio\Sunset\QueuePause\QueuePauseGate;
 use Admnio\Sunset\RateLimiting\RateLimitGate;
 use Illuminate\Queue\RedisQueue as LaravelRedisQueue;
 use Illuminate\Support\Str;
@@ -48,6 +49,16 @@ class RedisQueue extends LaravelRedisQueue
 
     public function pop($queue = null, $index = 0)
     {
+        // v1.3.0 queue-pause gate. Resolved lazily per-pop, same shape as the
+        // rate-limit gate below: the gate fails open on Redis errors so a
+        // transient outage of the pause storage doesn't silently stop the
+        // entire worker fleet.
+        $queueName = $queue ?: $this->default;
+        if ($this->container->make(QueuePauseGate::class)
+                ->isPaused((string) $this->getConnectionName(), $queueName)) {
+            return null;
+        }
+
         $job = parent::pop($queue, $index);
 
         if ($job !== null) {

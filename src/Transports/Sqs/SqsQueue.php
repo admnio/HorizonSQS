@@ -6,6 +6,7 @@ use Admnio\Sunset\Events\JobQueueing;
 use Admnio\Sunset\Events\JobQueued;
 use Admnio\Sunset\Events\JobReserved;
 use Admnio\Sunset\JobPayload;
+use Admnio\Sunset\QueuePause\QueuePauseGate;
 use Admnio\Sunset\RateLimiting\RateLimitGate;
 use Admnio\Sunset\Transports\Sqs\Delay\DelayedJobStore;
 use Admnio\Sunset\Transports\Sqs\Payload\ExtendedPayloadHandler;
@@ -159,6 +160,18 @@ class SqsQueue extends LaravelSqsQueue
     {
         $queueUrl = $this->getQueue($queue);
         $resolvedQueue = $queue ?: $this->default;
+
+        // v1.3.0 queue-pause gate. Consulted BEFORE the SQS receiveMessage call
+        // so a paused queue costs zero SQS API calls per poll. Mirrors the
+        // rate-limit gate's lazy-resolve-per-pop pattern; the gate fails open
+        // on Redis errors so a pause-storage outage doesn't silently stop the
+        // fleet. Uses the bare queue name (not the URL) so the operator's
+        // (connection, queue) pair lines up with what the dashboard / CLI
+        // wrote into the pause set.
+        if ($this->container->make(QueuePauseGate::class)
+                ->isPaused((string) $this->getConnectionName(), $resolvedQueue)) {
+            return null;
+        }
 
         $response = $this->sqs->receiveMessage([
             'QueueUrl' => $queueUrl,
