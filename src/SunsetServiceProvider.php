@@ -32,6 +32,8 @@ use Admnio\Sunset\Console\SunsetInstallCommand;
 use Admnio\Sunset\Console\SunsetPublishCommand;
 use Admnio\Sunset\Console\SunsetMigrateHorizonConfigCommand;
 use Admnio\Sunset\Console\SunsetHorizonRemovedCommand;
+use Admnio\Sunset\Console\SunsetPauseQueueCommand;
+use Admnio\Sunset\Console\SunsetResumeQueueCommand;
 use Admnio\Sunset\Contracts\JobRepository as SunsetJobRepository;
 use Admnio\Sunset\Contracts\FailedJobRepository as SunsetFailedJobRepository;
 use Admnio\Sunset\Contracts\TagRepository as SunsetTagRepository;
@@ -439,6 +441,10 @@ class SunsetServiceProvider extends ServiceProvider
 
                 // v1.1.0 worker-metrics maintenance:
                 SunsetSweepWorkerMetricsCommand::class,
+
+                // v1.3.0 queue pause/resume:
+                SunsetPauseQueueCommand::class,
+                SunsetResumeQueueCommand::class,
             ]);
         }
 
