@@ -26,14 +26,12 @@ Route::middleware([Authorize::class, \Inertia\Middleware::class, SetSunsetInerti
         Route::get('/batches',                [C\BatchesController::class,       'show'])->name('batches');
         Route::get('/health',                 [C\HealthController::class,        'show'])->name('health');
 
-        // v1.2.0: Activity stream — Inertia page + same-route JSON, a
-        // "load older" pagination endpoint, and the long-lived SSE endpoint.
-        // The stream endpoint reads sunset.activity.enabled internally and
-        // 404s when the feature is disabled, so we don't gate it on config
-        // at route registration time.
+        // v1.2.0 (polling-only since v1.2.1): Activity log — Inertia page +
+        // same-route JSON polling, plus a "load older" pagination endpoint.
+        // The recorder behind these reads sunset.activity.enabled internally;
+        // when disabled, both endpoints return an empty events list.
         Route::get('/activity',         [C\ActivityController::class, 'show'])->name('activity');
         Route::get('/activity/page',    [C\ActivityController::class, 'page'])->name('activity.page');
-        Route::get('/activity/stream',  [C\ActivityController::class, 'stream'])->name('activity.stream');
 
         // POST actions — write through to native repositories.
         Route::post('/jobs/failed/{id}/retry',    [C\FailedJobsController::class,  'retry'])->name('jobs.failed.retry');

@@ -117,24 +117,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Activity stream (v1.2.0)
+    | Activity log (v1.2.0)
     |--------------------------------------------------------------------------
     |
-    | The dashboard's Activity page subscribes to a Server-Sent Events stream
-    | backed by Sunset's recorded event buffer. Set `enabled` to false to
-    | disable the recorder (the stream endpoint also 404s when disabled).
-    | `stream_buffer_size` caps how many recent events are retained for
-    | replay / page load. The remaining knobs tune the SSE response lifetime
-    | — change them only for proxy or worker-tier reasons. See the README's
-    | Octane note before deploying behind Laravel Octane.
+    | Sunset records job-lifecycle, supervisor, and rate-limit events into a
+    | capped Redis sorted set; the dashboard's Activity page reads from it on
+    | each poll tick (same 3-second cadence as every other page — see
+    | `dashboard.poll_interval_seconds`). Set `enabled` to false to disable
+    | the recorder entirely. `stream_buffer_size` caps how many recent events
+    | are retained for replay / page load.
     */
 
     'activity' => [
         'enabled' => env('SUNSET_ACTIVITY_ENABLED', true),
         'stream_buffer_size' => (int) env('SUNSET_ACTIVITY_BUFFER', 5000),
-        'max_connection_seconds' => (int) env('SUNSET_ACTIVITY_MAX_CONNECTION', 60),
-        'heartbeat_interval_seconds' => (int) env('SUNSET_ACTIVITY_HEARTBEAT', 15),
-        'poll_interval_seconds' => (int) env('SUNSET_ACTIVITY_POLL', 5),
     ],
 
     /*

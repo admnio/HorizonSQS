@@ -38,7 +38,7 @@ class ActivityPageTest extends IntegrationTestCase
         config(['sunset.activity.enabled' => true]);
     }
 
-    public function test_refresh_response_returns_recent_events_descending_with_enabled_and_stream_url(): void
+    public function test_refresh_response_returns_recent_events_descending_with_enabled_and_page_url(): void
     {
         $this->seedEvents(5);
 
@@ -50,10 +50,10 @@ class ActivityPageTest extends IntegrationTestCase
 
         $this->assertArrayHasKey('events', $props);
         $this->assertArrayHasKey('enabled', $props);
-        $this->assertArrayHasKey('stream_url', $props);
+        $this->assertArrayHasKey('page_url', $props);
 
         $this->assertTrue($props['enabled']);
-        $this->assertStringContainsString('/sunset/activity/stream', $props['stream_url']);
+        $this->assertStringContainsString('/sunset/activity/page', $props['page_url']);
 
         $events = $props['events'];
         $this->assertCount(5, $events);
@@ -79,11 +79,11 @@ class ActivityPageTest extends IntegrationTestCase
         $this->assertIsArray($props);
         $this->assertArrayHasKey('events', $props);
         $this->assertArrayHasKey('enabled', $props);
-        $this->assertArrayHasKey('stream_url', $props);
+        $this->assertArrayHasKey('page_url', $props);
 
         $this->assertCount(3, $props['events']);
         $this->assertTrue($props['enabled']);
-        $this->assertStringContainsString('/sunset/activity/stream', $props['stream_url']);
+        $this->assertStringContainsString('/sunset/activity/page', $props['page_url']);
     }
 
     public function test_page_endpoint_returns_events_strictly_before_the_cursor_descending(): void

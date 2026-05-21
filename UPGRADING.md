@@ -697,7 +697,7 @@ The Supervisors dashboard route gains two new top-level props (`worker_metrics`,
 
 ## What you get for free
 
-A new `/sunset/activity` dashboard page renders a live event feed (job failures, rate-limit rejections, worker restarts, supervisor deployments) via Server-Sent Events. The recorder begins capturing events the moment Sunset boots; no opt-in needed.
+A new `/sunset/activity` dashboard page lists the most recent job failures, rate-limit rejections, worker restarts, and supervisor deployments. The recorder begins capturing events the moment Sunset boots; no opt-in needed. The page polls every 3 seconds (same `dashboard.poll_interval_seconds` setting every other dashboard page uses).
 
 ## New config block
 
@@ -707,22 +707,10 @@ If you re-publish the config (`php artisan vendor:publish --tag=sunset-config --
 'activity' => [
     'enabled' => env('SUNSET_ACTIVITY_ENABLED', true),
     'stream_buffer_size' => (int) env('SUNSET_ACTIVITY_BUFFER', 5000),
-    'max_connection_seconds' => (int) env('SUNSET_ACTIVITY_MAX_CONNECTION', 60),
-    'heartbeat_interval_seconds' => (int) env('SUNSET_ACTIVITY_HEARTBEAT', 15),
-    'poll_interval_seconds' => (int) env('SUNSET_ACTIVITY_POLL', 5),
 ],
 ```
 
 Defaults work for most deployments. If you don't re-publish, the defaults still apply (the SP merges them in).
-
-## Laravel Octane caveat
-
-The SSE stream endpoint blocks a worker for up to `max_connection_seconds` (default 60). Under Octane (Swoole/RoadRunner) each connected dashboard tab consumes one of your worker slots for that duration. Two options:
-
-1. **Run the dashboard tier in FPM** — Octane handles the rest of the app, FPM serves `/sunset/*`. Wire a separate fastcgi-pass directive for the path prefix.
-2. **Disable streaming** — `SUNSET_ACTIVITY_ENABLED=false`. The dashboard still renders the Activity page with the most recent 200 buffered events (just without live updates).
-
-Standalone PHP-FPM, Apache+mod_php, Roadrunner-without-task-workers, etc. are unaffected — the SSE endpoint behaves like any other long-running request to those servers.
 
 ## New public API surface
 
@@ -740,10 +728,30 @@ These are stable for v1.x:
   });
   ```
 
-## Streaming model — server cursor-poll, not Redis pub/sub
-
-The "stream" is technically a fast server-side cursor poll (default 5s) over a capped Redis sorted set, served as Server-Sent Events to the browser. We picked this over true Redis pub/sub because pub/sub semantics differ subtly between phpredis and predis around blocking reads + read timeouts + heartbeat timers, and the fiddliness wasn't worth it for shipping v1.2.0 against three transport libraries. Sub-second freshness becomes a v1.2.x optimization if anyone asks.
-
 ## Buffer size considerations
 
 `stream_buffer_size` defaults to 5000 events. At a steady ~10 events/second this is ~8 minutes of replay history — enough for most operators arriving at the dashboard to see what just happened. Bump it up to 50000 if you want longer replay (~83 minutes); the cost is more Redis memory (~150 bytes/event × 50000 = ~7.5 MB).
+
+---
+
+# Upgrading from `admnio/sunset` v1.2.0 to v1.2.1
+
+If you installed v1.2.0 between commits and used the SSE stream, this section applies. Otherwise — skip; v1.2.1 is a no-op upgrade.
+
+## What changed
+
+- The Server-Sent Events endpoint `GET /sunset/activity/stream` was removed.
+- Three config keys were removed: `sunset.activity.max_connection_seconds`, `sunset.activity.heartbeat_interval_seconds`, `sunset.activity.poll_interval_seconds`. Their env-var hooks (`SUNSET_ACTIVITY_MAX_CONNECTION`, `SUNSET_ACTIVITY_HEARTBEAT`, `SUNSET_ACTIVITY_POLL`) are now ignored.
+- The Activity dashboard page polls the same `?refresh=1` route every other dashboard page polls. Cadence is governed by `dashboard.poll_interval_seconds` (default 3 seconds).
+- The `stream_url` Inertia prop is replaced by `page_url` (for the "Load older" pagination URL). If you wrote a custom Vue page on top of the route, drop the `stream_url`/`EventSource` wiring and use the standard `usePolling()` composable.
+- Internal class `Admnio\Sunset\Activity\ActivityStreamer` was deleted. Internal — no consumer should have referenced it.
+
+## Why
+
+Streaming added a per-tab worker-slot cost under Octane that wasn't worth the freshness benefit for an observability page already needing a recorder + buffer for replay. Polling at 3s is fast enough for the use case, removes the worker starvation, and keeps the page consistent with the rest of the dashboard.
+
+## Migration
+
+For most consumers: **no action required**. Sunset auto-discovers the new code; the page renders normally on the next request.
+
+If you set any of the removed env vars in your deployment config, you can remove them — they're ignored.

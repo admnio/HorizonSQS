@@ -48,7 +48,6 @@ use Admnio\Sunset\Repositories\Redis\RedisProcessRepository;
 use Admnio\Sunset\Repositories\Redis\RedisSupervisorCommandQueue;
 use Admnio\Sunset\Activity\ActivityEventFactory;
 use Admnio\Sunset\Activity\ActivityRecorder;
-use Admnio\Sunset\Activity\ActivityStreamer;
 use Admnio\Sunset\Contracts\ActivityRepository as SunsetActivityRepository;
 use Admnio\Sunset\Events\JobQueueing;
 use Admnio\Sunset\Events\JobQueued;
@@ -317,31 +316,6 @@ class SunsetServiceProvider extends ServiceProvider
                 events: $app->make(\Illuminate\Contracts\Events\Dispatcher::class),
                 logger: $app->make(LoggerInterface::class),
                 enabled: (bool) $app['config']->get('sunset.activity.enabled', true),
-            );
-        });
-
-        // bind() (not singleton()) — the streamer captures request-scoped
-        // emit/clock/sleep closures and must be reconstructed per request so
-        // those don't leak across SSE connections.
-        $this->app->bind(ActivityStreamer::class, function ($app) {
-            return new ActivityStreamer(
-                repository: $app->make(SunsetActivityRepository::class),
-                maxConnectionSeconds: (int) $app['config']->get('sunset.activity.max_connection_seconds', 60),
-                heartbeatIntervalSeconds: (int) $app['config']->get('sunset.activity.heartbeat_interval_seconds', 15),
-                pollIntervalSeconds: (int) $app['config']->get('sunset.activity.poll_interval_seconds', 5),
-                clock: static fn (): float => microtime(true),
-                sleep: static function (int $seconds): void {
-                    sleep($seconds);
-                },
-                emit: static function (string $frame): void {
-                    echo $frame;
-                    // ob_flush() errors on `output_buffering=Off`. The
-                    // controller disables buffering before invoking stream(),
-                    // so we expect the @-suppression to be a no-op-on-no-op
-                    // rather than masking a real failure.
-                    @ob_flush();
-                    flush();
-                },
             );
         });
 

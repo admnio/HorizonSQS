@@ -2,6 +2,24 @@
 
 All notable changes to Sunset are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and Sunset adheres to [Semantic Versioning](https://semver.org/).
 
+## v1.2.1
+
+Drop Server-Sent Events; the Activity page now polls the same way every other dashboard page does.
+
+### Removed
+- `Admnio\Sunset\Activity\ActivityStreamer` (internal) — no replacement; the recorder + sorted-set buffer cover what the streamer's read side did.
+- `Admnio\Sunset\Dashboard\Http\Controllers\ActivityController::stream()` and the `GET /sunset/activity/stream` route.
+- `useActivityStream` Vue composable.
+- Config keys `sunset.activity.max_connection_seconds`, `sunset.activity.heartbeat_interval_seconds`, `sunset.activity.poll_interval_seconds` (plus their `SUNSET_ACTIVITY_*` env hooks). The dashboard now uses the existing `dashboard.poll_interval_seconds` (default 3s) for the Activity page like every other page.
+- README's "Octane note (activity stream)" section — no longer applicable.
+
+### Changed
+- `ActivityController::show()` now emits `page_url` instead of `stream_url`. The Inertia props shape is otherwise unchanged.
+- `Activity.vue` switched to the same `usePolling()` composable every other dashboard page uses. Removed Pause/Resume controls (polling has nothing to pause that closing the tab doesn't already cover) and the live/reconnecting status pill.
+
+### Why
+Streaming added an Octane worker-starvation tradeoff that wasn't worth the freshness benefit for an observability page that already needed a recorder + buffer for replay. Polling at 3s is fast enough for the use case, removes the per-tab worker slot cost, and keeps the page consistent with the rest of the dashboard. Public-API contracts (`ActivityRepository`, `ActivityEvent`, `ActivityRecorded`) are unchanged.
+
 ## v1.2.0
 
 Realtime worker activity stream — a new `/sunset/activity` dashboard page powered by Server-Sent Events.
