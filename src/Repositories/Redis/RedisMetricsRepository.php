@@ -3,9 +3,9 @@
 namespace Admnio\Sunset\Repositories\Redis;
 
 use Admnio\Sunset\Contracts\MetricsRepository;
+use Admnio\Sunset\Repositories\Redis\Concerns\IteratesRedisKeys;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
-use Throwable;
 
 /**
  * @internal This class is part of Sunset's internal implementation; signatures
@@ -14,6 +14,8 @@ use Throwable;
  */
 class RedisMetricsRepository implements MetricsRepository
 {
+    use IteratesRedisKeys;
+
     public function __construct(private RedisFactory $redis)
     {
     }
@@ -403,140 +405,18 @@ class RedisMetricsRepository implements MetricsRepository
     }
 
     /**
-     * SCAN the keyspace for `<prefix>sunset:metrics:job:{$job}:buckets:*`
-     * slot hashes and delete them. Used by {@see forgetJob()} so an
-     * operator-initiated forget doesn't leave 12 orphan TTLs ticking.
+     * SCAN the keyspace for `sunset:metrics:job:{$job}:buckets:*` slot hashes
+     * and delete them. Used by {@see forgetJob()} so an operator-initiated
+     * forget doesn't leave 12 orphan TTLs ticking.
      *
-     * Mirrors the SCAN pattern in RateLimitStatsRepository: prefer the raw
-     * phpredis client with SCAN_RETRY where available; fall back to
-     * Laravel's wrapper for predis / phpredis-without-client.
+     * Iteration + prefix-stripping is delegated to {@see IteratesRedisKeys::scanKeys()}.
      */
     private function deleteSlotKeysFor(string $job): void
     {
         $conn = $this->connection();
-        $logicalPattern = $this->key("metrics:job:{$job}:buckets:*");
-        $prefix = $this->detectPrefix($conn);
-        $matchPattern = $prefix . $logicalPattern;
-
-        $rawKeys = [];
-        if (method_exists($conn, 'client') && defined('\\Redis::OPT_SCAN')) {
-            $client = $conn->client();
-            if (is_object($client) && method_exists($client, 'scan')) {
-                $rawKeys = $this->scanWithPhpRedis($client, $matchPattern);
-            }
-        }
-
-        if ($rawKeys === []) {
-            // Either we're not on phpredis, or the phpredis scan returned
-            // nothing. Either way, retry through Laravel's wrapper — predis
-            // and very old phpredis live here.
-            $rawKeys = $this->scanWithLaravelWrapper($conn, $matchPattern);
-        }
-
-        foreach ($rawKeys as $rawKey) {
-            // Strip prefix so Laravel's wrapper doesn't double-apply it on
-            // the DEL call. Same dance as RateLimitStatsRepository.
-            $logicalKey = $prefix !== '' && str_starts_with($rawKey, $prefix)
-                ? substr($rawKey, strlen($prefix))
-                : $rawKey;
+        foreach ($this->scanKeys($conn, $this->key("metrics:job:{$job}:buckets:*")) as $logicalKey) {
             $conn->del($logicalKey);
         }
-    }
-
-    /**
-     * @param  \Redis  $client
-     * @return array<int, string>
-     */
-    private function scanWithPhpRedis($client, string $matchPattern): array
-    {
-        $previousScanOption = null;
-        try {
-            $previousScanOption = $client->getOption(\Redis::OPT_SCAN);
-        } catch (Throwable) {
-            // ignore — older phpredis or misconfigured client
-        }
-
-        try {
-            $client->setOption(\Redis::OPT_SCAN, \Redis::SCAN_RETRY);
-
-            $cursor = null;
-            $keys = [];
-            while (($batch = $client->scan($cursor, $matchPattern, 100)) !== false) {
-                foreach ($batch as $k) {
-                    $keys[] = (string) $k;
-                }
-            }
-            return $keys;
-        } finally {
-            if ($previousScanOption !== null) {
-                try {
-                    $client->setOption(\Redis::OPT_SCAN, $previousScanOption);
-                } catch (Throwable) {
-                    // ignore
-                }
-            }
-        }
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function scanWithLaravelWrapper($conn, string $matchPattern): array
-    {
-        $cursor = 0;
-        $keys = [];
-        do {
-            $result = $conn->scan($cursor, ['match' => $matchPattern, 'count' => 100]);
-            if ($result === false) {
-                break;
-            }
-            if (is_array($result) && count($result) === 2 && is_array($result[1])) {
-                $cursor = $result[0];
-                $batch = (array) $result[1];
-            } else {
-                $cursor = 0;
-                $batch = (array) ($result ?: []);
-            }
-            foreach ($batch as $k) {
-                $keys[] = (string) $k;
-            }
-        } while ((string) $cursor !== '0');
-
-        return $keys;
-    }
-
-    private function detectPrefix($conn): string
-    {
-        if (method_exists($conn, 'client')) {
-            try {
-                $client = $conn->client();
-                if (is_object($client) && method_exists($client, '_prefix')) {
-                    $p = $client->_prefix('');
-                    if (is_string($p) && $p !== '') {
-                        return $p;
-                    }
-                }
-                if (is_object($client) && method_exists($client, 'getOption') && defined('\\Redis::OPT_PREFIX')) {
-                    $p = $client->getOption(\Redis::OPT_PREFIX);
-                    if (is_string($p) && $p !== '') {
-                        return $p;
-                    }
-                }
-                if (is_object($client) && method_exists($client, 'getOptions')) {
-                    $opts = $client->getOptions();
-                    if (is_object($opts) && method_exists($opts, '__get')) {
-                        $p = $opts->__get('prefix');
-                        if (is_string($p) && $p !== '') {
-                            return $p;
-                        }
-                    }
-                }
-            } catch (Throwable) {
-                // fall through to config fallback
-            }
-        }
-
-        return (string) config('database.redis.options.prefix', '');
     }
 
     private function key(string $name): string
