@@ -4,6 +4,8 @@ namespace Admnio\Sunset\Tests\Unit\Repositories\Redis;
 
 use Admnio\Sunset\Repositories\Redis\RedisMetricsRepository;
 use Admnio\Sunset\Tests\TestCase;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 
 /**
@@ -32,6 +34,15 @@ class RedisMetricsRepositoryHistogramTest extends TestCase
             $this->redis->del($name);
         }
         $this->repo = new RedisMetricsRepository($factory);
+    }
+
+    protected function tearDown(): void
+    {
+        // Tests using setTestNow() must reset the clock so other tests
+        // observe real time. Carbon::setTestNow() is wall-of-shame global state.
+        Carbon::setTestNow();
+        CarbonImmutable::setTestNow();
+        parent::tearDown();
     }
 
     public function test_runtime_buckets_for_job_returns_correct_counts_per_bucket(): void
@@ -133,20 +144,83 @@ class RedisMetricsRepositoryHistogramTest extends TestCase
     {
         $this->seedFooWorkload();
 
-        // Sanity: bucket hash is populated.
+        // Sanity: bucket data is populated.
         $before = $this->repo->runtimeBucketsForJob('Foo');
         $this->assertGreaterThan(0, array_sum(array_column($before, 'count')));
 
+        // Sanity: at least one slot hash exists under the v2.4 layout. We
+        // SCAN the live keyspace instead of guessing the slot ID so the
+        // assertion stays stable across the 5-minute boundary.
+        $slotKeysBefore = $this->redis->keys('sunset:metrics:job:Foo:buckets:*');
+        $this->assertNotEmpty($slotKeysBefore, 'expected at least one slot hash after seeding');
+
         $this->repo->forgetJob('Foo');
 
-        // After forget, all buckets should be zeroed (the underlying hash
-        // is DEL'd and reads gracefully return an empty hash).
+        // After forget, all buckets should be zeroed (slot hashes are
+        // DEL'd and reads gracefully sum to zero across the window).
         $after = $this->repo->runtimeBucketsForJob('Foo');
         $this->assertSame(0, array_sum(array_column($after, 'count')));
 
-        // Buckets-hash key itself is gone from Redis.
+        // Slot hashes are gone from Redis.
+        $slotKeysAfter = $this->redis->keys('sunset:metrics:job:Foo:buckets:*');
+        $this->assertSame([], $slotKeysAfter);
+
+        // Legacy single-hash key (pre-v2.4) is also cleaned up if it ever
+        // existed — forgetJob still DELs it for upgrade-path tidiness.
         $exists = (int) $this->redis->exists('sunset:metrics:job:Foo:buckets');
         $this->assertSame(0, $exists);
+    }
+
+    public function test_buckets_age_out_after_60_minutes(): void
+    {
+        // Anchor "now" at a fixed, well-inside-a-slot moment so the seeded
+        // workload doesn't accidentally straddle two slots. We then advance
+        // 70 minutes (past the 60-min window AND past the 70-min TTL slack)
+        // before seeding a smaller workload that should be the ONLY data
+        // {@see runtimeBucketsForJob()} surfaces.
+        $t0 = CarbonImmutable::parse('2030-01-01 12:00:00');
+        Carbon::setTestNow($t0);
+        CarbonImmutable::setTestNow($t0);
+
+        // Initial workload (22 jobs across all buckets).
+        $this->seedFooWorkload();
+
+        // Sanity: the rolling window currently sees the seeded data.
+        $atT0 = $this->repo->runtimeBucketsForJob('Foo');
+        $this->assertSame(22, array_sum(array_column($atT0, 'count')));
+
+        // Time-travel forward 70 minutes. The slots written at t0 are now
+        // older than the 60-minute window AND past their 70-minute TTL —
+        // Redis will have evicted them. The reads below should see only
+        // the post-jump writes.
+        //
+        // Carbon::setTestNow() does NOT propagate TTLs to a real Redis
+        // server (Redis tracks wall clock independently), so we explicitly
+        // sleep long enough for the keys to expire. To keep the test fast
+        // we override the slot keys' TTL to 1 second AFTER the seed, then
+        // wait 1.1 seconds. This validates aging behavior end-to-end
+        // without making the test sleep for 70 minutes of real time.
+        foreach ($this->redis->keys('sunset:metrics:job:Foo:buckets:*') as $key) {
+            $name = str_replace($this->redis->_prefix(''), '', $key);
+            $this->redis->expire($name, 1);
+        }
+        usleep(1_200_000); // 1.2s — give Redis time to expire the keys.
+
+        $t1 = $t0->addMinutes(70);
+        Carbon::setTestNow($t1);
+        CarbonImmutable::setTestNow($t1);
+
+        // New, distinct workload after the jump: 2 jobs at 100ms (→ b1).
+        $this->repo->incrementThroughput('Foo', 'default', 0.100);
+        $this->repo->incrementThroughput('Foo', 'default', 0.100);
+
+        $atT1 = $this->repo->runtimeBucketsForJob('Foo');
+
+        // Only the new jobs should be visible — old slot hashes expired.
+        $this->assertSame(2, array_sum(array_column($atT1, 'count')));
+        $this->assertSame(2, $atT1[1]['count'], 'new b1 jobs visible');
+        $this->assertSame(0, $atT1[0]['count'], 'old b0 jobs aged out');
+        $this->assertSame(0, $atT1[5]['count'], 'old b5 jobs aged out');
     }
 
     /**

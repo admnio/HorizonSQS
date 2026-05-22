@@ -119,8 +119,8 @@ function statusKind(s) {
     <div class="section">
       <div class="section-head">
         <h2>Runtime distribution</h2>
-        <span class="meta" v-tooltip="'Bucket counts are cumulative since the metrics keyspace was last reset (sunset:purge or fresh deploy). Future v2.3 may add a rolling window.'">
-          {{ stats.runs_1h ?? 0 }} runs · cumulative
+        <span class="meta">
+          {{ stats.runs_1h ?? 0 }} runs · last 60 min
         </span>
       </div>
       <Empty v-if="histogram.length === 0" message="No histogram data yet." />
