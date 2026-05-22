@@ -722,3 +722,286 @@ html[data-theme="light"] .kbd-modal-backdrop { background: rgba(0, 0, 0, 0.25); 
   background: rgb(var(--bg-3)); color: rgb(var(--text));
   min-width: 22px; text-align: center; font-weight: 500;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   PAGE CHROME — headers, sections, callouts, banners
+   ───────────────────────────────────────────────────────────── */
+
+.page-head {
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgb(var(--border-soft));
+  margin-bottom: 28px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+.page-sub {
+  font-size: 13.5px;
+  color: rgb(var(--muted));
+}
+.page-sub::before { content: '·'; margin-right: 12px; color: rgb(var(--faint)); }
+.page-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.page-meta {
+  font-size: 11px;
+  color: rgb(var(--muted));
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.section { margin-top: 28px; }
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.section-head h2 {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.section-head .meta {
+  font-size: 12.5px;
+  color: rgb(var(--muted));
+}
+.section-head .meta::before { content: '·'; margin-right: 8px; color: rgb(var(--faint)); }
+.section-head .link {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: rgb(var(--violet));
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+}
+.section-head .link:hover { color: rgb(var(--violet-2)); }
+
+/* ─────────────────────────────────────────────────────────────
+   STAT CARDS
+   ───────────────────────────────────────────────────────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.stats.cols-6 { grid-template-columns: repeat(6, 1fr); }
+.stats.cols-6 .stat-value { font-size: 24px; }
+
+.stat {
+  background: rgb(var(--card));
+  border: 1px solid rgb(var(--border-soft));
+  border-radius: 12px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.stat:hover { border-color: rgb(var(--border)); }
+
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: rgb(var(--muted));
+  font-weight: 500;
+}
+.stat-label svg { width: 13px; height: 13px; color: rgb(var(--dim)); }
+
+.stat-value {
+  margin-top: 10px;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.stat-value .unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgb(var(--muted));
+  margin-left: 5px;
+  letter-spacing: 0;
+}
+.stat-value.red   { color: rgb(var(--red)); }
+.stat-value.amber { color: rgb(var(--amber)); }
+.stat-value.green { color: rgb(var(--green)); }
+
+.stat-delta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgb(var(--muted));
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.stat-delta .arrow { font-weight: 600; }
+.stat-delta.up   { color: rgb(var(--green)); }
+.stat-delta.down { color: rgb(var(--red)); }
+
+.stat-spark {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 92px;
+  height: 28px;
+  opacity: 0.85;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LOG ENTRIES (Activity feed + Overview's recent-activity preview)
+   ───────────────────────────────────────────────────────────── */
+
+.log {
+  background: rgb(var(--card));
+  border: 1px solid rgb(var(--border-soft));
+  border-radius: 12px;
+  overflow: hidden;
+}
+.log-entry {
+  display: grid;
+  grid-template-columns: 90px 110px 1fr 64px;
+  gap: 16px;
+  padding: 13px 18px;
+  border-bottom: 1px solid rgb(var(--border-soft));
+  align-items: start;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.log-entry:hover { background: rgba(167, 139, 250, 0.025); }
+.log-entry:last-child { border-bottom: none; }
+.log-entry .ts {
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
+  color: rgb(var(--muted));
+  padding-top: 1px;
+}
+.log-entry .ts .rel {
+  display: block;
+  font-size: 10.5px;
+  color: rgb(var(--dim));
+  margin-top: 2px;
+}
+.log-entry .body { color: rgb(var(--text-2)); line-height: 1.5; }
+.log-entry .body .who   { color: rgb(var(--text)); font-weight: 500; }
+.log-entry .body .what  { color: rgb(var(--violet)); }
+.log-entry .body .detail{ display: block; color: rgb(var(--muted)); font-size: 12.5px; margin-top: 2px; }
+.log-entry .body code {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11.5px;
+  color: rgb(var(--violet));
+  background: rgb(var(--bg-3));
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.log-entry .id {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  text-align: right;
+  color: rgb(var(--dim));
+  padding-top: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CALLOUTS — soft violet-bordered context banner
+   ───────────────────────────────────────────────────────────── */
+
+.callout {
+  background: rgb(var(--card));
+  border: 1px solid rgb(var(--border-soft));
+  border-left: 3px solid rgb(var(--violet));
+  border-radius: 10px;
+  padding: 18px 20px;
+  font-size: 13.5px;
+  color: rgb(var(--text-2));
+  line-height: 1.6;
+  margin: 20px 0;
+}
+.callout code {
+  font-family: 'Geist Mono', monospace;
+  font-size: 12.5px;
+  padding: 1px 6px;
+  background: rgb(var(--bg-3));
+  border-radius: 4px;
+  color: rgb(var(--violet));
+  border: 1px solid rgb(var(--border-soft));
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ACTIVITY FILTER CHIPS BAND
+   ───────────────────────────────────────────────────────────── */
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.filter {
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: rgb(var(--bg-3));
+  color: rgb(var(--muted));
+  border: 1px solid rgb(var(--border-soft));
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  font-family: inherit;
+}
+.filter:hover { color: rgb(var(--text)); border-color: rgb(var(--border)); }
+.filter.active {
+  background: var(--violet-soft);
+  color: rgb(var(--violet-2));
+  border-color: rgba(167, 139, 250, 0.3);
+}
+.filters .meta {
+  margin-left: auto;
+  font-size: 12px;
+  color: rgb(var(--muted));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filters .meta .pulse {
+  width: 6px;
+  height: 6px;
+  background: rgb(var(--green));
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18);
+  animation: filter-pulse 2s ease-in-out infinite;
+}
+@keyframes filter-pulse { 50% { opacity: 0.55; } }
+
+/* ─────────────────────────────────────────────────────────────
+   QUEUE NAME + CONNECTION CHIP (table cells)
+   ───────────────────────────────────────────────────────────── */
+
+.q-name {
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+.q-conn {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11.5px;
+  color: rgb(var(--dim));
+  margin-left: 8px;
+  background: rgb(var(--bg-3));
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+  vertical-align: 1px;
+}
