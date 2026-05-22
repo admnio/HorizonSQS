@@ -2,6 +2,8 @@
 
 namespace Admnio\Sunset\Dashboard\Http\Controllers;
 
+use Admnio\Sunset\Contracts\FailedJobRepository;
+use Admnio\Sunset\Contracts\JobRepository;
 use Admnio\Sunset\Contracts\MetricsRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,8 +39,13 @@ final class MetricsController extends Controller
      * inline percentile math below). They are accurate within the bounds
      * of that data — see the caveat in {@see realHistogram()}.
      */
-    public function class(string $name, Request $request, MetricsRepository $metrics): InertiaResponse|JsonResponse
-    {
+    public function class(
+        string $name,
+        Request $request,
+        MetricsRepository $metrics,
+        JobRepository $jobs,
+        FailedJobRepository $failed,
+    ): InertiaResponse|JsonResponse {
         $snapshots = $metrics->snapshotsForJob($name);
         $avgMs = (int) round($metrics->runtimeForJob($name));
 
@@ -62,14 +69,47 @@ final class MetricsController extends Controller
 
         $histogram = $this->realHistogram($snapshots);
 
+        // Per-class filter: match against the same fields the Recent.vue
+        // jobName(row) helper checks (`name || display_name || type ||
+        // job_class`). We don't extend the JobRepository contract; instead we
+        // filter the small collection returned by getRecent()/getFailed() in
+        // memory. That keeps the v1.x contract stable for downstream consumers.
+        $matchesClass = static fn (object $row): bool => $row->name === $name
+            || ($row->display_name ?? null) === $name
+            || ($row->type ?? null) === $name
+            || ($row->job_class ?? null) === $name;
+
+        $recentRuns = $jobs->getRecent()
+            ->filter($matchesClass)
+            ->take(20)
+            ->values()
+            ->map(fn (object $row) => $this->mapRecentRun($row))
+            ->all();
+
+        $recentFailures = $failed->getFailed()
+            ->filter($matchesClass)
+            ->take(10)
+            ->values()
+            ->map(fn (object $row) => $this->mapRecentFailure($row))
+            ->all();
+
+        $failures1h = count($recentFailures);
+
+        // Failure-rate denominator is total runs (including failures) for the
+        // class over the snapshot window. Returns '—' when there's nothing to
+        // divide against — matches the Overview controller's convention.
+        $failureRatePct = $runsLastHour > 0
+            ? (string) number_format(($failures1h / max(1, $runsLastHour)) * 100, 2, '.', '')
+            : '—';
+
         $stats = [
             'runs_1h' => $runsLastHour,
             'avg_ms' => $avgMs,
             'p50_ms' => $p50,
             'p95_ms' => $p95,
             'p99_ms' => $p99,
-            'failure_rate_pct' => 0.0,         // TODO(v2-wire-data): no per-class failure count yet
-            'failures_1h' => 0,
+            'failure_rate_pct' => $failureRatePct,
+            'failures_1h' => $failures1h,
         ];
 
         $throughputSeries = array_map(
@@ -85,9 +125,65 @@ final class MetricsController extends Controller
             'stats' => $stats,
             'throughput_series' => $throughputSeries,
             'runtime_histogram' => $histogram,
-            'recent_runs' => [],       // TODO(v2-wire-data): filter recent jobs by class
-            'recent_failures' => [],   // TODO(v2-wire-data): filter failed jobs by class
+            'recent_runs' => $recentRuns,
+            'recent_failures' => $recentFailures,
         ]);
+    }
+
+    /**
+     * Project a job hash from JobRepository::getRecent() into the column
+     * shape ClassDetail.vue's "Recent runs" DataTable expects: `at`, `queue`,
+     * `runtime_ms`, `status`, `attempt`, `pid`, `tags`. The repo doesn't
+     * record per-job runtimes/attempts/pid/tags today (see the caveat on
+     * {@see class()}), so we surface what we have and leave the rest null —
+     * the Vue table renders a `—` fallback for missing values.
+     */
+    private function mapRecentRun(object $row): array
+    {
+        $at = $row->completed_at
+            ?? $row->reserved_at
+            ?? $row->failed_at
+            ?? null;
+
+        return [
+            'at' => $at !== null ? (int) $at : null,
+            'queue' => $row->queue ?? null,
+            'runtime_ms' => null,
+            'status' => $row->status ?? null,
+            'attempt' => null,
+            'pid' => null,
+            'tags' => null,
+        ];
+    }
+
+    /**
+     * Project a failed-job hash from FailedJobRepository::getFailed() into the
+     * column shape ClassDetail.vue's "Recent failures" DataTable expects:
+     * `failed_at`, `exception_class`, `message`, `attempts`. The exception
+     * blob is stored as a JSON string by RedisFailedJobRepository::failed();
+     * decode and pluck the class/message pair so the page renders something
+     * useful instead of the raw JSON.
+     */
+    private function mapRecentFailure(object $row): array
+    {
+        $exception = $row->exception ?? null;
+        $exceptionClass = null;
+        $message = null;
+
+        if (is_string($exception) && $exception !== '') {
+            $decoded = json_decode($exception, true);
+            if (is_array($decoded)) {
+                $exceptionClass = $decoded['class'] ?? null;
+                $message = $decoded['message'] ?? null;
+            }
+        }
+
+        return [
+            'failed_at' => isset($row->failed_at) ? (int) $row->failed_at : null,
+            'exception_class' => $exceptionClass,
+            'message' => $message,
+            'attempts' => null,
+        ];
     }
 
     /**

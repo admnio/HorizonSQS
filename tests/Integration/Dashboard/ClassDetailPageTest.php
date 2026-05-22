@@ -2,9 +2,15 @@
 
 namespace Admnio\Sunset\Tests\Integration\Dashboard;
 
+use Admnio\Sunset\Contracts\FailedJobRepository;
+use Admnio\Sunset\Contracts\JobRepository;
+use Admnio\Sunset\Contracts\MetricsRepository;
 use Admnio\Sunset\Facades\Sunset;
+use Admnio\Sunset\JobPayload;
 use Admnio\Sunset\Manager;
 use Admnio\Sunset\Tests\Integration\IntegrationTestCase;
+use Illuminate\Contracts\Redis\Factory as RedisFactory;
+use RuntimeException;
 
 /**
  * Covers GET /sunset/metrics/jobs/{name}/detail — the Inertia ClassDetail
@@ -18,6 +24,24 @@ class ClassDetailPageTest extends IntegrationTestCase
         parent::setUp();
         Manager::flushAuth();
         Sunset::auth(fn () => true);
+
+        // Wipe Sunset Redis state so per-class filters start from a clean
+        // slate (each test seeds exactly the jobs it cares about). phpredis
+        // returns prefixed key names from `keys()`, so strip the connection
+        // prefix before calling del() to avoid the double-prefix that would
+        // leave keys orphaned across runs. We try _prefix() first (phpredis
+        // exposes the configured prefix) and fall back to the Laravel
+        // `database.redis.options.prefix` config when running under predis.
+        $conn = $this->app->make(RedisFactory::class)
+            ->connection(config('sunset.redis_connection', 'default'));
+        $prefix = method_exists($conn, '_prefix') ? (string) $conn->_prefix('') : '';
+        if ($prefix === '') {
+            $prefix = (string) config('database.redis.options.prefix', '');
+        }
+        foreach ((array) $conn->keys('sunset:*') as $k) {
+            $name = $prefix !== '' ? str_replace($prefix, '', (string) $k) : (string) $k;
+            $conn->del($name);
+        }
     }
 
     public function test_class_detail_route_renders_inertia_component_with_expected_props(): void
@@ -66,5 +90,115 @@ class ClassDetailPageTest extends IntegrationTestCase
             'App\\Jobs\\Some\\Deeply\\Nested\\Class',
             $response->json('props.class_name'),
         );
+    }
+
+    public function test_recent_runs_filtered_by_class_name(): void
+    {
+        /** @var JobRepository $jobs */
+        $jobs = $this->app->make(JobRepository::class);
+
+        // Two runs for the target class, one for a different class.
+        $jobs->pushed('redis', 'default', $this->payload('a1', 'App\\Jobs\\IndexProduct'));
+        $jobs->pushed('redis', 'default', $this->payload('a2', 'App\\Jobs\\IndexProduct'));
+        $jobs->pushed('redis', 'default', $this->payload('b1', 'App\\Jobs\\OtherJob'));
+
+        $response = $this->getJson(
+            '/sunset/metrics/jobs/' . urlencode('App\\Jobs\\IndexProduct') . '/detail?refresh=1',
+        );
+        $response->assertStatus(200);
+
+        $runs = $response->json('props.recent_runs');
+        $this->assertIsArray($runs);
+        $this->assertCount(2, $runs, 'Only jobs matching the target class should appear');
+
+        // Each row carries the contract shape ClassDetail.vue's DataTable reads.
+        foreach ($runs as $row) {
+            $this->assertArrayHasKey('at', $row);
+            $this->assertArrayHasKey('queue', $row);
+            $this->assertArrayHasKey('runtime_ms', $row);
+            $this->assertArrayHasKey('status', $row);
+            $this->assertArrayHasKey('attempt', $row);
+            $this->assertArrayHasKey('pid', $row);
+            $this->assertArrayHasKey('tags', $row);
+            $this->assertSame('default', $row['queue']);
+            // pushed() doesn't set completed_at/reserved_at, so `at` is null
+            // until the job moves forward through the lifecycle.
+            $this->assertSame('pending', $row['status']);
+        }
+    }
+
+    public function test_recent_failures_filtered_by_class_name(): void
+    {
+        /** @var FailedJobRepository $failed */
+        $failed = $this->app->make(FailedJobRepository::class);
+
+        $failed->failed(new RuntimeException('boom-1'), 'redis', 'default', $this->payload('f1', 'App\\Jobs\\IndexProduct'));
+        $failed->failed(new RuntimeException('boom-2'), 'redis', 'default', $this->payload('f2', 'App\\Jobs\\IndexProduct'));
+        $failed->failed(new RuntimeException('boom-3'), 'redis', 'default', $this->payload('f3', 'App\\Jobs\\OtherJob'));
+
+        $response = $this->getJson(
+            '/sunset/metrics/jobs/' . urlencode('App\\Jobs\\IndexProduct') . '/detail?refresh=1',
+        );
+        $response->assertStatus(200);
+
+        $failures = $response->json('props.recent_failures');
+        $this->assertIsArray($failures);
+        $this->assertCount(2, $failures);
+
+        foreach ($failures as $row) {
+            $this->assertArrayHasKey('failed_at', $row);
+            $this->assertArrayHasKey('exception_class', $row);
+            $this->assertArrayHasKey('message', $row);
+            $this->assertArrayHasKey('attempts', $row);
+            $this->assertSame(RuntimeException::class, $row['exception_class']);
+            $this->assertStringStartsWith('boom-', (string) $row['message']);
+        }
+    }
+
+    public function test_failure_rate_reflects_per_class_failures(): void
+    {
+        /** @var MetricsRepository $metrics */
+        $metrics = $this->app->make(MetricsRepository::class);
+        /** @var FailedJobRepository $failed */
+        $failed = $this->app->make(FailedJobRepository::class);
+
+        // 10 measured runs for this class in the snapshot window.
+        for ($i = 0; $i < 10; $i++) {
+            $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 100.0);
+        }
+        $metrics->snapshot();
+
+        // One recorded failure for this class — failure_rate_pct = 1/10*100.
+        $failed->failed(
+            new RuntimeException('rate-1'),
+            'redis',
+            'default',
+            $this->payload('rate-fail-1', 'App\\Jobs\\IndexProduct'),
+        );
+
+        $response = $this->getJson(
+            '/sunset/metrics/jobs/' . urlencode('App\\Jobs\\IndexProduct') . '/detail?refresh=1',
+        );
+        $response->assertStatus(200);
+
+        $stats = $response->json('props.stats');
+        $this->assertSame(10, $stats['runs_1h']);
+        $this->assertSame(1, $stats['failures_1h']);
+        $this->assertSame('10.00', $stats['failure_rate_pct']);
+    }
+
+    /**
+     * Build a JobPayload whose decoded `uuid` and `displayName` map directly
+     * to the `id` and `name` fields the repositories persist on the job hash.
+     */
+    private function payload(string $id, string $displayName): JobPayload
+    {
+        return new JobPayload(json_encode([
+            'uuid'        => $id,
+            'displayName' => $displayName,
+            'job'         => 'Illuminate\\Queue\\CallQueuedHandler@call',
+            'data'        => ['commandName' => $displayName],
+            'tags'        => [],
+        ]));
     }
 }
