@@ -834,3 +834,72 @@ app(\Admnio\Sunset\Contracts\QueuePauseRepository::class)->pause('my-redis', 'hi
 ```
 
 This is a known limitation of v1.3.0 — most consumers use the canonical connection names so the dashboard buttons work fine out of the box.
+
+---
+
+# Upgrading from `admnio/sunset` v1.3.x to v2.0.0
+
+**Full dashboard redesign with zero breaking API changes.** Existing routes,
+controller prop shapes, public contracts, events, and artisan commands are
+unchanged. Only the visual layer of `/sunset/*` is new.
+
+## What changed
+
+- New Linear/Vercel-style dashboard: deep-slate background, violet accent,
+  Geist + Geist Mono typography.
+- Tri-state theme toggle (light / dark / system) in the topbar — respects
+  `prefers-color-scheme`.
+- Sticky service-health strip below the topbar (Redis/SQS/RabbitMQ/scheduler
+  probe pills).
+- Command palette (⌘K) and keyboard shortcuts modal (`?`).
+- Toast notifications on actions (pause/resume/retry/delete with Undo).
+- Per-page enhancements: filter bars on Activity / Recent / Failed /
+  Pending / Completed / Monitoring; bulk-select with floating action bar
+  on Failed; 4-stat aggregate row on Workload; sortable column headers
+  on Metrics + Monitoring.
+- Two new drill-down detail pages reached by clicking a row:
+  - Metrics' by-class table → `/sunset/metrics/jobs/{name}/detail`
+    (ClassDetail with hero stats, throughput chart, runtime histogram,
+    recent runs/failures)
+  - Monitoring's tag list → `/sunset/monitoring/tags/{tag}`
+    (TagDetail with hero stats, activity chart, classes breakdown,
+    recent runs)
+
+## Migration
+
+For most consumers: **no action required.** Run `php artisan sunset:install`
+to re-publish the dashboard bundle, or pull the new `public-dist/app.js` +
+`public-dist/app.css` from the package. That's it.
+
+## What you DON'T need to change
+
+- Existing controllers, repositories, contracts, and events all keep their
+  signatures. Code that depends on `Admnio\Sunset\Contracts\*` is
+  unaffected.
+- Existing routes work unchanged. The new ClassDetail and TagDetail are
+  additive — they don't replace any existing endpoint.
+- Existing tests pass without modification.
+- Custom CSS overrides targeting `sunset-*` Tailwind classes still work —
+  those aliases are retained as back-compat shims pointing at the v2
+  tokens. (Your overrides will pick up the v2 violet/slate palette; if you
+  want to keep the v1 amber look, you'll need to redefine those tokens.)
+
+## What's deliberately different
+
+- The HTML root element now carries a `data-theme="dark"` or
+  `data-theme="light"` attribute instead of the old `class="dark"`. If
+  your app injected CSS targeting `html.dark`, switch the selector to
+  `html[data-theme="dark"]`. Sunset's own CSS handles this automatically.
+- The dashboard now requires a network call to fonts.googleapis.com for
+  Geist + Geist Mono. If your deployment must work offline, self-host
+  those fonts and override the `<link>` tag in `resources/views/vendor/
+  sunset/sunset-app.blade.php` (publish via `php artisan vendor:publish
+  --tag=sunset-views`).
+
+## ClassDetail histogram + percentiles caveat
+
+The new ClassDetail page shows p50/p95/p99 latency percentiles and a
+6-bucket runtime histogram. v2.0.0 ships these as heuristics derived from
+the average runtime — real percentile data lands when the
+`MetricsRepository` is extended (no consumer-side change required when
+that lands, just a Sunset upgrade).

@@ -2,6 +2,81 @@
 
 All notable changes to Sunset are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and Sunset adheres to [Semantic Versioning](https://semver.org/).
 
+## v2.0.0
+
+Full dashboard redesign — new visual identity (Linear/Vercel direction:
+deep-slate + violet, Geist + Geist Mono typography), enhanced interactions,
+two new drill-down detail pages. No breaking API changes — all v1.x routes,
+prop shapes, contracts, and events remain stable.
+
+### Added
+- Tri-state theme toggle (light / dark / system) with `prefers-color-scheme`
+  listener and FOUC-prevention init script.
+- Sticky service-health strip below the topbar showing live probe status for
+  Redis / SQS / RabbitMQ / scheduler, plus per-page summary counters.
+- Command palette (⌘K) with categorized fuzzy search over pages / queues /
+  job classes / actions.
+- Keyboard shortcuts modal (`?`) listing all shortcuts.
+- Global keyboard shortcuts: `G + letter` page navigation (G O, G A, G W,
+  G M, G F, G S, G H, G P, G C, G L, G R, G B, G T), `T` cycles theme,
+  `R` refreshes, `Esc` closes modals.
+- Toast notification system (`useToasts()`) wired to action buttons with
+  optional Undo on destructive actions.
+- `Pages/ClassDetail.vue` — drill-down page for a single job class.
+  Reached by clicking a row in Metrics' by-class table. Shows 6-stat hero
+  (Runs/Avg/p50/p95/p99/Failure rate), full-width throughput chart with
+  gridlines, runtime histogram (6 buckets), recent runs, recent failures.
+- `Pages/TagDetail.vue` — drill-down page for a monitored tag. Reached by
+  clicking a row in Monitoring. Shows 6-stat hero, 24h activity chart,
+  per-class breakdown (clickable → ClassDetail), recent runs.
+- `GET /sunset/metrics/jobs/{name}/detail` — new Inertia route (the
+  existing `GET /sunset/metrics/jobs/{name}` JSON-series endpoint is
+  unchanged).
+- `GET /sunset/monitoring/tags/{tag}` — new Inertia route.
+- New shared component library: `FilterBar`, `SearchInput`, `RangeGroup`,
+  `BulkActionBar`, `BackLink`, `Kicker`, `ChartCard`, `Histogram`,
+  `IconSprite`, `HealthStrip`, `KeyboardShortcutsModal`, `ToastContainer`.
+- `v-tooltip` directive (registered globally) — set `v-tooltip="'Hint'"`
+  on any element.
+- DataTable enhancements: sortable column headers (asc/desc indicator)
+  via `sortable: 'num' | 'text'` per column, plus clickable row variant
+  (`clickable: true` + `@row-click`) for drill-down lists.
+- Sparkline enhancements: `area`, `color`, `axis`, `tall`, `width`,
+  `height` props.
+- New page-level features: filter bars (search + range chips) on Activity /
+  Recent / Failed / Pending / Completed / Monitoring. Bulk-select with
+  floating action bar on Failed jobs. 4-stat aggregate row on Workload.
+  6-up stat grid layout for detail pages.
+
+### Changed
+- All 13 existing dashboard pages reskinned to the new design system.
+  Same Inertia props, same data flow, same routes — only the visual
+  layer changed.
+- Tailwind tokens migrated from `sunset-*` aliases to a richer namespace
+  (`bg`, `card`, `border`, `border-soft`, `border-strong`, `text`,
+  `text-2`, `muted`, `dim`, `faint`, `violet`, `violet-2`, `violet-deep`,
+  `ok`, `warn`, `err`, `info`, `green`, `red`, `amber`, `blue`). Legacy
+  `sunset-*` aliases retained as back-compat shims.
+- Theme attribute moved from `html.dark` class to `html[data-theme="dark"]`
+  / `html[data-theme="light"]`. The inline script in the Blade root view
+  sets this before paint to prevent FOUC.
+- `useTheme()` composable now exposes `cycle()` (light → dark → system)
+  alongside the existing `toggle()` (dark ↔ light) for back-compat.
+
+### Notes
+- Public-API stability commitment from v1.x carries forward unchanged.
+  No contract removed; no prop shape changed on existing routes; no
+  artisan command signature changed; no event payload changed.
+- Visual identity is the only intentional break. Consumer apps may have
+  shipped their own CSS overrides targeting `sunset-*` Tailwind classes;
+  those continue to work, though the underlying colors now resolve to the
+  v2 violet/slate palette instead of v1 amber/warm-slate.
+- ClassDetail's percentiles and runtime histogram use heuristics for now
+  (avg×0.5 for p50, avg×2.5 for p95, avg×4.0 for p99; 6-bucket
+  distribution centered on the avg). Real percentile data lands when the
+  MetricsRepository extends to record runtime buckets — flagged as
+  TODO(v2-wire-data) in the controller.
+
 ## v1.3.0
 
 Per-queue pause/resume controls across SQS, Redis, and RabbitMQ transports.
