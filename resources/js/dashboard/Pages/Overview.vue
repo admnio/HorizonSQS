@@ -28,9 +28,9 @@ const totalProcesses = computed(() =>
   }, 0),
 );
 
-// TODO(v2-wire-data): throughput + failure-rate aggregates aren't in the
-// existing Overview controller payload. Falling back to placeholders so the
-// hero stats render meaningfully until Phase 7 extends the controller.
+// Hero-stat aggregates. The OverviewController fills these in on every
+// render and poll tick. The `??` fallbacks cover the (defensive) case where
+// a stale poll response is still in-flight when the page first mounts.
 const throughputPerMin = computed(() => current.value.throughput_per_min ?? '—');
 const failureRatePct = computed(() => current.value.failure_rate_pct ?? '—');
 const failuresLastHour = computed(() => current.value.failures_last_hour ?? 0);

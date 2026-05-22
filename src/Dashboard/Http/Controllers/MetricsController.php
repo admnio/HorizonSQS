@@ -32,31 +32,35 @@ final class MetricsController extends Controller
      * ClassDetail page with stats, throughput series, histogram, and
      * recent runs/failures.
      *
-     * For data points the existing MetricsRepository can't compute
-     * directly (p50/p95/p99 latency percentiles, histogram buckets),
-     * we emit reasonable derived values. A future MetricsRepository
-     * extension can replace the heuristics with real percentile data.
+     * Percentiles + histogram are derived from the per-snapshot runtime
+     * series the repo already records (see {@see realHistogram()} and the
+     * inline percentile math below). They are accurate within the bounds
+     * of that data — see the caveat in {@see realHistogram()}.
      */
     public function class(string $name, Request $request, MetricsRepository $metrics): InertiaResponse|JsonResponse
     {
         $snapshots = $metrics->snapshotsForJob($name);
-        $throughput = $metrics->throughputForJob($name);
         $avgMs = (int) round($metrics->runtimeForJob($name));
 
-        // Approximate percentiles from avg (placeholder until repo can compute them).
-        $p50 = (int) round($avgMs * 0.5);
-        $p95 = (int) round($avgMs * 2.5);
-        $p99 = (int) round($avgMs * 4.0);
+        // Derive percentiles from the per-snapshot average runtime values.
+        // Caveat: these are percentiles over snapshot averages, not over
+        // individual job runtimes — the repo doesn't record per-job timings,
+        // so this is the best fidelity we can offer without a contract bump.
+        // For a workload with low variance across snapshots the difference
+        // is negligible; for bursty workloads the p99 will under-report.
+        $runtimeValues = array_values(array_filter(array_map(
+            static fn ($s) => (float) ($s['runtime'] ?? 0),
+            $snapshots,
+        ), static fn ($v) => $v > 0.0));
+
+        [$p50, $p95, $p99] = $this->percentiles($runtimeValues, $avgMs);
 
         $runsLastHour = (int) array_sum(array_map(
             static fn ($s) => (int) ($s['throughput'] ?? 0),
             $snapshots,
         ));
 
-        // Histogram: derive bucket counts from runs + avg by approximating a
-        // log-normal-ish distribution. Real data should replace this when the
-        // repo can record per-class runtime buckets.
-        $histogram = $this->approximateHistogram($runsLastHour, $avgMs);
+        $histogram = $this->realHistogram($snapshots);
 
         $stats = [
             'runs_1h' => $runsLastHour,
@@ -87,10 +91,60 @@ final class MetricsController extends Controller
     }
 
     /**
-     * Approximate a 6-bucket runtime histogram. Real data lives at
-     * sunset:metrics:job:{class}:rtbucket once the repo supports it.
+     * Compute [p50, p95, p99] as integer millisecond values from the given
+     * runtime samples. When no samples are available we fall back to the
+     * stored mean runtime so the stat tiles still render a non-zero value
+     * for jobs that have run but not yet been snapshotted.
+     *
+     * @param list<float> $values
+     * @return array{0:int,1:int,2:int}
      */
-    private function approximateHistogram(int $totalRuns, int $avgMs): array
+    private function percentiles(array $values, int $avgMs): array
+    {
+        if ($values === []) {
+            return [$avgMs, $avgMs, $avgMs];
+        }
+        sort($values, SORT_NUMERIC);
+        return [
+            $this->percentile($values, 0.50),
+            $this->percentile($values, 0.95),
+            $this->percentile($values, 0.99),
+        ];
+    }
+
+    /**
+     * Nearest-rank percentile over an already-sorted list of values.
+     *
+     * @param list<float> $sorted
+     */
+    private function percentile(array $sorted, float $q): int
+    {
+        $n = count($sorted);
+        if ($n === 0) {
+            return 0;
+        }
+        // Nearest-rank with clamping — keeps the boundary cases (q=0, q=1)
+        // exact and avoids the off-by-one ambiguity of interpolation methods.
+        $idx = (int) ceil($q * $n) - 1;
+        if ($idx < 0) {
+            $idx = 0;
+        }
+        if ($idx >= $n) {
+            $idx = $n - 1;
+        }
+        return (int) round($sorted[$idx]);
+    }
+
+    /**
+     * Bucket the snapshot runtime values into the six fixed buckets used by
+     * the ClassDetail Vue page. Each snapshot contributes one observation
+     * (its average runtime over the snapshot window), so this is a histogram
+     * of snapshot-averages, not of individual job runtimes — see the caveat
+     * in {@see class()}.
+     *
+     * @param array<int, array<string, mixed>> $snapshots
+     */
+    private function realHistogram(array $snapshots): array
     {
         $buckets = [
             ['label' => '0–50 ms', 'min' => 0, 'max' => 50],
@@ -101,36 +155,30 @@ final class MetricsController extends Controller
             ['label' => '5 s+', 'min' => 5000, 'max' => PHP_INT_MAX],
         ];
 
-        if ($totalRuns <= 0) {
-            return array_map(static fn ($b) => [
-                'label' => $b['label'],
-                'count' => 0,
-                'pct' => 0.0,
-                'danger' => $b['min'] >= 5000,
-            ], $buckets);
-        }
-
-        // Heuristic distribution centered on the avg: pick the bucket the avg
-        // lives in, give it 60%, neighbors 18%/2%, others split the rest.
-        $weights = [0.05, 0.20, 0.18, 0.06, 0.02, 0.001];
-        foreach ($buckets as $i => $b) {
-            if ($avgMs >= $b['min'] && $avgMs < $b['max']) {
-                // Shift the distribution toward this bucket.
-                $weights = [0.08, 0.12, 0.10, 0.06, 0.04, 0.005];
-                $weights[$i] = 0.60;
-                break;
+        $counts = array_fill(0, count($buckets), 0);
+        $total  = 0;
+        foreach ($snapshots as $s) {
+            $rt = (float) ($s['runtime'] ?? 0);
+            if ($rt <= 0.0) {
+                continue;
+            }
+            foreach ($buckets as $i => $b) {
+                if ($rt >= $b['min'] && $rt < $b['max']) {
+                    $counts[$i]++;
+                    $total++;
+                    break;
+                }
             }
         }
-        $sum = array_sum($weights);
 
         $out = [];
         foreach ($buckets as $i => $b) {
-            $pct = ($weights[$i] / $sum) * 100;
-            $count = (int) round(($pct / 100) * $totalRuns);
+            $count = $counts[$i];
+            $pct   = $total > 0 ? round(($count / $total) * 100, 1) : 0.0;
             $out[] = [
-                'label' => $b['label'],
-                'count' => $count,
-                'pct' => round($pct, 1),
+                'label'  => $b['label'],
+                'count'  => $count,
+                'pct'    => $pct,
                 'danger' => $b['min'] >= 5000 && $count > 0,
             ];
         }
