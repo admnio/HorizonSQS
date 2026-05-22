@@ -4,39 +4,45 @@
 
 /* ─────────────────────────────────────────────────────────────
    DESIGN TOKENS — v2.0 (Linear / Vercel direction)
+
+   Tokens are stored as R G B channels (e.g. "8 8 11") so they
+   compose with Tailwind's <alpha-value> placeholder. Use
+   `rgb(var(--X))` for direct CSS, or `rgb(var(--X) / 0.5)` for
+   manual alpha. Tailwind utilities like `bg-bg`, `text-text`,
+   `border-border-soft` resolve through the same channels.
    ───────────────────────────────────────────────────────────── */
 
 :root,
 html[data-theme="dark"] {
-  --bg: #08080b;
-  --bg-2: #0e0e12;
-  --bg-3: #14141a;
-  --bg-4: #1a1a22;
-  --card: #14141a;
-  --card-hover: #18181f;
-  --border: #23232c;
-  --border-soft: #1c1c24;
-  --border-strong: #2d2d38;
+  --bg: 8 8 11;
+  --bg-2: 14 14 18;
+  --bg-3: 20 20 26;
+  --bg-4: 26 26 34;
+  --card: 20 20 26;
+  --card-hover: 24 24 31;
+  --border: 35 35 44;
+  --border-soft: 28 28 36;
+  --border-strong: 45 45 56;
 
-  --text: #ededf2;
-  --text-2: #c5c5d0;
-  --muted: #9c9ca8;
-  --dim: #5c5c68;
-  --faint: #3c3c46;
+  --text: 237 237 242;
+  --text-2: 197 197 208;
+  --muted: 156 156 168;
+  --dim: 92 92 104;
+  --faint: 60 60 70;
 
-  --violet: #a78bfa;
-  --violet-2: #c4b5fd;
-  --violet-deep: #7c3aed;
+  --violet: 167 139 250;
+  --violet-2: 196 181 253;
+  --violet-deep: 124 58 237;
   --violet-soft: rgba(167, 139, 250, 0.12);
   --violet-glow: rgba(167, 139, 250, 0.4);
 
-  --green: #4ade80;
+  --green: 74 222 128;
   --green-soft: rgba(74, 222, 128, 0.12);
-  --red: #f87171;
+  --red: 248 113 113;
   --red-soft: rgba(248, 113, 113, 0.12);
-  --amber: #fbbf24;
+  --amber: 251 191 36;
   --amber-soft: rgba(251, 191, 36, 0.12);
-  --blue: #60a5fa;
+  --blue: 96 165 250;
   --blue-soft: rgba(96, 165, 250, 0.12);
 
   --topbar-bg: rgba(8, 8, 11, 0.85);
@@ -51,35 +57,35 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="light"] {
-  --bg: #fafafa;
-  --bg-2: #f4f4f5;
-  --bg-3: #ededee;
-  --bg-4: #e4e4e7;
-  --card: #ffffff;
-  --card-hover: #fafafa;
-  --border: #d4d4d8;
-  --border-soft: #e4e4e7;
-  --border-strong: #a1a1aa;
+  --bg: 250 250 250;
+  --bg-2: 244 244 245;
+  --bg-3: 237 237 238;
+  --bg-4: 228 228 231;
+  --card: 255 255 255;
+  --card-hover: 250 250 250;
+  --border: 212 212 216;
+  --border-soft: 228 228 231;
+  --border-strong: 161 161 170;
 
-  --text: #09090b;
-  --text-2: #27272a;
-  --muted: #52525b;
-  --dim: #71717a;
-  --faint: #a1a1aa;
+  --text: 9 9 11;
+  --text-2: 39 39 42;
+  --muted: 82 82 91;
+  --dim: 113 113 122;
+  --faint: 161 161 170;
 
-  --violet: #7c3aed;
-  --violet-2: #6d28d9;
-  --violet-deep: #5b21b6;
+  --violet: 124 58 237;
+  --violet-2: 109 40 217;
+  --violet-deep: 91 33 182;
   --violet-soft: rgba(124, 58, 237, 0.08);
   --violet-glow: rgba(124, 58, 237, 0.25);
 
-  --green: #15803d;
+  --green: 21 128 61;
   --green-soft: rgba(21, 128, 61, 0.10);
-  --red: #b91c1c;
+  --red: 185 28 28;
   --red-soft: rgba(185, 28, 28, 0.08);
-  --amber: #b45309;
+  --amber: 180 83 9;
   --amber-soft: rgba(180, 83, 9, 0.10);
-  --blue: #1d4ed8;
+  --blue: 29 78 216;
   --blue-soft: rgba(29, 78, 216, 0.08);
 
   --topbar-bg: rgba(250, 250, 250, 0.85);
@@ -97,8 +103,8 @@ html { color-scheme: dark; }
 html[data-theme="light"] { color-scheme: light; }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: rgb(var(--bg));
+  color: rgb(var(--text));
   font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-feature-settings: 'cv11' 1, 'ss01' 1;
   -webkit-font-smoothing: antialiased;
@@ -110,11 +116,11 @@ body {
   min-height: 100vh;
 }
 
-::selection { background: var(--violet-deep); color: #fff; }
+::selection { background: rgb(var(--violet-deep)); color: #fff; }
 
 /* Focus ring */
 :focus-visible {
-  outline: 2px solid var(--violet);
+  outline: 2px solid rgb(var(--violet));
   outline-offset: 2px;
 }
 a.sr-only:focus,
@@ -135,29 +141,29 @@ a.sr-only:focus-visible { outline: none; }
   line-height: 1.55;
 }
 .pill .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-.pill-ok    { background: var(--green-soft); color: var(--green); }
-.pill-warn  { background: var(--amber-soft); color: var(--amber); }
-.pill-error { background: var(--red-soft);   color: var(--red); }
-.pill-info  { background: var(--violet-soft); color: var(--violet); }
-.pill-blue  { background: var(--blue-soft); color: var(--blue); }
-.pill-neutral { background: var(--bg-3); color: var(--muted); }
+.pill-ok    { background: var(--green-soft); color: rgb(var(--green)); }
+.pill-warn  { background: var(--amber-soft); color: rgb(var(--amber)); }
+.pill-error { background: var(--red-soft);   color: rgb(var(--red)); }
+.pill-info  { background: var(--violet-soft); color: rgb(var(--violet)); }
+.pill-blue  { background: var(--blue-soft); color: rgb(var(--blue)); }
+.pill-neutral { background: rgb(var(--bg-3)); color: rgb(var(--muted)); }
 
 /* Banners */
 .banner-info {
-  border: 1px solid var(--border-soft);
-  border-left: 3px solid var(--violet);
-  background: var(--card);
-  color: var(--text-2);
+  border: 1px solid rgb(var(--border-soft));
+  border-left: 3px solid rgb(var(--violet));
+  background: rgb(var(--card));
+  color: rgb(var(--text-2));
 }
 .banner-warn {
-  border: 1px solid var(--border-soft);
-  border-left: 3px solid var(--amber);
+  border: 1px solid rgb(var(--border-soft));
+  border-left: 3px solid rgb(var(--amber));
   background: rgba(251, 191, 36, 0.04);
-  color: var(--text-2);
+  color: rgb(var(--text-2));
 }
 
 /* Toasts */
-.toast-info    { background: var(--card); color: var(--text); border: 1px solid var(--border); border-left: 3px solid var(--violet); }
-.toast-error   { background: var(--card); color: var(--text); border: 1px solid var(--border); border-left: 3px solid var(--red); }
-.toast-success { background: var(--card); color: var(--text); border: 1px solid var(--border); border-left: 3px solid var(--green); }
-.toast-warn    { background: var(--card); color: var(--text); border: 1px solid var(--border); border-left: 3px solid var(--amber); }
+.toast-info    { background: rgb(var(--card)); color: rgb(var(--text)); border: 1px solid rgb(var(--border)); border-left: 3px solid rgb(var(--violet)); }
+.toast-error   { background: rgb(var(--card)); color: rgb(var(--text)); border: 1px solid rgb(var(--border)); border-left: 3px solid rgb(var(--red)); }
+.toast-success { background: rgb(var(--card)); color: rgb(var(--text)); border: 1px solid rgb(var(--border)); border-left: 3px solid rgb(var(--green)); }
+.toast-warn    { background: rgb(var(--card)); color: rgb(var(--text)); border: 1px solid rgb(var(--border)); border-left: 3px solid rgb(var(--amber)); }
