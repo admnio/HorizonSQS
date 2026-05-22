@@ -263,7 +263,23 @@ class SunsetServiceProvider extends ServiceProvider
         $this->app->singleton(SunsetJobRepository::class, RedisJobRepository::class);
         $this->app->singleton(SunsetFailedJobRepository::class, RedisFailedJobRepository::class);
         $this->app->singleton(SunsetTagRepository::class, RedisTagRepository::class);
-        $this->app->singleton(SunsetMetricsRepository::class, RedisMetricsRepository::class);
+        // v2.2.0: bind the contract via an explicit factory closure (not a
+        // class-string redirect) so we can alias the concrete class back to
+        // the same singleton without a recursive resolution loop. The
+        // MetricsController::class() action depends on the concrete class for
+        // its bucket-histogram + percentile APIs, which are intentionally not
+        // on the public MetricsRepository contract. Mirrors the v1.3.0
+        // RedisQueuePauseRepository pattern further down in this method.
+        $this->app->singleton(
+            SunsetMetricsRepository::class,
+            fn ($app) => new RedisMetricsRepository(
+                $app->make(\Illuminate\Contracts\Redis\Factory::class),
+            ),
+        );
+        $this->app->singleton(
+            RedisMetricsRepository::class,
+            fn ($app) => $app->make(SunsetMetricsRepository::class),
+        );
 
         // v0.5.0: Bind Sunset supervisor contracts to Redis implementations.
         $this->app->singleton(SunsetMasterSupervisorRepository::class, RedisMasterSupervisorRepository::class);

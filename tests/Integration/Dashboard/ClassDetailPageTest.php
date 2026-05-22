@@ -188,6 +188,77 @@ class ClassDetailPageTest extends IntegrationTestCase
     }
 
     /**
+     * v2.2.0 — the runtime histogram on the ClassDetail page now reflects the
+     * 6-bucket per-class histogram recorded at job-complete time by the Redis
+     * concrete repo, not snapshot-mean values. Seed a known workload, hit the
+     * route, assert each bucket's count matches the seed.
+     */
+    public function test_histogram_reflects_recorded_runtimes(): void
+    {
+        /** @var MetricsRepository $metrics */
+        $metrics = $this->app->make(MetricsRepository::class);
+
+        // Same canonical seed used by the unit test: 5×30ms, 10×100ms,
+        // 3×400ms, 2×800ms, 1×2000ms, 1×6000ms (runtime in seconds).
+        for ($i = 0; $i < 5; $i++)  $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 0.030);
+        for ($i = 0; $i < 10; $i++) $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 0.100);
+        for ($i = 0; $i < 3; $i++)  $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 0.400);
+        for ($i = 0; $i < 2; $i++)  $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 0.800);
+        $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 2.000);
+        $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 6.000);
+
+        $response = $this->getJson(
+            '/sunset/metrics/jobs/' . urlencode('App\\Jobs\\IndexProduct') . '/detail?refresh=1',
+        );
+        $response->assertStatus(200);
+
+        $hist = $response->json('props.runtime_histogram');
+        $this->assertIsArray($hist);
+        $this->assertCount(6, $hist);
+        $this->assertSame(5,  $hist[0]['count']);
+        $this->assertSame(10, $hist[1]['count']);
+        $this->assertSame(3,  $hist[2]['count']);
+        $this->assertSame(2,  $hist[3]['count']);
+        $this->assertSame(1,  $hist[4]['count']);
+        $this->assertSame(1,  $hist[5]['count']);
+        // Tail bucket lights up red exactly when it has observations.
+        $this->assertTrue($hist[5]['danger']);
+    }
+
+    /**
+     * v2.2.0 — percentile stats are derived from the bucket histogram via
+     * linear interpolation across bucket boundaries. Asserts the props land
+     * in the buckets they should for the canonical seed workload.
+     */
+    public function test_percentiles_reflect_recorded_runtimes(): void
+    {
+        /** @var MetricsRepository $metrics */
+        $metrics = $this->app->make(MetricsRepository::class);
+
+        for ($i = 0; $i < 5; $i++)  $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 0.030);
+        for ($i = 0; $i < 10; $i++) $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 0.100);
+        for ($i = 0; $i < 3; $i++)  $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 0.400);
+        for ($i = 0; $i < 2; $i++)  $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 0.800);
+        $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 2.000);
+        $metrics->incrementThroughput('App\\Jobs\\IndexProduct', 'default', 6.000);
+
+        $response = $this->getJson(
+            '/sunset/metrics/jobs/' . urlencode('App\\Jobs\\IndexProduct') . '/detail?refresh=1',
+        );
+        $response->assertStatus(200);
+
+        $stats = $response->json('props.stats');
+        // p50 falls in the 50–250 ms bucket; p95 in the 1–5 s bucket; p99 in
+        // the 5 s+ tail. Exact values depend on the interpolation formula
+        // but the bucket containment is the contract here.
+        $this->assertGreaterThanOrEqual(50,   $stats['p50_ms']);
+        $this->assertLessThan(250,            $stats['p50_ms']);
+        $this->assertGreaterThanOrEqual(1000, $stats['p95_ms']);
+        $this->assertLessThan(5000,           $stats['p95_ms']);
+        $this->assertGreaterThanOrEqual(5000, $stats['p99_ms']);
+    }
+
+    /**
      * Build a JobPayload whose decoded `uuid` and `displayName` map directly
      * to the `id` and `name` fields the repositories persist on the job hash.
      */

@@ -5,6 +5,7 @@ namespace Admnio\Sunset\Dashboard\Http\Controllers;
 use Admnio\Sunset\Contracts\FailedJobRepository;
 use Admnio\Sunset\Contracts\JobRepository;
 use Admnio\Sunset\Contracts\MetricsRepository;
+use Admnio\Sunset\Repositories\Redis\RedisMetricsRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Response as InertiaResponse;
@@ -34,40 +35,49 @@ final class MetricsController extends Controller
      * ClassDetail page with stats, throughput series, histogram, and
      * recent runs/failures.
      *
-     * Percentiles + histogram are derived from the per-snapshot runtime
-     * series the repo already records (see {@see realHistogram()} and the
-     * inline percentile math below). They are accurate within the bounds
-     * of that data — see the caveat in {@see realHistogram()}.
+     * v2.2.0: percentiles + histogram are now derived from the per-class
+     * 6-bucket runtime histogram recorded at job-complete time on the Redis
+     * concrete repository. This replaces the v2.0 heuristic (which derived
+     * percentiles from snapshot averages and bucketed snapshot-mean values
+     * into the histogram — see the v2.1.0 caveat). The controller depends on
+     * the concrete RedisMetricsRepository here because the bucket APIs are
+     * intentionally not on the MetricsRepository contract; the contract is
+     * Sunset's stable public surface and we don't break it for an internal
+     * fidelity improvement. Mirrors the v1.3.0 RedisQueuePauseRepository
+     * concrete-injection pattern used by WorkloadController.
      */
     public function class(
         string $name,
         Request $request,
-        MetricsRepository $metrics,
+        RedisMetricsRepository $metrics,
         JobRepository $jobs,
         FailedJobRepository $failed,
     ): InertiaResponse|JsonResponse {
         $snapshots = $metrics->snapshotsForJob($name);
         $avgMs = (int) round($metrics->runtimeForJob($name));
 
-        // Derive percentiles from the per-snapshot average runtime values.
-        // Caveat: these are percentiles over snapshot averages, not over
-        // individual job runtimes — the repo doesn't record per-job timings,
-        // so this is the best fidelity we can offer without a contract bump.
-        // For a workload with low variance across snapshots the difference
-        // is negligible; for bursty workloads the p99 will under-report.
-        $runtimeValues = array_values(array_filter(array_map(
-            static fn ($s) => (float) ($s['runtime'] ?? 0),
-            $snapshots,
-        ), static fn ($v) => $v > 0.0));
-
-        [$p50, $p95, $p99] = $this->percentiles($runtimeValues, $avgMs);
+        // v2.2.0: real percentiles from the bucket histogram via
+        // linear-interpolation across bucket boundaries. percentilesForJob()
+        // returns ['p50' => int_ms, ...] and yields all-zeros when no jobs of
+        // this class have completed yet — the stat tiles render 0 in that
+        // case, which is correct.
+        $percentiles = $metrics->percentilesForJob($name);
+        $p50 = (int) ($percentiles['p50'] ?? 0);
+        $p95 = (int) ($percentiles['p95'] ?? 0);
+        $p99 = (int) ($percentiles['p99'] ?? 0);
 
         $runsLastHour = (int) array_sum(array_map(
             static fn ($s) => (int) ($s['throughput'] ?? 0),
             $snapshots,
         ));
 
-        $histogram = $this->realHistogram($snapshots);
+        // v2.2.0: real per-job-runtime histogram. Falls back to a zero-filled
+        // 6-bucket array when nothing has been recorded yet so the Vue page
+        // still renders gracefully with empty bars.
+        $histogram = $metrics->runtimeBucketsForJob($name);
+        if ($histogram === []) {
+            $histogram = $this->emptyHistogram();
+        }
 
         // Per-class filter: match against the same fields the Recent.vue
         // jobName(row) helper checks (`name || display_name || type ||
@@ -187,95 +197,22 @@ final class MetricsController extends Controller
     }
 
     /**
-     * Compute [p50, p95, p99] as integer millisecond values from the given
-     * runtime samples. When no samples are available we fall back to the
-     * stored mean runtime so the stat tiles still render a non-zero value
-     * for jobs that have run but not yet been snapshotted.
-     *
-     * @param list<float> $values
-     * @return array{0:int,1:int,2:int}
+     * Zero-filled 6-bucket histogram matching the labels rendered by the
+     * ClassDetail page. Used as a fallback when the repo hasn't recorded any
+     * runtime observations yet (e.g. a fresh deployment, or a job class that
+     * has never completed). Keeps the Vue page from rendering an empty list
+     * — it expects exactly 6 entries.
      */
-    private function percentiles(array $values, int $avgMs): array
+    private function emptyHistogram(): array
     {
-        if ($values === []) {
-            return [$avgMs, $avgMs, $avgMs];
-        }
-        sort($values, SORT_NUMERIC);
-        return [
-            $this->percentile($values, 0.50),
-            $this->percentile($values, 0.95),
-            $this->percentile($values, 0.99),
-        ];
-    }
-
-    /**
-     * Nearest-rank percentile over an already-sorted list of values.
-     *
-     * @param list<float> $sorted
-     */
-    private function percentile(array $sorted, float $q): int
-    {
-        $n = count($sorted);
-        if ($n === 0) {
-            return 0;
-        }
-        // Nearest-rank with clamping — keeps the boundary cases (q=0, q=1)
-        // exact and avoids the off-by-one ambiguity of interpolation methods.
-        $idx = (int) ceil($q * $n) - 1;
-        if ($idx < 0) {
-            $idx = 0;
-        }
-        if ($idx >= $n) {
-            $idx = $n - 1;
-        }
-        return (int) round($sorted[$idx]);
-    }
-
-    /**
-     * Bucket the snapshot runtime values into the six fixed buckets used by
-     * the ClassDetail Vue page. Each snapshot contributes one observation
-     * (its average runtime over the snapshot window), so this is a histogram
-     * of snapshot-averages, not of individual job runtimes — see the caveat
-     * in {@see class()}.
-     *
-     * @param array<int, array<string, mixed>> $snapshots
-     */
-    private function realHistogram(array $snapshots): array
-    {
-        $buckets = [
-            ['label' => '0–50 ms', 'min' => 0, 'max' => 50],
-            ['label' => '50–250 ms', 'min' => 50, 'max' => 250],
-            ['label' => '250–500 ms', 'min' => 250, 'max' => 500],
-            ['label' => '500 ms–1 s', 'min' => 500, 'max' => 1000],
-            ['label' => '1–5 s', 'min' => 1000, 'max' => 5000],
-            ['label' => '5 s+', 'min' => 5000, 'max' => PHP_INT_MAX],
-        ];
-
-        $counts = array_fill(0, count($buckets), 0);
-        $total  = 0;
-        foreach ($snapshots as $s) {
-            $rt = (float) ($s['runtime'] ?? 0);
-            if ($rt <= 0.0) {
-                continue;
-            }
-            foreach ($buckets as $i => $b) {
-                if ($rt >= $b['min'] && $rt < $b['max']) {
-                    $counts[$i]++;
-                    $total++;
-                    break;
-                }
-            }
-        }
-
+        $labels = ['0–50 ms', '50–250 ms', '250–500 ms', '500 ms–1 s', '1–5 s', '5 s+'];
         $out = [];
-        foreach ($buckets as $i => $b) {
-            $count = $counts[$i];
-            $pct   = $total > 0 ? round(($count / $total) * 100, 1) : 0.0;
+        foreach ($labels as $i => $label) {
             $out[] = [
-                'label'  => $b['label'],
-                'count'  => $count,
-                'pct'    => $pct,
-                'danger' => $b['min'] >= 5000 && $count > 0,
+                'label'  => $label,
+                'count'  => 0,
+                'pct'    => 0.0,
+                'danger' => false,
             ];
         }
         return $out;
