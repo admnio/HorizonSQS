@@ -107,6 +107,32 @@ async function resumeSupervisor(name) {
     push({ kind: 'err', title: 'Resume failed.', sub: e?.message });
   }
 }
+
+// v2.3.0: live worker scaling. Each +/− click posts a fresh absolute target
+// (current ± 1), not a delta — the server clamps to [1, 256] and the
+// supervisor's next loop tick brings worker count to match. We intentionally
+// don't await router.reload here: the supervisor needs ~1s to drain the
+// command queue, so polling refresh picks up the new count naturally.
+const scaling = ref({}); // name → bool, dim buttons while a request is in flight
+
+async function scaleSupervisor(name, delta, current, ceiling) {
+  if (scaling.value[name]) return;
+  const target = (Number(current) || 0) + delta;
+  if (target < 1) return;
+  if (Number.isFinite(ceiling) && target > ceiling) return;
+
+  scaling.value = { ...scaling.value, [name]: true };
+  try {
+    await axios.post(`/sunset/supervisors/${encodeURIComponent(name)}/scale`, {
+      processes: target,
+    });
+    push({ kind: 'ok', title: `Scaled supervisor ${name} to ${target} worker${target === 1 ? '' : 's'}.` });
+  } catch (e) {
+    push({ kind: 'err', title: 'Scale failed.', sub: e?.message });
+  } finally {
+    scaling.value = { ...scaling.value, [name]: false };
+  }
+}
 function statusKind(s) {
   const v = String(s ?? '').toLowerCase();
   if (v === 'paused') return 'warn';
@@ -144,7 +170,7 @@ function statusKind(s) {
           { key: 'procs_label', label: 'Workers', width: '120px', align: 'right' },
           { key: 'connection', label: 'Connection', width: '130px' },
           { key: 'queues_label', label: 'Queues', width: '1fr' },
-          { key: 'actions', label: '', width: '150px' },
+          { key: 'actions', label: '', width: '230px' },
         ]"
         :rows="supervisorRows"
         :selectable="false"
@@ -159,7 +185,31 @@ function statusKind(s) {
           <span class="pill neutral">{{ row.connection }}</span>
         </template>
         <template #actions="{ row }">
-          <div class="flex justify-end" @click.stop>
+          <div class="flex justify-end items-center gap-1" @click.stop>
+            <!-- v2.3.0: live worker scaling. No ConfirmAction wrapper here —
+                 these are cheap and reversible (the next click undoes them);
+                 confirmation friction would just slow operators down. -->
+            <button
+              class="btn ghost sm"
+              type="button"
+              :disabled="(row.processes ?? 0) <= 1 || scaling[row.name]"
+              :title="(row.processes ?? 0) <= 1
+                ? 'Pause the supervisor instead of scaling to 0 workers'
+                : 'Remove one worker without restarting the supervisor'"
+              @click="scaleSupervisor(row.name, -1, row.processes, row.options?.maxProcesses)"
+            >−</button>
+            <button
+              class="btn ghost sm"
+              type="button"
+              :disabled="Number.isFinite(row.options?.maxProcesses)
+                && (row.processes ?? 0) >= (row.options?.maxProcesses ?? Infinity)
+                || scaling[row.name]"
+              :title="Number.isFinite(row.options?.maxProcesses)
+                && (row.processes ?? 0) >= (row.options?.maxProcesses ?? Infinity)
+                  ? `At configured ceiling (${row.options?.maxProcesses})`
+                  : 'Add one worker without restarting the supervisor'"
+              @click="scaleSupervisor(row.name, 1, row.processes, row.options?.maxProcesses)"
+            >+</button>
             <ConfirmAction
               v-if="String(row.status).toLowerCase() !== 'paused'"
               label="pause"

@@ -9,6 +9,7 @@ use Admnio\Sunset\Contracts\SupervisorRepository;
 use Admnio\Sunset\Contracts\WorkerMetricsRepository;
 use Admnio\Sunset\SupervisorCommands\ContinueWorking;
 use Admnio\Sunset\SupervisorCommands\Pause;
+use Admnio\Sunset\SupervisorCommands\Scale;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Response as InertiaResponse;
@@ -92,6 +93,29 @@ final class SupervisorsController extends Controller
         $commands->push($name, ContinueWorking::class);
 
         return response()->json(['ok' => true, 'command' => 'continue', 'supervisor' => $name]);
+    }
+
+    /**
+     * Push a Scale command onto the named supervisor's command queue so the
+     * supervisor's next loop tick adjusts its worker count without restarting.
+     *
+     * Operators driving this from the dashboard +/− buttons can only ever
+     * submit small deltas, but we still clamp to [1, 256] server-side so a
+     * crafted request can't request 10k workers or a negative count. We
+     * deliberately disallow 0 here — operators should use pause() for that.
+     */
+    public function scale(string $name, Request $request, SupervisorCommandQueue $commands): JsonResponse
+    {
+        $processes = max(1, min((int) $request->input('processes', 0), 256));
+
+        $commands->push($name, Scale::class, ['processes' => $processes]);
+
+        return response()->json([
+            'ok'         => true,
+            'command'    => 'scale',
+            'supervisor' => $name,
+            'processes'  => $processes,
+        ]);
     }
 
     public function processes(string $master, ProcessRepository $processes): JsonResponse

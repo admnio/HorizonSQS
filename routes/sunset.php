@@ -49,6 +49,13 @@ Route::middleware([Authorize::class, \Inertia\Middleware::class, SetSunsetInerti
         Route::post('/jobs/failed/delete',        [C\FailedJobsController::class,  'deleteBulk'])->name('jobs.failed.delete-bulk');
         Route::post('/supervisors/{name}/pause',  [C\SupervisorsController::class, 'pause'])->name('supervisors.pause');
         Route::post('/supervisors/{name}/resume', [C\SupervisorsController::class, 'resume'])->name('supervisors.resume');
+        // v2.3.0: live worker scaling — operator clicks +/− on the dashboard
+        // and the supervisor's next loop tick adjusts its worker count without
+        // restarting. The `where` constraint mirrors the other supervisor
+        // routes so names with `:` / `.` characters route cleanly.
+        Route::post('/supervisors/{name}/scale',  [C\SupervisorsController::class, 'scale'])
+            ->where('name', '[^/]+')
+            ->name('supervisors.scale');
         // v1.3.0: per-queue pause/resume. The `where` constraints allow any
         // non-slash characters in queue names (queue names commonly include
         // `-`, `_`, `.`, `:` — e.g. SQS allows `.fifo` suffixes; apps may
