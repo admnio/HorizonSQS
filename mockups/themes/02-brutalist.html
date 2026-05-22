@@ -1,0 +1,122 @@
+<!doctype html><html><head><meta charset="utf-8"><title>02 · Brutalist Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #fafaf7; color: #0a0a0a; font-family: 'Newsreader', Georgia, serif; font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+.app { max-width: 1200px; margin: 0 auto; padding: 56px 80px 120px; }
+
+.masthead { display: flex; align-items: baseline; gap: 24px; padding-bottom: 12px; border-bottom: 2px solid #0a0a0a; }
+.brand { font-family: 'Newsreader', serif; font-weight: 800; font-size: 42px; letter-spacing: -0.04em; line-height: 1; font-variation-settings: 'opsz' 72; }
+.brand sup { font-size: 14px; color: #dc2626; font-weight: 600; letter-spacing: 0; }
+.dateline { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: #555; margin-left: auto; }
+.dateline strong { color: #0a0a0a; }
+.navrow { padding: 6px 0 0; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #888; }
+.navrow .item { margin-right: 18px; }
+.navrow .item.active { color: #0a0a0a; font-weight: 600; border-bottom: 2px solid #dc2626; padding-bottom: 4px; }
+
+.lead { margin: 60px 0 56px; display: grid; grid-template-columns: 80px 1fr 220px; align-items: end; gap: 32px; }
+.numeral { font-family: 'Newsreader', serif; font-weight: 200; font-size: 96px; color: #dc2626; line-height: 0.85; font-variation-settings: 'opsz' 72; }
+.title { font-family: 'Newsreader', serif; font-weight: 600; font-size: 88px; line-height: 0.92; letter-spacing: -0.05em; font-variation-settings: 'opsz' 72; }
+.lede { font-family: 'Newsreader', serif; font-style: italic; font-weight: 300; font-size: 17px; line-height: 1.45; color: #444; }
+.lede strong { color: #dc2626; font-style: normal; font-weight: 600; }
+
+.section { margin: 64px 0 32px; padding-top: 24px; border-top: 1px solid #0a0a0a; display: flex; align-items: baseline; gap: 16px; }
+.section .num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #dc2626; letter-spacing: 0.1em; font-weight: 600; }
+.section h2 { font-family: 'Newsreader', serif; font-weight: 500; font-size: 32px; letter-spacing: -0.02em; }
+.section .sub { font-style: italic; color: #888; font-size: 14px; margin-left: auto; }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid #0a0a0a; }
+.stat { padding: 28px 24px; border-right: 1px solid #ddd; }
+.stat:last-child { border-right: none; }
+.stat .l { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #888; margin-bottom: 14px; }
+.stat .n { font-family: 'Newsreader', serif; font-weight: 600; font-size: 60px; line-height: 0.95; letter-spacing: -0.04em; font-variation-settings: 'opsz' 72; }
+.stat .n.red { color: #dc2626; }
+.stat .n sup { font-size: 18px; font-weight: 400; font-style: italic; color: #888; letter-spacing: 0; margin-left: 4px; }
+.stat .d { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #555; margin-top: 10px; letter-spacing: 0.04em; }
+.stat .d.up { color: #15803d; }
+.stat .d.down { color: #dc2626; }
+
+table.wk { width: 100%; border-collapse: collapse; }
+table.wk th { text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; padding: 12px 0 8px; border-bottom: 2px solid #0a0a0a; font-weight: 500; }
+table.wk th.r { text-align: right; }
+table.wk td { padding: 16px 0; border-bottom: 1px solid #ddd; font-size: 16px; vertical-align: baseline; }
+table.wk td.r { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+table.wk td .q { font-weight: 600; }
+table.wk td .conn { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: #888; text-transform: uppercase; margin-left: 8px; }
+table.wk td .status { font-style: italic; font-size: 14px; }
+table.wk td .status.ok { color: #15803d; }
+table.wk td .status.warn { color: #dc2626; }
+
+.events { margin-top: 32px; }
+.events .e { padding: 20px 0; border-bottom: 1px solid #ddd; display: grid; grid-template-columns: 110px 1fr 80px; gap: 32px; align-items: baseline; }
+.events .e:last-child { border-bottom: 1px solid #0a0a0a; }
+.events .ts { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #888; letter-spacing: 0.04em; }
+.events .body { font-size: 17px; line-height: 1.55; }
+.events .body strong { font-weight: 600; }
+.events .body em { color: #dc2626; font-style: italic; font-weight: 500; }
+.events .body .src { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #888; margin-top: 4px; letter-spacing: 0.03em; }
+.events .id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #aaa; text-align: right; }
+.events .e.err .body strong { color: #dc2626; }
+
+.footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid #0a0a0a; display: flex; align-items: baseline; gap: 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
+.footer .end { margin-left: auto; font-style: italic; text-transform: none; font-family: 'Newsreader', serif; font-size: 14px; color: #555; }
+
+</style>
+</head><body>
+<div class="app">
+  <header class="masthead">
+    <div class="brand">SUNSET<sup>vol.1.3</sup></div>
+    <div class="dateline">Thursday, 21 May 2026 · <strong>04:22 UTC</strong> · prod-cluster-east</div>
+  </header>
+  <div class="navrow">
+    <span class="item active">Overview</span>
+    <span class="item">Activity</span>
+    <span class="item">Workload</span>
+    <span class="item">Metrics</span>
+    <span class="item">Failed</span>
+    <span class="item">Supervisors</span>
+    <span class="item">Limits</span>
+    <span class="item">Health</span>
+  </div>
+
+  <div class="lead">
+    <div class="numeral">I.</div>
+    <h1 class="title">Overview</h1>
+    <p class="lede">Five queues are <strong>active</strong>; one is paused. Throughput trending up over the prior hour. Five jobs failed in the last sixty minutes — none critical.</p>
+  </div>
+
+  <div class="section"><span class="num">№ 1</span><h2>Vital signs</h2><span class="sub">poll · 3 seconds</span></div>
+  <div class="stats">
+    <div class="stat"><div class="l">Queue depth</div><div class="n">3,847</div><div class="d down">↘ 412 jobs / hr</div></div>
+    <div class="stat"><div class="l">Supervisors</div><div class="n">4</div><div class="d">28 / 46 procs</div></div>
+    <div class="stat"><div class="l">Throughput</div><div class="n">1.2<sup>k/min</sup></div><div class="d up">↗ 8.2% / hr</div></div>
+    <div class="stat"><div class="l">Failure rate</div><div class="n red">0.84<sup>%</sup></div><div class="d down">5 in last hour</div></div>
+  </div>
+
+  <div class="section"><span class="num">№ 2</span><h2>Workload</h2><span class="sub">five queues, three transports</span></div>
+  <table class="wk">
+    <thead><tr><th>Queue</th><th class="r">Length</th><th class="r">Workers</th><th class="r">Wait</th><th class="r">Throughput</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><span class="q">Emails</span><span class="conn">redis</span></td><td class="r">128</td><td class="r">8</td><td class="r">2 s</td><td class="r">412 / min</td><td><span class="status ok">↻ running</span></td></tr>
+      <tr><td><span class="q">Webhooks</span><span class="conn">sqs</span></td><td class="r">2,431</td><td class="r">16</td><td class="r">14 s</td><td class="r">605 / min</td><td><span class="status ok">↻ running</span></td></tr>
+      <tr><td><span class="q">Indexing</span><span class="conn">redis</span></td><td class="r">901</td><td class="r">4</td><td class="r">48 s</td><td class="r">196 / min</td><td><span class="status warn">! backlog</span></td></tr>
+      <tr><td><span class="q">Geocode</span><span class="conn">redis</span></td><td class="r">312</td><td class="r">0</td><td class="r">—</td><td class="r">—</td><td><span class="status warn">∥ paused</span></td></tr>
+      <tr><td><span class="q">Nightly rollup</span><span class="conn">rabbitmq</span></td><td class="r">75</td><td class="r">2</td><td class="r">5 s</td><td class="r">34 / min</td><td><span class="status ok">↻ running</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="section"><span class="num">№ 3</span><h2>Recent events</h2><span class="sub">supervisor &amp; rate-limit signal</span></div>
+  <div class="events">
+    <div class="e"><div class="ts">04:18:42</div><div class="body"><strong>Master deployed.</strong> Supervisors loaded from <em>sunset.environments[]</em>. Four supervisors brought online across redis, sqs, rabbitmq.<div class="src">master-1</div></div><div class="id">№ 48201</div></div>
+    <div class="e"><div class="ts">04:17:11</div><div class="body"><strong>Long-wait detected.</strong> The <em>webhooks</em> queue on SQS sat idle for 48 seconds — over the configured threshold. Auto-scaler will add 2 workers.<div class="src">sqs · webhooks</div></div><div class="id">№ 48198</div></div>
+    <div class="e"><div class="ts">04:15:08</div><div class="body"><strong>Queue paused.</strong> <em>Geocode</em> on Redis paused by dashboard. Eight workers will stop popping on their next loop iteration.<div class="src">redis · geocode · actor: dashboard</div></div><div class="id">№ 48192</div></div>
+    <div class="e err"><div class="ts">04:13:01</div><div class="body"><strong>Job failed.</strong> <em>App\Jobs\IndexProduct</em> on indexing: Elastic\ClientResponseException — 429 Too Many Requests. Three of three attempts exhausted.<div class="src">redis · indexing</div></div><div class="id">№ 48184</div></div>
+  </div>
+
+  <footer class="footer">
+    <span>Sunset · v1.3.0</span><span>Page I of XIII</span>
+    <span class="end">— continued on page II —</span>
+  </footer>
+</div>
+</body></html>

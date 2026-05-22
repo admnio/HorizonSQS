@@ -1,0 +1,3374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sunset · Queue Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  // Set theme before paint to prevent FOUC
+  (function() {
+    var stored = localStorage.getItem('sunset-theme') || 'system';
+    var effective = stored === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+      : stored;
+    document.documentElement.setAttribute('data-theme', effective);
+  })();
+</script>
+<style>
+
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+   ───────────────────────────────────────────────────────────── */
+
+/* DARK is the default */
+:root,
+html[data-theme="dark"] {
+  --bg: #08080b;
+  --bg-2: #0e0e12;
+  --bg-3: #14141a;
+  --bg-4: #1a1a22;
+  --card: #14141a;
+  --card-hover: #18181f;
+  --border: #23232c;
+  --border-soft: #1c1c24;
+  --border-strong: #2d2d38;
+
+  --text: #ededf2;
+  --text-2: #c5c5d0;
+  --muted: #9c9ca8;
+  --dim: #5c5c68;
+  --faint: #3c3c46;
+
+  --violet: #a78bfa;
+  --violet-2: #c4b5fd;
+  --violet-deep: #7c3aed;
+  --violet-soft: rgba(167, 139, 250, 0.12);
+  --violet-glow: rgba(167, 139, 250, 0.4);
+
+  --green: #4ade80;
+  --green-soft: rgba(74, 222, 128, 0.12);
+  --red: #f87171;
+  --red-soft: rgba(248, 113, 113, 0.12);
+  --amber: #fbbf24;
+  --amber-soft: rgba(251, 191, 36, 0.12);
+  --blue: #60a5fa;
+  --blue-soft: rgba(96, 165, 250, 0.12);
+
+  --topbar-bg: rgba(8, 8, 11, 0.85);
+
+  --bg-glow-1: rgba(167, 139, 250, 0.14);
+  --bg-glow-2: rgba(96, 165, 250, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px -4px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  --shadow-lg: 0 12px 32px -12px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  --shadow-violet: 0 4px 16px -4px rgba(124, 58, 237, 0.45), 0 1px 0 rgba(255, 255, 255, 0.18) inset;
+}
+
+/* LIGHT */
+html[data-theme="light"] {
+  --bg: #fafafa;
+  --bg-2: #f4f4f5;
+  --bg-3: #ededee;
+  --bg-4: #e4e4e7;
+  --card: #ffffff;
+  --card-hover: #fafafa;
+  --border: #d4d4d8;
+  --border-soft: #e4e4e7;
+  --border-strong: #a1a1aa;
+
+  --text: #09090b;
+  --text-2: #27272a;
+  --muted: #52525b;
+  --dim: #71717a;
+  --faint: #a1a1aa;
+
+  --violet: #7c3aed;
+  --violet-2: #6d28d9;
+  --violet-deep: #5b21b6;
+  --violet-soft: rgba(124, 58, 237, 0.08);
+  --violet-glow: rgba(124, 58, 237, 0.25);
+
+  --green: #15803d;
+  --green-soft: rgba(21, 128, 61, 0.10);
+  --red: #b91c1c;
+  --red-soft: rgba(185, 28, 28, 0.08);
+  --amber: #b45309;
+  --amber-soft: rgba(180, 83, 9, 0.10);
+  --blue: #1d4ed8;
+  --blue-soft: rgba(29, 78, 216, 0.08);
+
+  --topbar-bg: rgba(250, 250, 250, 0.85);
+
+  --bg-glow-1: rgba(124, 58, 237, 0.06);
+  --bg-glow-2: rgba(29, 78, 216, 0.03);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px -4px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+  --shadow-lg: 0 12px 32px -12px rgba(0, 0, 0, 0.12), 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+  --shadow-violet: 0 4px 16px -4px rgba(124, 58, 237, 0.35), 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+}
+
+/* prevent FOUC while JS reads the stored theme */
+html { color-scheme: dark; }
+html[data-theme="light"] { color-scheme: light; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv11' 1, 'ss01' 1;
+  min-height: 100vh;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse 100% 50% at 10% -20%, var(--bg-glow-1), transparent 50%),
+    radial-gradient(ellipse 80% 40% at 90% 110%, var(--bg-glow-2), transparent 50%);
+  background-attachment: fixed;
+}
+
+::selection { background: var(--violet-deep); color: #fff; }
+
+.mono { font-family: 'Geist Mono', ui-monospace, monospace; font-feature-settings: 'tnum' 1, 'zero' 1; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer; }
+
+/* ─────────────────────────────────────────────────────────────
+   TOP BAR
+   ───────────────────────────────────────────────────────────── */
+
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: 56px;
+  background: var(--topbar-bg);
+  backdrop-filter: blur(12px) saturate(1.4);
+  border-bottom: 1px solid var(--border-soft);
+  display: flex; align-items: center; gap: 18px;
+  padding: 0 20px;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14.5px; letter-spacing: -0.01em; }
+.brand-mark {
+  width: 24px; height: 24px; border-radius: 7px;
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
+  display: grid; place-items: center;
+  box-shadow: 0 4px 12px -2px var(--violet-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  position: relative;
+}
+.brand-mark::before {
+  content: ''; width: 9px; height: 9px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.divider { width: 1px; height: 18px; background: var(--border); }
+
+.env {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'Geist Mono', monospace; font-size: 12px; font-weight: 500;
+  color: var(--text-2);
+  padding: 4px 9px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+.env::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: 0.55; } }
+
+.crumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.crumb .sep { color: var(--faint); font-size: 11px; }
+.crumb .current { color: var(--text); font-weight: 500; }
+
+.search-wrap { margin-left: auto; }
+.search {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px;
+  width: 280px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px; color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.search:hover { border-color: var(--border-strong); }
+.search svg { width: 14px; height: 14px; color: var(--dim); }
+.search .placeholder { flex: 1; }
+.search .kbd {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  padding: 1px 5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--dim);
+}
+
+.icon-btn {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  color: var(--muted);
+  transition: background 0.12s, color 0.12s;
+}
+.icon-btn:hover { background: var(--bg-3); color: var(--text); }
+.icon-btn svg { width: 16px; height: 16px; }
+
+.avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, #fb923c 0%, #ec4899 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+.avatar::after {
+  content: ''; position: absolute; bottom: -1px; right: -1px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--bg);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   APP LAYOUT
+   ───────────────────────────────────────────────────────────── */
+
+.app {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  min-height: calc(100vh - 56px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LEFT RAIL
+   ───────────────────────────────────────────────────────────── */
+
+.rail {
+  border-right: 1px solid var(--border-soft);
+  padding: 16px 12px;
+  position: sticky;
+  top: 95px;
+  align-self: start;
+  max-height: calc(100vh - 95px);
+  overflow-y: auto;
+}
+
+.rail::-webkit-scrollbar { width: 6px; }
+.rail::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.rail-group { margin-bottom: 18px; }
+
+.rail-heading {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0 12px 8px;
+  font-weight: 500;
+}
+
+.rail a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 12px;
+  font-size: 13.5px;
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  position: relative;
+  margin-bottom: 1px;
+}
+.rail a:hover { background: var(--bg-3); color: var(--text); }
+.rail a.active {
+  background: var(--violet-soft);
+  color: var(--text);
+}
+.rail a.active svg { color: var(--violet); }
+.rail a.active::before {
+  content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 16px; background: var(--violet); border-radius: 0 2px 2px 0;
+}
+
+.rail a svg { width: 15px; height: 15px; color: var(--dim); flex-shrink: 0; transition: color 0.12s; }
+.rail a:hover svg { color: var(--muted); }
+
+.rail .badge {
+  margin-left: auto;
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  padding: 1px 7px;
+  background: var(--bg-3);
+  color: var(--muted);
+  border-radius: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.rail a.alert .badge { background: var(--red-soft); color: var(--red); }
+.rail a.alert::after {
+  content: ''; position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  width: 4px; height: 4px; background: var(--red); border-radius: 50%;
+  opacity: 0;
+}
+
+.rail-footer {
+  margin-top: 24px;
+  padding: 12px 12px 4px;
+  border-top: 1px solid var(--border-soft);
+}
+.rail-footer .version {
+  font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.rail-footer .version .dot { width: 5px; height: 5px; background: var(--green); border-radius: 50%; }
+.rail-footer .uptime {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  color: var(--dim); margin-top: 4px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MAIN
+   ───────────────────────────────────────────────────────────── */
+
+main {
+  padding: 28px 36px 80px;
+  max-width: 1480px;
+}
+
+.page { display: none; }
+.page.active {
+  display: block;
+  animation: pageIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PAGE HEADER
+   ───────────────────────────────────────────────────────────── */
+
+.page-head {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 28px;
+  display: flex; align-items: baseline; gap: 16px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.page-sub {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.page-sub::before { content: '·'; margin-right: 12px; color: var(--faint); }
+
+.page-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* ─────────────────────────────────────────────────────────────
+   BUTTONS
+   ───────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--bg-3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--card-hover); border-color: var(--border-strong); }
+.btn svg { width: 14px; height: 14px; color: var(--muted); transition: color 0.12s; }
+.btn:hover svg { color: var(--text); }
+
+.btn.primary {
+  background: var(--violet-deep);
+  color: #fff;
+  border-color: var(--violet);
+  box-shadow: var(--shadow-violet);
+}
+.btn.primary:hover { background: var(--violet); }
+.btn.primary svg { color: rgba(255, 255, 255, 0.85); }
+.btn.danger { color: var(--red); }
+.btn.danger:hover { background: var(--red-soft); border-color: var(--red); }
+.btn.danger svg { color: var(--red); }
+
+.btn.sm { padding: 4px 10px; font-size: 12px; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { background: var(--bg-3); color: var(--text); border-color: transparent; }
+
+/* ─────────────────────────────────────────────────────────────
+   STAT GRID
+   ───────────────────────────────────────────────────────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.stat:hover { border-color: var(--border); }
+
+.stat-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--muted); font-weight: 500;
+}
+.stat-label svg { width: 13px; height: 13px; color: var(--dim); }
+
+.stat-value {
+  margin-top: 10px;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.stat-value .unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 5px;
+  letter-spacing: 0;
+}
+.stat-value.red { color: var(--red); }
+.stat-value.amber { color: var(--amber); }
+
+.stat-delta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex; align-items: center; gap: 5px;
+}
+.stat-delta .arrow { font-weight: 600; }
+.stat-delta.up { color: var(--green); }
+.stat-delta.down { color: var(--red); }
+
+.stat-spark {
+  position: absolute; right: 12px; bottom: 12px;
+  width: 92px; height: 28px;
+  opacity: 0.85;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SECTION
+   ───────────────────────────────────────────────────────────── */
+
+.section { margin-top: 28px; }
+
+.section-head {
+  display: flex; align-items: baseline; gap: 12px;
+  margin-bottom: 12px;
+}
+.section-head h2 { font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em; }
+.section-head .meta { font-size: 12.5px; color: var(--muted); }
+.section-head .meta::before { content: '·'; margin-right: 8px; color: var(--faint); }
+.section-head .link {
+  margin-left: auto;
+  font-size: 12.5px; color: var(--violet); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.section-head .link:hover { color: var(--violet-2); }
+
+/* ─────────────────────────────────────────────────────────────
+   TABLE
+   ───────────────────────────────────────────────────────────── */
+
+.table {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.table table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.table th {
+  text-align: left;
+  padding: 10px 18px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.01);
+}
+.table th.r { text-align: right; }
+.table td {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text);
+  vertical-align: middle;
+}
+.table td.r { text-align: right; font-variant-numeric: tabular-nums; font-family: 'Geist Mono', monospace; font-size: 13px; }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: rgba(167, 139, 250, 0.025); }
+.table td .muted { color: var(--muted); }
+
+.q-name { font-weight: 500; letter-spacing: -0.005em; }
+.q-conn {
+  font-family: 'Geist Mono', monospace; font-size: 11.5px;
+  color: var(--dim); margin-left: 8px;
+  background: var(--bg-3); padding: 1px 6px; border-radius: 4px;
+  letter-spacing: 0.02em; vertical-align: 1px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PILLS
+   ───────────────────────────────────────────────────────────── */
+
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 9px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 999px;
+  line-height: 1.55;
+  letter-spacing: 0;
+}
+.pill .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: var(--green-soft); color: var(--green); }
+.pill.warn { background: var(--amber-soft); color: var(--amber); }
+.pill.err { background: var(--red-soft); color: var(--red); }
+.pill.info { background: var(--violet-soft); color: var(--violet); }
+.pill.blue { background: var(--blue-soft); color: var(--blue); }
+.pill.neutral { background: var(--bg-3); color: var(--muted); }
+
+/* ─────────────────────────────────────────────────────────────
+   SPARKLINES
+   ───────────────────────────────────────────────────────────── */
+
+svg.spark .area { fill: currentColor; opacity: 0.15; }
+svg.spark .line { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+svg.spark-mini {
+  display: inline-block; width: 72px; height: 18px; vertical-align: middle;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BANNERS
+   ───────────────────────────────────────────────────────────── */
+
+.banner {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  margin: 20px 0;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+.banner svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+.banner.info { border-left: 3px solid var(--violet); }
+.banner.info svg { color: var(--violet); }
+.banner.warn { border-left: 3px solid var(--amber); background: rgba(251, 191, 36, 0.04); }
+.banner.warn svg { color: var(--amber); }
+.banner code {
+  font-family: 'Geist Mono', monospace; font-size: 12px;
+  padding: 1px 6px;
+  background: var(--bg-3);
+  border-radius: 4px;
+  color: var(--violet);
+  border: 1px solid var(--border-soft);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ACTIVITY FEED
+   ───────────────────────────────────────────────────────────── */
+
+.filters { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter {
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--bg-3);
+  color: var(--muted);
+  border: 1px solid var(--border-soft);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.filter:hover { color: var(--text); border-color: var(--border); }
+.filter.active {
+  background: var(--violet-soft);
+  color: var(--violet-2);
+  border-color: rgba(167, 139, 250, 0.3);
+}
+.filters .meta { margin-left: auto; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.filters .meta .pulse { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18); animation: pulse 2s ease-in-out infinite; }
+
+.log {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.log-entry {
+  display: grid;
+  grid-template-columns: 90px 110px 1fr 64px;
+  gap: 16px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  align-items: start;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.log-entry:hover { background: rgba(167, 139, 250, 0.025); }
+.log-entry:last-child { border-bottom: none; }
+.log-entry .ts {
+  font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted);
+  padding-top: 1px;
+}
+.log-entry .ts .rel { display: block; font-size: 10.5px; color: var(--dim); margin-top: 2px; }
+.log-entry .body { color: var(--text-2); line-height: 1.5; }
+.log-entry .body .who { color: var(--text); font-weight: 500; }
+.log-entry .body .what { color: var(--violet); }
+.log-entry .body .detail { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.log-entry .body code {
+  font-family: 'Geist Mono', monospace; font-size: 11.5px;
+  color: var(--violet); background: var(--bg-3); padding: 1px 5px; border-radius: 3px;
+}
+.log-entry .id {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  text-align: right; color: var(--dim); padding-top: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MASTER-DETAIL (Failed Jobs)
+   ───────────────────────────────────────────────────────────── */
+
+.split {
+  display: grid; grid-template-columns: 340px 1fr;
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 540px;
+}
+.split-master { border-right: 1px solid var(--border-soft); display: flex; flex-direction: column; }
+.split-master .mh {
+  padding: 12px 16px;
+  font-size: 12px; color: var(--muted);
+  border-bottom: 1px solid var(--border-soft);
+  display: flex; align-items: center; gap: 8px;
+}
+.split-master .mh .ml-auto { margin-left: auto; font-size: 11px; }
+.master-list { flex: 1; overflow-y: auto; }
+.master-item {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  cursor: pointer;
+  transition: background 0.12s;
+  border-left: 2px solid transparent;
+}
+.master-item:hover { background: rgba(167, 139, 250, 0.04); }
+.master-item.active {
+  background: var(--violet-soft);
+  border-left-color: var(--violet);
+}
+.master-item .mt-who { font-weight: 500; font-size: 13px; color: var(--text); margin-bottom: 3px; }
+.master-item .mt-what {
+  color: var(--red); font-size: 11.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: 'Geist Mono', monospace; margin-bottom: 4px;
+}
+.master-item .mt-meta {
+  font-size: 11px; color: var(--muted);
+  font-family: 'Geist Mono', monospace;
+  letter-spacing: 0.02em;
+}
+
+.split-detail { padding: 24px 28px; }
+.detail-head {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 20px;
+}
+.detail-head .title-block { flex: 1; }
+.detail-head .label {
+  font-size: 11px; font-weight: 600; color: var(--violet);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-bottom: 6px;
+}
+.detail-head h3 { font-size: 20px; font-weight: 600; letter-spacing: -0.015em; }
+.detail-head .actions { display: flex; gap: 6px; }
+
+.detail-meta {
+  display: flex; gap: 18px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--muted);
+  margin-bottom: 20px;
+}
+.detail-meta .item { display: flex; align-items: center; gap: 6px; }
+.detail-meta .item .k { color: var(--dim); }
+.detail-meta .item .v { color: var(--text-2); font-family: 'Geist Mono', monospace; font-size: 12px; }
+
+.trace {
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
+  padding: 16px 18px;
+  line-height: 1.65;
+  color: var(--text-2);
+  max-height: 380px;
+  overflow: auto;
+}
+.trace .first { color: var(--red); font-weight: 500; display: block; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border-soft); }
+.trace .frame { display: block; padding-left: 20px; text-indent: -20px; }
+.trace .num { color: var(--dim); }
+.trace .path { color: var(--violet); }
+.trace .meth { color: var(--text); }
+
+/* ─────────────────────────────────────────────────────────────
+   CARDS / GRIDS
+   ───────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.card-label { font-size: 12.5px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+.card-value { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.card-foot { margin-top: 8px; font-size: 12px; color: var(--muted); }
+
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+/* ─────────────────────────────────────────────────────────────
+   BATCHES
+   ───────────────────────────────────────────────────────────── */
+
+.batch-card {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 18px 20px;
+  position: relative;
+  transition: border-color 0.15s;
+}
+.batch-card:hover { border-color: var(--border); }
+.batch-card.failing { border-left: 3px solid var(--red); }
+.batch-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.batch-name { font-weight: 500; font-size: 14.5px; letter-spacing: -0.01em; }
+.batch-name .sub { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; margin-top: 3px; font-family: 'Geist Mono', monospace; }
+.batch-counts { display: flex; gap: 14px; margin-bottom: 12px; font-size: 12.5px; }
+.batch-counts .item { display: flex; align-items: baseline; gap: 5px; }
+.batch-counts .item .l { color: var(--muted); font-size: 11.5px; }
+.batch-counts .item .v { font-family: 'Geist Mono', monospace; font-weight: 500; }
+.batch-counts .item.fail .v { color: var(--red); }
+.batch-counts .item.done .v { color: var(--green); }
+.batch-progress {
+  height: 5px;
+  background: var(--bg-3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  position: relative;
+}
+.batch-progress .bar {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: var(--violet);
+  transition: width 0.3s;
+}
+.batch-progress .bar.fail { background: var(--red); }
+.batch-progress .bar.ok { background: var(--green); }
+.batch-foot { font-size: 11.5px; color: var(--muted); font-family: 'Geist Mono', monospace; }
+
+/* ─────────────────────────────────────────────────────────────
+   HEALTH PROBES
+   ───────────────────────────────────────────────────────────── */
+
+.probe {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--green);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+.probe.warn { border-left-color: var(--amber); }
+.probe.err { border-left-color: var(--red); }
+.probe-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 4px var(--green-soft);
+  flex-shrink: 0;
+}
+.probe.warn .probe-dot { background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft); }
+.probe.err .probe-dot { background: var(--red); box-shadow: 0 0 0 4px var(--red-soft); }
+.probe-body { flex: 1; }
+.probe-name { font-weight: 500; font-size: 15px; letter-spacing: -0.01em; }
+.probe-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; font-family: 'Geist Mono', monospace; }
+.probe-stat { text-align: right; }
+.probe-stat .v { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.probe-stat .u { font-size: 11.5px; color: var(--muted); font-weight: 500; margin-left: 2px; }
+
+/* ─────────────────────────────────────────────────────────────
+   SCHEDULE TABLE
+   ───────────────────────────────────────────────────────────── */
+
+.schedule { background: var(--card); border: 1px solid var(--border-soft); border-radius: 12px; }
+.schedule .row {
+  display: grid; grid-template-columns: 1.6fr 1fr 2fr;
+  gap: 16px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  align-items: baseline;
+  font-size: 13px;
+}
+.schedule .row:last-child { border-bottom: none; }
+.schedule .cmd { font-family: 'Geist Mono', monospace; font-size: 12.5px; color: var(--violet); }
+.schedule .cad { font-size: 12.5px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.schedule .cad svg { width: 12px; height: 12px; color: var(--muted); }
+.schedule .desc { color: var(--muted); font-size: 12.5px; }
+
+/* ─────────────────────────────────────────────────────────────
+   MISC
+   ───────────────────────────────────────────────────────────── */
+
+.empty-state {
+  padding: 56px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+/* Sortable headers */
+.table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.12s;
+  white-space: nowrap;
+}
+.table th.sortable:hover { color: var(--text-2); }
+.table th.sortable::after {
+  content: '↕';
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--faint);
+  vertical-align: 0;
+  font-weight: 400;
+}
+.table th.sortable.asc::after { content: '↑'; color: var(--violet); }
+.table th.sortable.desc::after { content: '↓'; color: var(--violet); }
+.table th.sortable.asc, .table th.sortable.desc { color: var(--text); }
+
+/* Clickable rows (drill-down) */
+.table tbody tr.clickable { cursor: pointer; transition: background 0.12s; }
+.table tbody tr.clickable td:first-child {
+  border-left: 2px solid transparent;
+  padding-left: 16px;
+  transition: border-color 0.12s;
+}
+.table tbody tr.clickable:hover td:first-child { border-left-color: var(--violet); }
+.table tbody tr.clickable:hover .q-name { color: var(--violet); }
+.table tbody tr.clickable td:last-child::after {
+  content: '›';
+  position: absolute;
+  right: 14px;
+  color: var(--faint);
+  font-size: 16px;
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, transform 0.12s;
+}
+.table tbody tr.clickable:hover td:last-child::after {
+  opacity: 1;
+  color: var(--violet);
+  transform: translateX(2px);
+}
+.table tbody tr.clickable td:last-child { position: relative; padding-right: 32px; }
+
+/* Back link */
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: color 0.12s;
+  background: none; border: none; padding: 0;
+}
+.back-link:hover { color: var(--violet); }
+.back-link svg { width: 14px; height: 14px; transform: rotate(180deg); }
+
+.kicker {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--violet);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.kicker svg { width: 13px; height: 13px; }
+
+.class-name {
+  font-family: 'Geist Mono', monospace;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: var(--text);
+}
+.class-name .ns { color: var(--muted); font-weight: 500; }
+
+/* Stat grid variant for the class-detail page (6 cols) */
+.stats.cols-6 { grid-template-columns: repeat(6, 1fr); }
+.stats.cols-6 .stat-value { font-size: 24px; }
+
+/* Throughput sparkline (full-width on detail page) */
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 22px 24px 18px;
+  position: relative;
+}
+.chart-card svg.full-spark { display: block; width: 100%; height: 160px; }
+.chart-card .chart-axis {
+  display: flex; justify-content: space-between;
+  margin-top: 10px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  color: var(--dim);
+  letter-spacing: 0.02em;
+}
+
+/* Histogram */
+.hist {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 18px 22px;
+}
+.hist-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 110px;
+  gap: 18px;
+  padding: 7px 0;
+  align-items: center;
+  font-size: 12.5px;
+}
+.hist-row + .hist-row { border-top: 1px solid var(--border-soft); }
+.hist-row .bucket {
+  color: var(--muted);
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.hist-row .bar-track {
+  height: 18px;
+  background: var(--bg-3);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.hist-row .bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--violet-deep), var(--violet));
+  border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hist-row .bar-fill.danger {
+  background: linear-gradient(90deg, var(--red), #fda4af);
+}
+.hist-row .count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-family: 'Geist Mono', monospace;
+  font-size: 12.5px;
+  color: var(--text);
+}
+.hist-row .count .pct {
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: 6px;
+  font-weight: 400;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SERVICE HEALTH STRIP (sticky, under top bar)
+   ───────────────────────────────────────────────────────────── */
+
+.health-strip {
+  display: flex; align-items: center; gap: 12px;
+  padding: 7px 20px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--topbar-bg);
+  backdrop-filter: blur(12px) saturate(1.4);
+  font-size: 12px;
+  position: sticky; top: 56px; z-index: 49;
+  overflow-x: auto; white-space: nowrap;
+}
+.health-strip::-webkit-scrollbar { display: none; }
+.health-strip .label {
+  color: var(--dim);
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.health-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color 0.12s, background 0.12s;
+}
+.health-pill:hover { background: var(--card-hover); border-color: var(--border); }
+.health-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+.health-pill.warn .dot { background: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+.health-pill.err .dot { background: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.health-pill .latency { color: var(--dim); font-family: 'Geist Mono', monospace; font-size: 11px; margin-left: 2px; }
+.health-strip .summary {
+  margin-left: auto;
+  color: var(--muted);
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+}
+.health-strip .summary strong { color: var(--text); font-weight: 600; }
+
+/* ─────────────────────────────────────────────────────────────
+   COMMAND PALETTE
+   ───────────────────────────────────────────────────────────── */
+
+.palette-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: flex-start; justify-content: center;
+  padding-top: 96px;
+}
+html[data-theme="light"] .palette-backdrop { background: rgba(0, 0, 0, 0.25); }
+.palette-backdrop.open { display: flex; }
+.palette {
+  width: 620px;
+  max-width: calc(100vw - 32px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: pal-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes pal-in { from { opacity: 0; transform: scale(0.97) translateY(-10px); } }
+.palette-input {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.palette-input svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+.palette-input input {
+  flex: 1;
+  background: none; border: none; outline: none;
+  color: var(--text); font-size: 15px;
+  font-family: inherit; font-weight: 400;
+}
+.palette-input input::placeholder { color: var(--dim); }
+.palette-input .esc {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  padding: 2px 7px; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--muted); background: var(--bg);
+}
+.palette-results { max-height: 420px; overflow-y: auto; padding: 4px 0; }
+.palette-group { padding: 6px 0 8px; }
+.palette-group + .palette-group { border-top: 1px solid var(--border-soft); }
+.palette-group .gh {
+  padding: 4px 18px 6px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.palette-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 7px 18px;
+  cursor: pointer;
+  font-size: 13.5px;
+  margin: 0 6px;
+  border-radius: 6px;
+}
+.palette-item:hover, .palette-item.active { background: var(--violet-soft); }
+.palette-item .ico { width: 15px; height: 15px; color: var(--muted); flex-shrink: 0; }
+.palette-item:hover .ico, .palette-item.active .ico { color: var(--violet); }
+.palette-item .label { flex: 1; }
+.palette-item:hover .label, .palette-item.active .label { color: var(--text); }
+.palette-item .meta {
+  color: var(--dim);
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  letter-spacing: 0.02em;
+}
+.palette-foot {
+  display: flex; align-items: center; gap: 14px;
+  padding: 9px 18px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 11px;
+  color: var(--dim);
+  background: var(--bg);
+}
+.palette-foot .kbd {
+  font-family: 'Geist Mono', monospace; font-size: 10px;
+  padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg-3); color: var(--muted);
+  margin-right: 3px;
+}
+.palette-foot .pf-grp { display: inline-flex; align-items: center; gap: 4px; }
+.palette-foot .pf-grp + .pf-grp { margin-left: 8px; }
+.palette-foot .right { margin-left: auto; }
+
+/* ─────────────────────────────────────────────────────────────
+   TOASTS
+   ───────────────────────────────────────────────────────────── */
+
+.toasts {
+  position: fixed; bottom: 20px; right: 20px; z-index: 95;
+  display: flex; flex-direction: column-reverse; gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--violet);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--text);
+  min-width: 280px; max-width: 380px;
+  box-shadow: var(--shadow-md);
+  display: flex; align-items: center; gap: 11px;
+  animation: toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toast.ok { border-left-color: var(--green); }
+.toast.warn { border-left-color: var(--amber); }
+.toast.err { border-left-color: var(--red); }
+.toast.fade { animation: toast-out 0.22s forwards; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(20px); } }
+@keyframes toast-out { to { opacity: 0; transform: translateX(20px); } }
+.toast svg.icon { width: 16px; height: 16px; color: var(--violet); flex-shrink: 0; }
+.toast.ok svg.icon { color: var(--green); }
+.toast.warn svg.icon { color: var(--amber); }
+.toast.err svg.icon { color: var(--red); }
+.toast .body { flex: 1; }
+.toast .body .t-title { font-weight: 500; }
+.toast .body .t-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.toast .undo {
+  color: var(--violet); cursor: pointer; font-size: 12px; font-weight: 500;
+  background: none; border: none; padding: 2px 4px;
+}
+.toast .undo:hover { color: var(--violet-2); }
+
+/* ─────────────────────────────────────────────────────────────
+   FILTER BAR (search + chips above tables)
+   ───────────────────────────────────────────────────────────── */
+
+.filter-bar {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.search-input {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px;
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  font-size: 13px;
+  flex: 1;
+  max-width: 360px;
+  transition: border-color 0.12s, background 0.12s;
+}
+.search-input:focus-within { border-color: var(--violet); background: var(--card-hover); }
+.search-input svg { width: 14px; height: 14px; color: var(--muted); }
+.search-input input {
+  flex: 1; background: none; border: none; outline: none; color: var(--text);
+  font-family: inherit; font-size: 13px;
+}
+.search-input input::placeholder { color: var(--dim); }
+.filter-bar .filter-count {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 3px 10px;
+  background: var(--bg-3);
+  border-radius: 999px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RANGE CHIP GROUP
+   ───────────────────────────────────────────────────────────── */
+
+.range-group {
+  display: inline-flex;
+  background: var(--bg-3);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 2px;
+}
+.range-group .chip {
+  padding: 4px 11px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.12s;
+  background: transparent; border: none;
+  font-family: inherit;
+}
+.range-group .chip:hover { color: var(--text); }
+.range-group .chip.active {
+  background: var(--card);
+  color: var(--violet);
+  box-shadow: 0 1px 0 var(--border-soft), 0 0 0 1px var(--border);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BULK SELECTION (checkbox column + action bar)
+   ───────────────────────────────────────────────────────────── */
+
+.checkbox {
+  width: 15px; height: 15px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: border-color 0.12s, background 0.12s;
+  vertical-align: middle;
+}
+.checkbox:hover { border-color: var(--violet); }
+.checkbox.checked {
+  background: var(--violet);
+  border-color: var(--violet);
+}
+.checkbox.checked::after {
+  content: '';
+  position: absolute; top: 1.5px; left: 4.5px;
+  width: 4px; height: 8px;
+  border: 2px solid #fff;
+  border-top: 0; border-left: 0;
+  transform: rotate(45deg);
+}
+
+.master-item .checkbox { margin-right: 8px; }
+.master-item .top-row { display: flex; align-items: center; }
+
+.bulk-bar {
+  position: sticky; bottom: 20px;
+  margin: 12px auto 0;
+  max-width: 540px;
+  display: none;
+  align-items: center; gap: 14px;
+  padding: 10px 14px 10px 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 40;
+}
+.bulk-bar.visible { display: flex; }
+.bulk-bar .count { color: var(--violet); }
+.bulk-bar .sep { color: var(--border-strong); }
+.bulk-bar .actions { display: flex; gap: 6px; margin-left: auto; }
+
+/* ─────────────────────────────────────────────────────────────
+   TOOLTIPS
+   ───────────────────────────────────────────────────────────── */
+
+[data-tooltip] { position: relative; }
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Geist', sans-serif;
+  font-size: 11.5px;
+  font-weight: 400;
+  padding: 5px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s;
+  z-index: 60;
+  box-shadow: var(--shadow-md);
+  letter-spacing: -0.01em;
+}
+[data-tooltip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+.stat-label[data-tooltip] { cursor: help; }
+.stat-label[data-tooltip]::before {
+  content: ''; position: absolute; bottom: 100%; left: 50%; height: 0; opacity: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   KEYBOARD SHORTCUTS MODAL
+   ───────────────────────────────────────────────────────────── */
+
+.kbd-modal-backdrop {
+  position: fixed; inset: 0; z-index: 101;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center; justify-content: center;
+}
+html[data-theme="light"] .kbd-modal-backdrop { background: rgba(0, 0, 0, 0.25); }
+.kbd-modal-backdrop.open { display: flex; }
+.kbd-modal {
+  width: 540px;
+  max-width: calc(100vw - 32px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  animation: pal-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.kbd-modal .head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border-soft); }
+.kbd-modal .head h3 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.kbd-modal .head .close {
+  margin-left: auto;
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  padding: 2px 7px; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--muted); background: var(--bg);
+  cursor: pointer;
+}
+.kbd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 28px; }
+.kbd-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 13px; color: var(--text-2); }
+.kbd-row + .kbd-section { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-soft); }
+.kbd-section-label {
+  grid-column: 1 / -1;
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  color: var(--dim); letter-spacing: 0.06em; text-transform: uppercase;
+  margin-top: 6px; margin-bottom: 2px;
+}
+.kbd-section-label:first-child { margin-top: 0; }
+.kbd-keys { display: inline-flex; gap: 4px; }
+.kbd-key {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  padding: 2px 7px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg-3); color: var(--text);
+  min-width: 22px; text-align: center; font-weight: 500;
+}
+
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border-soft); margin-bottom: 20px; }
+.tab {
+  padding: 8px 14px;
+  font-size: 13px; font-weight: 500;
+  color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--violet); border-bottom-color: var(--violet); }
+.tab .count { margin-left: 6px; font-family: 'Geist Mono', monospace; font-size: 11px; padding: 1px 6px; background: var(--bg-3); border-radius: 9px; color: var(--muted); }
+.tab.active .count { background: var(--violet-soft); color: var(--violet); }
+
+.callout {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--violet);
+  border-radius: 10px;
+  padding: 18px 20px;
+  font-size: 13.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin: 20px 0;
+}
+.callout code {
+  font-family: 'Geist Mono', monospace; font-size: 12.5px;
+  padding: 1px 6px; background: var(--bg-3); border-radius: 4px;
+  color: var(--violet); border: 1px solid var(--border-soft);
+}
+
+.kpi-row { display: flex; gap: 18px; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.kpi-row .k { color: var(--text); font-weight: 500; }
+
+</style>
+</head>
+<body>
+
+<!-- ─────────── SVG icon definitions ─────────── -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H10v7H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 16l4-4 4 4 5-5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.41 0Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5.5-9 5.5-9-5.5L12 2Zm0 11 9-5.5M3 7.5l9 5.5m-9 4.5 9 5.5 9-5.5m-18-4 9 5.5 9-5.5"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01M6 17h.01"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14 4 6m0 12a8 8 0 1 1 16 0"/></symbol>
+  <symbol id="i-hash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16m0 5v-5h5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3 14 9-14 9V3Z"/></symbol>
+  <symbol id="i-retry" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v5h-5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 2v6l-2 4h10l-2-4V2h-6Z"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a1.9 1.9 0 0 1-2.8 0L2 12V2h10l8.6 8.6a1.9 1.9 0 0 1 0 2.8Z"/><circle cx="7" cy="7" r="1"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+</defs></svg>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     TOP BAR
+     ═══════════════════════════════════════════════════════════════════════ -->
+<header class="topbar">
+  <a class="brand">
+    <div class="brand-mark"></div>
+    Sunset
+  </a>
+  <span class="divider"></span>
+  <div class="crumb">
+    <span class="env">prod-east</span>
+    <span class="sep">/</span>
+    <span class="current" id="crumb-page">Overview</span>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search">
+      <svg><use href="#i-search"/></svg>
+      <span class="placeholder">Search queues, jobs, supervisors…</span>
+      <span class="kbd">⌘K</span>
+    </div>
+  </div>
+
+  <button class="icon-btn" id="theme-toggle" aria-label="Switch theme"><svg id="theme-icon"><use href="#i-monitor"/></svg></button>
+  <button class="icon-btn" id="help-btn" data-tooltip="Shortcuts (?)"><svg><use href="#i-info"/></svg></button>
+  <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+  <button class="icon-btn"><svg><use href="#i-settings"/></svg></button>
+  <div class="avatar" title="jimmy@masonworkforce.com"></div>
+</header>
+
+<!-- Service health strip — always visible -->
+<div class="health-strip">
+  <span class="label">Probes</span>
+  <span class="health-pill"><span class="dot"></span>redis<span class="latency">2ms</span></span>
+  <span class="health-pill"><span class="dot"></span>sqs<span class="latency">38ms</span></span>
+  <span class="health-pill"><span class="dot"></span>rabbitmq<span class="latency">11ms</span></span>
+  <span class="health-pill"><span class="dot"></span>scheduler<span class="latency">last 04:22</span></span>
+  <span class="health-pill warn"><span class="dot"></span>worker 91824<span class="latency">112MB / 128MB</span></span>
+  <span class="summary"><strong>28</strong> workers · <strong>3,847</strong> pending · <strong>1.2k</strong>/min · <strong style="color:var(--red)">5</strong> failed (1h)</span>
+</div>
+
+<div class="app">
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     LEFT RAIL
+     ═══════════════════════════════════════════════════════════════════════ -->
+<nav class="rail">
+  <div class="rail-group">
+    <div class="rail-heading">Overview</div>
+    <a data-page="overview"><svg><use href="#i-home"/></svg>Home</a>
+    <a data-page="activity" class="alert"><svg><use href="#i-activity"/></svg>Activity<span class="badge">12</span></a>
+    <a data-page="workload"><svg><use href="#i-list"/></svg>Workload</a>
+    <a data-page="metrics"><svg><use href="#i-chart"/></svg>Metrics</a>
+  </div>
+  <div class="rail-group">
+    <div class="rail-heading">Jobs</div>
+    <a data-page="recent"><svg><use href="#i-play"/></svg>Recent</a>
+    <a data-page="failed" class="alert"><svg><use href="#i-alert"/></svg>Failed<span class="badge">5</span></a>
+    <a data-page="pending"><svg><use href="#i-clock"/></svg>Pending</a>
+    <a data-page="completed"><svg><use href="#i-check"/></svg>Completed</a>
+    <a data-page="batches"><svg><use href="#i-layers"/></svg>Batches</a>
+  </div>
+  <div class="rail-group">
+    <div class="rail-heading">Operations</div>
+    <a data-page="supervisors"><svg><use href="#i-server"/></svg>Supervisors</a>
+    <a data-page="rate-limits"><svg><use href="#i-gauge"/></svg>Rate limits</a>
+    <a data-page="monitoring"><svg><use href="#i-hash"/></svg>Monitoring</a>
+    <a data-page="health"><svg><use href="#i-heart"/></svg>Health</a>
+  </div>
+
+  <div class="rail-footer">
+    <div class="version"><span class="dot"></span>Sunset v1.3.0</div>
+    <div class="uptime">8d 14h uptime · 04:22 UTC</div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MAIN
+     ═══════════════════════════════════════════════════════════════════════ -->
+<main>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     OVERVIEW
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="overview" data-title="Overview">
+  <div class="page-head">
+    <h1 class="page-title">Overview</h1>
+    <span class="page-sub">real-time queue observability</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-refresh"/></svg>Refresh</button>
+      <button class="btn primary"><svg><use href="#i-plus"/></svg>New limit</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label" data-tooltip="Total jobs waiting across all queues, all transports"><svg><use href="#i-list"/></svg>Queue depth</div>
+      <div class="stat-value">3,847</div>
+      <div class="stat-delta down"><svg style="width:12px;height:12px"><use href="#i-arrow-down"/></svg> 412 vs last hour</div>
+      <svg class="spark" viewBox="0 0 92 28" preserveAspectRatio="none" style="color: var(--violet); position: absolute; right: 12px; bottom: 12px; width: 92px; height: 28px;">
+        <path class="area" d="M0,10 L10,12 L20,16 L30,14 L40,18 L50,20 L60,22 L70,24 L80,25 L92,26 L92,28 L0,28 Z"/>
+        <path class="line" d="M0,10 L10,12 L20,16 L30,14 L40,18 L50,20 L60,22 L70,24 L80,25 L92,26"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label" data-tooltip="Active supervisor processes (managing workers)"><svg><use href="#i-server"/></svg>Supervisors</div>
+      <div class="stat-value">4 <span class="unit">/ 4 active</span></div>
+      <div class="stat-delta">28 of 46 processes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label" data-tooltip="Jobs completed (or failed) per minute, rolling avg"><svg><use href="#i-zap"/></svg>Throughput</div>
+      <div class="stat-value">1.2k <span class="unit">jobs/min</span></div>
+      <div class="stat-delta up"><svg style="width:12px;height:12px"><use href="#i-arrow-up"/></svg> 8.2% vs last hour</div>
+      <svg class="spark" viewBox="0 0 92 28" preserveAspectRatio="none" style="color: var(--green); position: absolute; right: 12px; bottom: 12px; width: 92px; height: 28px;">
+        <path class="line" d="M0,22 L10,20 L20,16 L30,18 L40,12 L50,14 L60,9 L70,7 L80,5 L92,3"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label" data-tooltip="(failed / total) × 100, last 1 hour"><svg><use href="#i-alert"/></svg>Failure rate</div>
+      <div class="stat-value red">0.84% </div>
+      <div class="stat-delta">5 failures in last hour</div>
+      <svg class="spark" viewBox="0 0 92 28" preserveAspectRatio="none" style="color: var(--red); position: absolute; right: 12px; bottom: 12px; width: 92px; height: 28px;">
+        <path class="line" d="M0,18 L10,20 L20,16 L30,22 L40,14 L50,20 L60,10 L70,16 L80,8 L92,4"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>Workload</h2><span class="meta">5 queues, 3 transports</span>
+      <a class="link">View all <svg style="width:12px;height:12px"><use href="#i-arrow-right"/></svg></a>
+    </div>
+    <div class="table"><table>
+      <thead><tr><th>Queue</th><th class="r">Length</th><th class="r">Workers</th><th class="r">Wait</th><th class="r">Throughput</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td><span class="q-name">emails</span><span class="q-conn">redis</span></td><td class="r">128</td><td class="r">8</td><td class="r">2s</td><td class="r">412/min</td><td><span class="pill ok"><span class="dot"></span>Running</span></td></tr>
+        <tr><td><span class="q-name">webhooks</span><span class="q-conn">sqs</span></td><td class="r">2,431</td><td class="r">16</td><td class="r">14s</td><td class="r">605/min</td><td><span class="pill ok"><span class="dot"></span>Running</span></td></tr>
+        <tr><td><span class="q-name">indexing</span><span class="q-conn">redis</span></td><td class="r">901</td><td class="r">4</td><td class="r">48s</td><td class="r">196/min</td><td><span class="pill warn"><span class="dot"></span>Backlog</span></td></tr>
+        <tr><td><span class="q-name">geocode</span><span class="q-conn">redis</span></td><td class="r">312</td><td class="r">0</td><td class="r"><span class="muted">—</span></td><td class="r"><span class="muted">—</span></td><td><span class="pill warn"><span class="dot"></span>Paused</span></td></tr>
+        <tr><td><span class="q-name">nightly-rollup</span><span class="q-conn">rabbitmq</span></td><td class="r">75</td><td class="r">2</td><td class="r">5s</td><td class="r">34/min</td><td><span class="pill ok"><span class="dot"></span>Running</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Recent activity</h2><span class="meta">live</span><a class="link">Open Activity <svg style="width:12px;height:12px"><use href="#i-arrow-right"/></svg></a></div>
+    <div class="log">
+      <div class="log-entry"><span class="ts mono">04:18:42<span class="rel">3m ago</span></span><span><span class="pill ok"><span class="dot"></span>Deployed</span></span><span class="body"><span class="who">master-1</span> · <span class="what">supervisors loaded from sunset.environments[]</span></span><span class="id">48201</span></div>
+      <div class="log-entry"><span class="ts mono">04:17:11<span class="rel">5m ago</span></span><span><span class="pill warn"><span class="dot"></span>Long wait</span></span><span class="body"><span class="who">sqs:webhooks</span> idle <span class="what">48s</span> over wait threshold</span><span class="id">48198</span></div>
+      <div class="log-entry"><span class="ts mono">04:15:08<span class="rel">7m ago</span></span><span><span class="pill info"><span class="dot"></span>Paused</span></span><span class="body"><span class="who">redis:geocode</span> · <span class="what">paused by dashboard</span></span><span class="id">48192</span></div>
+      <div class="log-entry"><span class="ts mono">04:13:01<span class="rel">9m ago</span></span><span><span class="pill err"><span class="dot"></span>Failed</span></span><span class="body"><span class="who">App\Jobs\IndexProduct</span> · <span class="what">Elastic\ClientResponseException 429</span></span><span class="id">48184</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     ACTIVITY
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="activity" data-title="Activity">
+  <div class="page-head">
+    <h1 class="page-title">Activity</h1>
+    <span class="page-sub">live event stream</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-pause"/></svg>Pause</button>
+      <button class="btn"><svg><use href="#i-refresh"/></svg>Refresh</button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-input">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="Filter events by class, queue, exception…"/>
+    </div>
+    <div class="range-group">
+      <button class="chip">10m</button>
+      <button class="chip active">1h</button>
+      <button class="chip">6h</button>
+      <button class="chip">24h</button>
+    </div>
+    <span class="filter-count">12 entries</span>
+  </div>
+
+  <div class="filters">
+    <button class="filter active">Errors</button>
+    <button class="filter">All</button>
+    <button class="filter">Lifecycle</button>
+    <button class="filter">Supervisor</button>
+    <button class="filter">Rate limit</button>
+    <span class="meta"><span class="pulse"></span> live · auto-refresh 3s</span>
+  </div>
+
+  <div class="log">
+    <div class="log-entry">
+      <span class="ts mono">04:22:18<span class="rel">14s ago</span></span>
+      <span><span class="pill err"><span class="dot"></span>Failed</span></span>
+      <span class="body">
+        <span class="who">App\Jobs\SendWelcomeEmail</span> on <span class="what">redis:emails</span>
+        <span class="detail"><span style="color:var(--red)">Symfony\Mailer\TransportException</span> — Connection timed out after 30s</span>
+      </span>
+      <span class="id">48211</span>
+    </div>
+    <div class="log-entry">
+      <span class="ts mono">04:22:09<span class="rel">23s ago</span></span>
+      <span><span class="pill warn"><span class="dot"></span>Rate limited</span></span>
+      <span class="body">
+        <span class="who">App\Jobs\GeocodeAddress</span> on <span class="what">redis:geocode</span>
+        <span class="detail">hit <code>gmaps</code> · strategy release-computed · retry +4s</span>
+      </span>
+      <span class="id">48210</span>
+    </div>
+    <div class="log-entry">
+      <span class="ts mono">04:21:42<span class="rel">56s ago</span></span>
+      <span><span class="pill info"><span class="dot"></span>Paused</span></span>
+      <span class="body">
+        <span class="who">redis:geocode</span> — queue paused by <span class="what">dashboard</span>
+        <span class="detail">8 workers will stop popping on next loop iteration</span>
+      </span>
+      <span class="id">48207</span>
+    </div>
+    <div class="log-entry">
+      <span class="ts mono">04:21:31<span class="rel">1m ago</span></span>
+      <span><span class="pill err"><span class="dot"></span>Launch fail</span></span>
+      <span class="body">
+        <span class="who">master-1:webhooks</span> — failed to launch pid <span class="what">91823</span>
+        <span class="detail mono">php artisan sunset:worker redis --name=default --supervisor=master-1:webhooks</span>
+      </span>
+      <span class="id">48205</span>
+    </div>
+    <div class="log-entry">
+      <span class="ts mono">04:21:14<span class="rel">1m ago</span></span>
+      <span><span class="pill warn"><span class="dot"></span>Restart</span></span>
+      <span class="body">
+        Worker <span class="who">pid 91820</span> · process restarting
+        <span class="detail">exit code 137 · likely memory limit (128MB)</span>
+      </span>
+      <span class="id">48201</span>
+    </div>
+    <div class="log-entry">
+      <span class="ts mono">04:20:58<span class="rel">1m ago</span></span>
+      <span><span class="pill warn"><span class="dot"></span>Long wait</span></span>
+      <span class="body">
+        <span class="who">sqs:webhooks</span> idle <span class="what">48s</span> over wait threshold
+        <span class="detail">scaler will add 2 workers</span>
+      </span>
+      <span class="id">48198</span>
+    </div>
+    <div class="log-entry">
+      <span class="ts mono">04:20:32<span class="rel">2m ago</span></span>
+      <span><span class="pill err"><span class="dot"></span>Failed</span></span>
+      <span class="body">
+        <span class="who">App\Jobs\IndexProduct</span> on <span class="what">redis:indexing</span>
+        <span class="detail"><span style="color:var(--red)">Elastic\ClientResponseException</span> — 429 Too Many Requests · 3/3 attempts</span>
+      </span>
+      <span class="id">48195</span>
+    </div>
+    <div class="log-entry">
+      <span class="ts mono">04:18:42<span class="rel">3m ago</span></span>
+      <span><span class="pill ok"><span class="dot"></span>Deployed</span></span>
+      <span class="body">
+        <span class="who">master-1</span> · supervisors loaded from <span class="what">sunset.environments[]</span>
+      </span>
+      <span class="id">48201</span>
+    </div>
+  </div>
+
+  <div class="callout">
+    Public events <code>QueuePaused</code>, <code>QueueResumed</code>, and <code>ActivityRecorded</code>
+    let you forward this stream to Slack, your audit log, or Datadog — subscribe in any service provider.
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     WORKLOAD
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="workload" data-title="Workload">
+  <div class="page-head">
+    <h1 class="page-title">Workload</h1>
+    <span class="page-sub">5 queues across 3 transports</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-refresh"/></svg>Refresh</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label" data-tooltip="Sum of pending jobs across all queues">Total pending</div>
+      <div class="stat-value">3,847</div>
+      <div class="stat-delta down"><svg style="width:12px;height:12px"><use href="#i-arrow-down"/></svg> 412 vs last hour</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label" data-tooltip="Workers actively popping jobs across all queues">Active workers</div>
+      <div class="stat-value">28 <span class="unit">/ 46</span></div>
+      <div class="stat-delta">61% utilization</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label" data-tooltip="Length-weighted average wait across all queues">Weighted wait</div>
+      <div class="stat-value">22<span class="unit">s</span></div>
+      <div class="stat-delta">↗ from 18s</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label" data-tooltip="Approximate time to drain all queues at current throughput">ETA to drain</div>
+      <div class="stat-value">3.1<span class="unit">m</span></div>
+      <div class="stat-delta">at 1.2k/min</div>
+    </div>
+  </div>
+
+  <div class="section-head" style="margin-top: 26px;">
+    <h2>Queues</h2><span class="meta">click pause to halt without restarting workers</span>
+  </div>
+  <div class="table"><table>
+    <thead><tr><th>Queue</th><th class="r">Length</th><th class="r">Workers</th><th class="r">Wait</th><th class="r">Throughput</th><th>State</th><th style="text-align:right;">Actions</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="q-name">emails</span><span class="q-conn">redis</span></td>
+        <td class="r">128</td><td class="r">8</td><td class="r">2s</td><td class="r">412/min</td>
+        <td><span class="pill ok"><span class="dot"></span>Running</span></td>
+        <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pause"/></svg>Pause</button></td>
+      </tr>
+      <tr>
+        <td><span class="q-name">webhooks</span><span class="q-conn">sqs</span></td>
+        <td class="r">2,431</td><td class="r">16</td><td class="r">14s</td><td class="r">605/min</td>
+        <td><span class="pill ok"><span class="dot"></span>Running</span></td>
+        <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pause"/></svg>Pause</button></td>
+      </tr>
+      <tr>
+        <td><span class="q-name">indexing</span><span class="q-conn">redis</span></td>
+        <td class="r">901</td><td class="r">4</td><td class="r">48s</td><td class="r">196/min</td>
+        <td><span class="pill warn"><span class="dot"></span>Backlog</span></td>
+        <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pause"/></svg>Pause</button></td>
+      </tr>
+      <tr>
+        <td><span class="q-name">geocode</span><span class="q-conn">redis</span></td>
+        <td class="r">312</td><td class="r">0</td><td class="r"><span class="muted">—</span></td><td class="r"><span class="muted">—</span></td>
+        <td><span class="pill warn"><span class="dot"></span>Paused</span></td>
+        <td style="text-align:right;"><button class="btn sm primary"><svg><use href="#i-play"/></svg>Resume</button></td>
+      </tr>
+      <tr>
+        <td><span class="q-name">nightly-rollup</span><span class="q-conn">rabbitmq</span></td>
+        <td class="r">75</td><td class="r">2</td><td class="r">5s</td><td class="r">34/min</td>
+        <td><span class="pill ok"><span class="dot"></span>Running</span></td>
+        <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pause"/></svg>Pause</button></td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="banner info">
+    <svg><use href="#i-info"/></svg>
+    <div>
+      Pausing a queue is a soft signal — workers stop popping on their next loop iteration (≤ worker sleep, default 3s).
+      Producers can still enqueue. The action fires <code>QueuePaused</code> with <code>actor=dashboard</code> and shows up in the activity log.
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     METRICS
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="metrics" data-title="Metrics">
+  <div class="page-head">
+    <h1 class="page-title">Metrics</h1>
+    <span class="page-sub">throughput · latency · failures</span>
+    <div class="page-actions">
+      <div class="range-group">
+        <button class="chip">15m</button>
+        <button class="chip active">1h</button>
+        <button class="chip">6h</button>
+        <button class="chip">24h</button>
+        <button class="chip">7d</button>
+      </div>
+      <button class="btn"><svg><use href="#i-refresh"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label"><svg><use href="#i-zap"/></svg>Jobs / minute</div>
+      <div class="stat-value">1,247</div>
+      <div class="stat-delta up"><svg style="width:12px;height:12px"><use href="#i-arrow-up"/></svg> 8.2% vs last hour</div>
+      <svg class="spark" viewBox="0 0 92 28" preserveAspectRatio="none" style="color: var(--violet); position: absolute; right: 12px; bottom: 12px; width: 92px; height: 28px;">
+        <path class="area" d="M0,18 L10,16 L20,17 L30,12 L40,14 L50,9 L60,10 L70,5 L80,8 L92,4 L92,28 L0,28 Z"/>
+        <path class="line" d="M0,18 L10,16 L20,17 L30,12 L40,14 L50,9 L60,10 L70,5 L80,8 L92,4"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label"><svg><use href="#i-chart"/></svg>Jobs / hour</div>
+      <div class="stat-value">74.8k</div>
+      <div class="stat-delta">peak 92k at 02:00</div>
+      <svg class="spark" viewBox="0 0 92 28" preserveAspectRatio="none" style="color: var(--blue); position: absolute; right: 12px; bottom: 12px; width: 92px; height: 28px;">
+        <path class="line" d="M0,15 L10,14 L20,17 L30,11 L40,8 L50,7 L60,11 L70,6 L80,9 L92,11"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label"><svg><use href="#i-clock"/></svg>Avg runtime</div>
+      <div class="stat-value">218<span class="unit">ms</span></div>
+      <div class="stat-delta">p99 1.2s</div>
+      <svg class="spark" viewBox="0 0 92 28" preserveAspectRatio="none" style="color: var(--amber); position: absolute; right: 12px; bottom: 12px; width: 92px; height: 28px;">
+        <path class="line" d="M0,10 L10,12 L20,8 L30,10 L40,14 L50,9 L60,12 L70,8 L80,11 L92,9"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label"><svg><use href="#i-alert"/></svg>Failure rate</div>
+      <div class="stat-value red">0.84<span class="unit" style="color:var(--red);opacity:0.7">%</span></div>
+      <div class="stat-delta">5 in last hour</div>
+      <svg class="spark" viewBox="0 0 92 28" preserveAspectRatio="none" style="color: var(--red); position: absolute; right: 12px; bottom: 12px; width: 92px; height: 28px;">
+        <path class="line" d="M0,22 L10,24 L20,20 L30,26 L40,18 L50,22 L60,14 L70,18 L80,12 L92,6"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>Throughput by queue</h2><span class="meta">last 60 minutes · 5 queues</span>
+    </div>
+    <div class="table"><table>
+      <thead><tr>
+        <th class="sortable" data-sort="text">Queue</th>
+        <th class="r sortable desc" data-sort="num">Jobs/min</th>
+        <th class="r sortable" data-sort="num">Avg (ms)</th>
+        <th class="r sortable" data-sort="num">p99 (ms)</th>
+        <th class="r sortable" data-sort="num">Failures</th>
+        <th>Trend</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="q-name">webhooks</span><span class="q-conn">sqs</span></td>
+          <td class="r">605</td><td class="r">147</td><td class="r">812</td><td class="r">2</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,12 L14,10 L28,11 L42,7 L56,9 L72,5"/></svg></td>
+        </tr>
+        <tr>
+          <td><span class="q-name">emails</span><span class="q-conn">redis</span></td>
+          <td class="r">412</td><td class="r">91</td><td class="r">340</td><td class="r">1</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,10 L14,8 L28,6 L42,9 L56,4 L72,5"/></svg></td>
+        </tr>
+        <tr>
+          <td><span class="q-name">indexing</span><span class="q-conn">redis</span></td>
+          <td class="r">196</td><td class="r">812</td><td class="r">4,210</td><td class="r" style="color:var(--red)">2</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--amber)"><path class="line" d="M0,8 L14,11 L28,9 L42,12 L56,10 L72,8"/></svg></td>
+        </tr>
+        <tr>
+          <td><span class="q-name">nightly-rollup</span><span class="q-conn">rabbitmq</span></td>
+          <td class="r">34</td><td class="r">1,418</td><td class="r">8,400</td><td class="r">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,7 L14,10 L28,6 L42,11 L56,7 L72,9"/></svg></td>
+        </tr>
+        <tr>
+          <td><span class="q-name">geocode</span><span class="q-conn">redis</span></td>
+          <td class="r">0</td><td class="r"><span class="muted">—</span></td><td class="r"><span class="muted">—</span></td><td class="r">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--muted)"><path class="line" d="M0,9 L14,9 L28,9 L42,9 L56,9 L72,9" style="stroke-dasharray:2 2"/></svg></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>Throughput by job class</h2><span class="meta">last 60 minutes · 11 classes · click a row to drill in</span>
+    </div>
+    <div class="table"><table>
+      <thead><tr>
+        <th class="sortable" data-sort="text">Job class</th>
+        <th>Queue</th>
+        <th class="r sortable desc" data-sort="num">Jobs/min</th>
+        <th class="r sortable" data-sort="num">Avg (ms)</th>
+        <th class="r sortable" data-sort="num">p99 (ms)</th>
+        <th class="r sortable" data-sort="num">Failures</th>
+        <th>Trend</th>
+      </tr></thead>
+      <tbody>
+        <tr class="clickable" data-class="App\Jobs\NotifySlack">
+          <td><span class="q-name">App\Jobs\NotifySlack</span></td>
+          <td><span class="pill neutral">webhooks</span></td>
+          <td class="r">405</td><td class="r">147</td><td class="r">812</td><td class="r">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,11 L14,9 L28,12 L42,7 L56,9 L72,5"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\SendWelcomeEmail">
+          <td><span class="q-name">App\Jobs\SendWelcomeEmail</span></td>
+          <td><span class="pill neutral">emails</span></td>
+          <td class="r">218</td><td class="r">91</td><td class="r">340</td><td class="r" style="color:var(--red)">1</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,9 L14,7 L28,8 L42,5 L56,7 L72,4"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\RetryWebhook">
+          <td><span class="q-name">App\Jobs\RetryWebhook</span></td>
+          <td><span class="pill neutral">webhooks</span></td>
+          <td class="r">200</td><td class="r">94</td><td class="r">280</td><td class="r">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,10 L14,8 L28,9 L42,6 L56,7 L72,8"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\IndexProduct">
+          <td><span class="q-name">App\Jobs\IndexProduct</span></td>
+          <td><span class="pill neutral">indexing</span></td>
+          <td class="r">196</td><td class="r">812</td><td class="r">4,210</td><td class="r" style="color:var(--red)">2</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--amber)"><path class="line" d="M0,8 L14,11 L28,9 L42,12 L56,10 L72,8"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\SendDigest">
+          <td><span class="q-name">App\Jobs\SendDigest</span></td>
+          <td><span class="pill neutral">emails</span></td>
+          <td class="r">194</td><td class="r">112</td><td class="r">410</td><td class="r">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,11 L14,9 L28,7 L42,8 L56,5 L72,6"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\RefreshAnalytics">
+          <td><span class="q-name">App\Jobs\RefreshAnalytics</span></td>
+          <td><span class="pill neutral">analytics</span></td>
+          <td class="r">88</td><td class="r">2,108</td><td class="r">8,400</td><td class="r">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,7 L14,8 L28,5 L42,9 L56,4 L72,6"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\GenerateThumbnail">
+          <td><span class="q-name">App\Jobs\GenerateThumbnail</span></td>
+          <td><span class="pill neutral">media</span></td>
+          <td class="r">52</td><td class="r">1,212</td><td class="r">4,800</td><td class="r" style="color:var(--red)">1</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,9 L14,12 L28,8 L42,11 L56,7 L72,9"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\ChargeSubscription">
+          <td><span class="q-name">App\Jobs\ChargeSubscription</span></td>
+          <td><span class="pill neutral">billing</span></td>
+          <td class="r">45</td><td class="r">488</td><td class="r">2,100</td><td class="r" style="color:var(--red)">1</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,10 L14,7 L28,11 L42,8 L56,9 L72,7"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\GenerateInvoicePdf">
+          <td><span class="q-name">App\Jobs\GenerateInvoicePdf</span></td>
+          <td><span class="pill neutral">nightly-rollup</span></td>
+          <td class="r">34</td><td class="r">8,418</td><td class="r">12,000</td><td class="r">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,8 L14,11 L28,7 L42,12 L56,8 L72,10"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\GeocodeAddress">
+          <td><span class="q-name">App\Jobs\GeocodeAddress</span></td>
+          <td><span class="pill neutral">geocode</span> <span class="pill warn" style="margin-left:4px"><span class="dot"></span>limited</span></td>
+          <td class="r">28</td><td class="r">280</td><td class="r">1,400</td><td class="r">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--amber)"><path class="line" d="M0,11 L14,8 L28,12 L42,9 L56,11 L72,8"/></svg></td>
+        </tr>
+        <tr class="clickable" data-class="App\Jobs\SyncShopifyOrders">
+          <td><span class="q-name">App\Jobs\SyncShopifyOrders</span></td>
+          <td><span class="pill neutral">webhooks</span></td>
+          <td class="r">18</td><td class="r">1,812</td><td class="r">6,200</td><td class="r">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,9 L14,11 L28,8 L42,10 L56,7 L72,9"/></svg></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="callout">
+    Per-class metrics are recorded under <code>sunset:metrics:job:{class}</code> Redis hashes,
+    trimmed to the last hour by default. Throughput and runtimes are tracked separately from per-queue series,
+    so a job class that runs on multiple queues shows its true aggregate here.
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     CLASS DETAIL (reached via drill-down from Metrics)
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="class-detail" data-title="Job class">
+  <button class="back-link" onclick="nav('metrics')">
+    <svg><use href="#i-arrow-right"/></svg>
+    Back to Metrics
+  </button>
+
+  <div class="page-head">
+    <div>
+      <div class="kicker"><svg><use href="#i-zap"/></svg>Job class</div>
+      <h1 class="class-name" id="class-detail-name">App\Jobs\IndexProduct</h1>
+    </div>
+    <span class="page-sub" style="margin-left:auto;">last 60 minutes</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-alert"/></svg>View failures (2)</button>
+      <button class="btn"><svg><use href="#i-refresh"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stats cols-6">
+    <div class="stat">
+      <div class="stat-label">Runs / 1h</div>
+      <div class="stat-value">11,760</div>
+      <div class="stat-delta up"><svg style="width:11px;height:11px"><use href="#i-arrow-up"/></svg> 196/min avg</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg</div>
+      <div class="stat-value">812<span class="unit">ms</span></div>
+      <div class="stat-delta">↗ 12% vs 1h ago</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">p50</div>
+      <div class="stat-value">240<span class="unit">ms</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">p95</div>
+      <div class="stat-value">2,800<span class="unit">ms</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">p99</div>
+      <div class="stat-value amber">4,210<span class="unit">ms</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Failure rate</div>
+      <div class="stat-value red">0.017<span class="unit">%</span></div>
+      <div class="stat-delta">2 of 11,760</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Throughput</h2><span class="meta">jobs/min · last 60 min</span></div>
+    <div class="chart-card">
+      <svg class="full-spark" viewBox="0 0 800 160" preserveAspectRatio="none" aria-label="Throughput chart">
+        <defs>
+          <linearGradient id="violet-fade" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#a78bfa" stop-opacity="0.4"/>
+            <stop offset="1" stop-color="#a78bfa" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- gridlines -->
+        <g stroke="currentColor" stroke-width="0.5" opacity="0.08">
+          <line x1="0" x2="800" y1="40" y2="40"/>
+          <line x1="0" x2="800" y1="80" y2="80"/>
+          <line x1="0" x2="800" y1="120" y2="120"/>
+        </g>
+        <!-- area + line -->
+        <path d="M0,108 L40,98 L80,112 L120,84 L160,94 L200,78 L240,86 L280,72 L320,66 L360,76 L400,54 L440,62 L480,48 L520,68 L560,42 L600,58 L640,38 L680,52 L720,32 L760,46 L800,28 L800,160 L0,160 Z" fill="url(#violet-fade)"/>
+        <path d="M0,108 L40,98 L80,112 L120,84 L160,94 L200,78 L240,86 L280,72 L320,66 L360,76 L400,54 L440,62 L480,48 L520,68 L560,42 L600,58 L640,38 L680,52 L720,32 L760,46 L800,28" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- p99 marker (the failure spike) -->
+        <circle cx="640" cy="38" r="3" fill="#f87171"/>
+        <text x="650" y="32" fill="#f87171" font-family="Geist Mono" font-size="10">429 fail</text>
+      </svg>
+      <div class="chart-axis">
+        <span>03:22</span>
+        <span>03:32</span>
+        <span>03:42</span>
+        <span>03:52</span>
+        <span>04:02</span>
+        <span>04:12</span>
+        <span>04:22 now</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Runtime distribution</h2><span class="meta">11,760 runs · bucketed</span></div>
+    <div class="hist">
+      <div class="hist-row">
+        <span class="bucket">0–50 ms</span>
+        <div class="bar-track"><div class="bar-fill" style="width: 12%"></div></div>
+        <span class="count">1,420 <span class="pct">12%</span></span>
+      </div>
+      <div class="hist-row">
+        <span class="bucket">50–250 ms</span>
+        <div class="bar-track"><div class="bar-fill" style="width: 68%"></div></div>
+        <span class="count">7,990 <span class="pct">68%</span></span>
+      </div>
+      <div class="hist-row">
+        <span class="bucket">250–500 ms</span>
+        <div class="bar-track"><div class="bar-fill" style="width: 14%"></div></div>
+        <span class="count">1,650 <span class="pct">14%</span></span>
+      </div>
+      <div class="hist-row">
+        <span class="bucket">500 ms–1 s</span>
+        <div class="bar-track"><div class="bar-fill" style="width: 4%"></div></div>
+        <span class="count">472 <span class="pct">4%</span></span>
+      </div>
+      <div class="hist-row">
+        <span class="bucket">1–5 s</span>
+        <div class="bar-track"><div class="bar-fill" style="width: 1.8%"></div></div>
+        <span class="count">214 <span class="pct">1.8%</span></span>
+      </div>
+      <div class="hist-row">
+        <span class="bucket">5 s+</span>
+        <div class="bar-track"><div class="bar-fill danger" style="width: 0.12%; min-width: 4px;"></div></div>
+        <span class="count">14 <span class="pct">0.1%</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Recent runs</h2><span class="meta">last 12 invocations</span></div>
+    <div class="table"><table>
+      <thead><tr>
+        <th class="r">At</th>
+        <th>Queue</th>
+        <th class="r">Runtime</th>
+        <th>Status</th>
+        <th class="r">Attempt</th>
+        <th class="r">Worker pid</th>
+        <th>Tags</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="r">04:22:08</td><td><span class="pill neutral">indexing</span></td><td class="r">412 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91824</td><td><span class="pill neutral" style="font-size:10.5px;">product:91823</span></td></tr>
+        <tr><td class="r">04:22:01</td><td><span class="pill neutral">indexing</span></td><td class="r">1,218 ms</td><td><span class="pill err"><span class="dot"></span>Failed</span></td><td class="r">3 / 3</td><td class="r">91824</td><td><span class="pill neutral" style="font-size:10.5px;">product:91823</span></td></tr>
+        <tr><td class="r">04:21:54</td><td><span class="pill neutral">indexing</span></td><td class="r">218 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91825</td><td><span class="pill neutral" style="font-size:10.5px;">tenant:acme</span></td></tr>
+        <tr><td class="r">04:21:42</td><td><span class="pill neutral">indexing</span></td><td class="r">1,184 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">2</td><td class="r">91824</td><td><span class="pill neutral" style="font-size:10.5px;">tenant:beta-co</span></td></tr>
+        <tr><td class="r">04:21:31</td><td><span class="pill neutral">indexing</span></td><td class="r">240 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91825</td><td><span class="pill neutral" style="font-size:10.5px;">tenant:acme</span></td></tr>
+        <tr><td class="r">04:21:18</td><td><span class="pill neutral">indexing</span></td><td class="r">184 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91824</td><td><span class="pill neutral" style="font-size:10.5px;">tenant:acme</span></td></tr>
+        <tr><td class="r">04:21:02</td><td><span class="pill neutral">indexing</span></td><td class="r">612 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91824</td><td><span class="pill neutral" style="font-size:10.5px;">tenant:beta-co</span></td></tr>
+        <tr><td class="r">04:20:48</td><td><span class="pill neutral">indexing</span></td><td class="r">220 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91825</td><td><span class="pill neutral" style="font-size:10.5px;">tenant:acme</span></td></tr>
+        <tr><td class="r">04:20:14</td><td><span class="pill neutral">indexing</span></td><td class="r">308 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91825</td><td><span class="pill neutral" style="font-size:10.5px;">tenant:acme</span></td></tr>
+        <tr><td class="r">04:19:58</td><td><span class="pill neutral">indexing</span></td><td class="r">198 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91824</td><td><span class="pill neutral" style="font-size:10.5px;">tenant:acme</span></td></tr>
+        <tr><td class="r">04:19:42</td><td><span class="pill neutral">indexing</span></td><td class="r">410 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91824</td><td><span class="pill neutral" style="font-size:10.5px;">product:91820</span></td></tr>
+        <tr><td class="r">04:19:28</td><td><span class="pill neutral">indexing</span></td><td class="r">224 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">1</td><td class="r">91825</td><td><span class="pill neutral" style="font-size:10.5px;">tenant:acme</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Recent failures</h2><span class="meta">2 in last 60 min · click for case file</span></div>
+    <div class="table"><table>
+      <thead><tr>
+        <th class="r">Failed at</th>
+        <th>Exception</th>
+        <th>Message</th>
+        <th class="r">Attempts</th>
+        <th style="text-align:right;">Actions</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="r">04:22:01</td>
+          <td><span style="color:var(--red); font-weight:500;">Elastic\ClientResponseException</span></td>
+          <td>429 Too Many Requests</td>
+          <td class="r">3 / 3</td>
+          <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-retry"/></svg>Retry</button></td>
+        </tr>
+        <tr>
+          <td class="r">04:11:48</td>
+          <td><span style="color:var(--red); font-weight:500;">Elastic\ClientResponseException</span></td>
+          <td>429 Too Many Requests</td>
+          <td class="r">3 / 3</td>
+          <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-retry"/></svg>Retry</button></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="callout">
+    Both failures returned 429 from Elasticsearch within ~10 minutes of each other — likely an upstream rate-limit window.
+    Consider declaring <code>Sunset::limit(App\Jobs\IndexProduct::class)->throttle(perMinute: 200)</code> to back off pre-emptively.
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     RECENT
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="recent" data-title="Recent jobs">
+  <div class="page-head">
+    <h1 class="page-title">Recent jobs</h1>
+    <span class="page-sub">last 60 minutes · 512 entries</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-refresh"/></svg></button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-input">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="Filter by job class, queue, status…"/>
+    </div>
+    <div class="range-group">
+      <button class="chip active">1h</button>
+      <button class="chip">6h</button>
+      <button class="chip">24h</button>
+    </div>
+    <button class="btn sm ghost" style="margin-left:auto;">Export CSV</button>
+  </div>
+
+  <div class="tabs">
+    <span class="tab active">All <span class="count">512</span></span>
+    <span class="tab">Completed <span class="count">487</span></span>
+    <span class="tab">Failed <span class="count">5</span></span>
+    <span class="tab">Released <span class="count">20</span></span>
+  </div>
+
+  <div class="table"><table>
+    <thead><tr><th>Name</th><th>Queue</th><th class="r">Runtime</th><th>Status</th><th class="r">At</th></tr></thead>
+    <tbody>
+      <tr><td><span class="q-name">App\Jobs\SendWelcomeEmail</span></td><td><span class="pill neutral">emails</span></td><td class="r">82ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">04:22:08</td></tr>
+      <tr><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">1.2s</td><td><span class="pill err"><span class="dot"></span>Failed</span></td><td class="r">04:22:01</td></tr>
+      <tr><td><span class="q-name">App\Jobs\GeocodeAddress</span></td><td><span class="pill neutral">geocode</span></td><td class="r"><span class="muted">—</span></td><td><span class="pill warn"><span class="dot"></span>Rate-limited</span></td><td class="r">04:21:58</td></tr>
+      <tr><td><span class="q-name">App\Jobs\NotifySlack</span></td><td><span class="pill neutral">webhooks</span></td><td class="r">241ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">04:21:55</td></tr>
+      <tr><td><span class="q-name">App\Jobs\GenerateInvoicePdf</span></td><td><span class="pill neutral">nightly-rollup</span></td><td class="r">8.4s</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">04:21:48</td></tr>
+      <tr><td><span class="q-name">App\Jobs\SendDigest</span></td><td><span class="pill neutral">emails</span></td><td class="r">112ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">04:21:42</td></tr>
+      <tr><td><span class="q-name">App\Jobs\RetryWebhook</span></td><td><span class="pill neutral">webhooks</span></td><td class="r"><span class="muted">—</span></td><td><span class="pill info"><span class="dot"></span>Released</span></td><td class="r">04:21:38</td></tr>
+      <tr><td><span class="q-name">App\Jobs\RefreshAnalytics</span></td><td><span class="pill neutral">analytics</span></td><td class="r">2.1s</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">04:21:31</td></tr>
+      <tr><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">412ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">04:21:24</td></tr>
+      <tr><td><span class="q-name">App\Jobs\ChargeSubscription</span></td><td><span class="pill neutral">billing</span></td><td class="r">488ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td><td class="r">04:21:08</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     FAILED
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="failed" data-title="Failed jobs">
+  <div class="page-head">
+    <h1 class="page-title">Failed jobs</h1>
+    <span class="page-sub">37 total · <span style="color:var(--red)">5 in last hour</span></span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-refresh"/></svg></button>
+      <button class="btn primary"><svg><use href="#i-retry"/></svg>Retry all</button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-input">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="Filter by class, exception, queue…"/>
+    </div>
+    <div class="range-group">
+      <button class="chip active">1h</button>
+      <button class="chip">24h</button>
+      <button class="chip">7d</button>
+      <button class="chip">All</button>
+    </div>
+    <span class="filter-count">5 of 37 shown</span>
+  </div>
+
+  <div class="split">
+    <div class="split-master">
+      <div class="mh">
+        <span class="checkbox" data-bulk-all></span>
+        <span>5 in last hour</span>
+        <span class="ml-auto mono">Sort: newest</span>
+      </div>
+      <div class="master-list">
+        <div class="master-item active" data-fail-id="48184">
+          <div class="top-row"><span class="checkbox" data-bulk></span><div><div class="mt-who">App\Jobs\IndexProduct</div></div></div>
+          <div class="mt-what">Elastic\ClientResponseException — 429 Too Many Requests</div>
+          <div class="mt-meta">indexing · 04:22:01 · 3 attempts</div>
+        </div>
+        <div class="master-item" data-fail-id="48211">
+          <div class="top-row"><span class="checkbox" data-bulk></span><div><div class="mt-who">App\Jobs\SendWelcomeEmail</div></div></div>
+          <div class="mt-what">Symfony\Mailer\TransportException — Connection timed out</div>
+          <div class="mt-meta">emails · 04:22:18 · 1 attempt</div>
+        </div>
+        <div class="master-item" data-fail-id="48088">
+          <div class="top-row"><span class="checkbox" data-bulk></span><div><div class="mt-who">App\Jobs\ChargeSubscription</div></div></div>
+          <div class="mt-what">Stripe\CardException — Your card was declined</div>
+          <div class="mt-meta">billing · 03:58:11 · 1 attempt</div>
+        </div>
+        <div class="master-item" data-fail-id="48054">
+          <div class="top-row"><span class="checkbox" data-bulk></span><div><div class="mt-who">App\Jobs\GenerateThumbnail</div></div></div>
+          <div class="mt-what">ImagickException — unable to open '/tmp/upload_xJ48z'</div>
+          <div class="mt-meta">media · 03:42:08 · 2 attempts</div>
+        </div>
+        <div class="master-item" data-fail-id="48003">
+          <div class="top-row"><span class="checkbox" data-bulk></span><div><div class="mt-who">App\Jobs\SyncShopifyOrders</div></div></div>
+          <div class="mt-what">GuzzleHttp\ConnectException — cURL 28 timeout</div>
+          <div class="mt-meta">webhooks · 03:08:54 · 3 attempts</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="split-detail">
+      <div class="detail-head">
+        <div class="title-block">
+          <div class="label"><svg style="width:12px;height:12px"><use href="#i-alert"/></svg> Case file</div>
+          <h3>App\Jobs\IndexProduct</h3>
+        </div>
+        <div class="actions">
+          <button class="btn"><svg><use href="#i-retry"/></svg>Retry</button>
+          <button class="btn danger"><svg><use href="#i-trash"/></svg>Delete</button>
+        </div>
+      </div>
+
+      <div class="detail-meta">
+        <div class="item"><span class="k">connection:</span><span class="v">redis</span></div>
+        <div class="item"><span class="k">queue:</span><span class="v">indexing</span></div>
+        <div class="item"><span class="k">failed at:</span><span class="v">2026-05-21 04:22:01 UTC</span></div>
+        <div class="item"><span class="k">attempts:</span><span class="v">3 / 3</span></div>
+        <div class="item"><span class="k">id:</span><span class="v">job_91823_88af</span></div>
+      </div>
+
+      <div class="trace">
+<span class="first">Elastic\Exception\ClientResponseException: 429 Too Many Requests</span>
+<span class="frame"><span class="num">#0</span> <span class="path">/var/www/vendor/elastic/elasticsearch/src/Endpoints/IndexRequest.php(142)</span>: <span class="meth">Elastic\Endpoints\IndexRequest-&gt;execute()</span></span>
+<span class="frame"><span class="num">#1</span> <span class="path">/var/www/vendor/elastic/elasticsearch/src/Client.php(312)</span>: <span class="meth">Elastic\Client-&gt;index(['id' =&gt; 91823, ...])</span></span>
+<span class="frame"><span class="num">#2</span> <span class="path">/var/www/app/Services/Search/ProductIndexer.php(48)</span>: <span class="meth">App\Services\Search\ProductIndexer-&gt;index($product)</span></span>
+<span class="frame"><span class="num">#3</span> <span class="path">/var/www/app/Jobs/IndexProduct.php(34)</span>: <span class="meth">App\Jobs\IndexProduct-&gt;handle()</span></span>
+<span class="frame"><span class="num">#4</span> [internal function]: <span class="meth">App\Jobs\IndexProduct-&gt;handle()</span></span>
+<span class="frame"><span class="num">#5</span> <span class="path">/var/www/vendor/laravel/framework/.../BoundMethod.php(36)</span>: <span class="meth">call_user_func_array(...)</span></span>
+<span class="frame"><span class="num">#6</span> <span class="path">/var/www/vendor/laravel/framework/.../Util.php(41)</span>: <span class="meth">Illuminate\Container\BoundMethod::{closure}()</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bulk-bar" id="failed-bulk-bar">
+    <span class="count" id="failed-bulk-count">0 selected</span>
+    <span class="sep">·</span>
+    <span style="color:var(--muted)">Bulk action</span>
+    <div class="actions">
+      <button class="btn sm"><svg><use href="#i-retry"/></svg>Retry selected</button>
+      <button class="btn sm danger"><svg><use href="#i-trash"/></svg>Delete selected</button>
+      <button class="btn sm ghost" id="failed-bulk-clear">Clear</button>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     PENDING
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="pending" data-title="Pending jobs">
+  <div class="page-head">
+    <h1 class="page-title">Pending jobs</h1>
+    <span class="page-sub">3,847 across all queues · 142 delayed</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-refresh"/></svg></button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-input">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="Filter by class, queue, state…"/>
+    </div>
+    <div class="tabs" style="margin-bottom:0; border:none;">
+      <span class="tab active">All <span class="count">3,847</span></span>
+      <span class="tab">Reserved <span class="count">3,705</span></span>
+      <span class="tab">Delayed <span class="count">135</span></span>
+      <span class="tab">Scheduled <span class="count">7</span></span>
+    </div>
+  </div>
+
+  <div class="table"><table>
+    <thead><tr><th>Name</th><th>Queue</th><th class="r">Reserved at</th><th class="r">Attempts</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td><span class="q-name">App\Jobs\SendDigest</span></td><td><span class="pill neutral">emails</span></td><td class="r">04:21:42</td><td class="r">1</td><td><span class="pill info"><span class="dot"></span>Reserved</span></td></tr>
+      <tr><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">04:21:38</td><td class="r">2</td><td><span class="pill info"><span class="dot"></span>Reserved</span></td></tr>
+      <tr><td><span class="q-name">App\Jobs\NotifySlack</span></td><td><span class="pill neutral">webhooks</span></td><td class="r">04:21:38</td><td class="r">1</td><td><span class="pill info"><span class="dot"></span>Reserved</span></td></tr>
+      <tr><td><span class="q-name">App\Jobs\GenerateInvoicePdf</span></td><td><span class="pill neutral">nightly-rollup</span></td><td class="r"><span class="muted">—</span></td><td class="r">0</td><td><span class="pill warn"><span class="dot"></span>Delayed +18m</span></td></tr>
+      <tr><td><span class="q-name">App\Jobs\SyncShopifyOrders</span></td><td><span class="pill neutral">webhooks</span></td><td class="r"><span class="muted">—</span></td><td class="r">0</td><td><span class="pill warn"><span class="dot"></span>Delayed +2h</span></td></tr>
+      <tr><td><span class="q-name">App\Jobs\ChargeSubscription</span></td><td><span class="pill neutral">billing</span></td><td class="r"><span class="muted">—</span></td><td class="r">0</td><td><span class="pill warn"><span class="dot"></span>Delayed +6h</span></td></tr>
+      <tr><td><span class="q-name">App\Jobs\WeeklyDigest</span></td><td><span class="pill neutral">emails</span></td><td class="r"><span class="muted">—</span></td><td class="r">0</td><td><span class="pill warn"><span class="dot"></span>Scheduled Fri 09:00</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     COMPLETED
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="completed" data-title="Completed jobs">
+  <div class="page-head">
+    <h1 class="page-title">Completed jobs</h1>
+    <span class="page-sub">last 60 min · 487 successful</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-refresh"/></svg></button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-input">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="Filter by class or queue…"/>
+    </div>
+    <div class="range-group">
+      <button class="chip active">1h</button>
+      <button class="chip">6h</button>
+      <button class="chip">24h</button>
+    </div>
+    <button class="btn sm ghost" style="margin-left:auto;">Export CSV</button>
+  </div>
+
+  <div class="table"><table>
+    <thead><tr><th>Name</th><th>Queue</th><th class="r">Runtime</th><th class="r">Mem peak</th><th class="r">At</th></tr></thead>
+    <tbody>
+      <tr><td><span class="q-name">App\Jobs\SendWelcomeEmail</span></td><td><span class="pill neutral">emails</span></td><td class="r">82ms</td><td class="r">8.4 MB</td><td class="r">04:22:08</td></tr>
+      <tr><td><span class="q-name">App\Jobs\NotifySlack</span></td><td><span class="pill neutral">webhooks</span></td><td class="r">241ms</td><td class="r">12.1 MB</td><td class="r">04:21:55</td></tr>
+      <tr><td><span class="q-name">App\Jobs\GenerateInvoicePdf</span></td><td><span class="pill neutral">nightly-rollup</span></td><td class="r">8.4s</td><td class="r">128.6 MB</td><td class="r">04:21:48</td></tr>
+      <tr><td><span class="q-name">App\Jobs\SendDigest</span></td><td><span class="pill neutral">emails</span></td><td class="r">112ms</td><td class="r">9.2 MB</td><td class="r">04:21:42</td></tr>
+      <tr><td><span class="q-name">App\Jobs\RefreshAnalytics</span></td><td><span class="pill neutral">analytics</span></td><td class="r">2.1s</td><td class="r">42.8 MB</td><td class="r">04:21:31</td></tr>
+      <tr><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">412ms</td><td class="r">18.3 MB</td><td class="r">04:21:24</td></tr>
+      <tr><td><span class="q-name">App\Jobs\ChargeSubscription</span></td><td><span class="pill neutral">billing</span></td><td class="r">488ms</td><td class="r">14.7 MB</td><td class="r">04:21:08</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     BATCHES
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="batches" data-title="Batches">
+  <div class="page-head">
+    <h1 class="page-title">Batches</h1>
+    <span class="page-sub">4 in flight · 1 with failures</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-refresh"/></svg></button>
+      <button class="btn primary"><svg><use href="#i-plus"/></svg>New batch</button>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="batch-card">
+      <div class="batch-head">
+        <div class="batch-name">Nightly product reindex<span class="sub">batch_a4f8b · started 02:00 UTC</span></div>
+        <span class="pill info"><span class="dot"></span>Processing</span>
+      </div>
+      <div class="batch-counts">
+        <div class="item"><span class="l">Total</span><span class="v">12,481</span></div>
+        <div class="item"><span class="l">Pending</span><span class="v">901</span></div>
+        <div class="item fail"><span class="l">Failed</span><span class="v">3</span></div>
+        <div class="item done"><span class="l">Done</span><span class="v">11,577</span></div>
+      </div>
+      <div class="batch-progress"><div class="bar" style="width: 92.7%"></div></div>
+      <div class="batch-foot">92.7% complete · ETA 04:38 UTC</div>
+    </div>
+
+    <div class="batch-card">
+      <div class="batch-head">
+        <div class="batch-name">Bulk subscriber email<span class="sub">batch_c2e1a · finished 09:42</span></div>
+        <span class="pill ok"><span class="dot"></span>Complete</span>
+      </div>
+      <div class="batch-counts">
+        <div class="item"><span class="l">Total</span><span class="v">3,892</span></div>
+        <div class="item"><span class="l">Pending</span><span class="v">0</span></div>
+        <div class="item"><span class="l">Failed</span><span class="v">0</span></div>
+        <div class="item done"><span class="l">Done</span><span class="v">3,892</span></div>
+      </div>
+      <div class="batch-progress"><div class="bar ok" style="width: 100%"></div></div>
+      <div class="batch-foot">finished in 4m 18s</div>
+    </div>
+
+    <div class="batch-card failing">
+      <div class="batch-head">
+        <div class="batch-name">Acme tenant migration<span class="sub">batch_acme_001 · started yesterday</span></div>
+        <span class="pill err"><span class="dot"></span>14 failures</span>
+      </div>
+      <div class="batch-counts">
+        <div class="item"><span class="l">Total</span><span class="v">847</span></div>
+        <div class="item"><span class="l">Pending</span><span class="v">0</span></div>
+        <div class="item fail"><span class="l">Failed</span><span class="v">14</span></div>
+        <div class="item done"><span class="l">Done</span><span class="v">833</span></div>
+      </div>
+      <div class="batch-progress" style="display:flex; gap:0;">
+        <div style="flex: 833; background: var(--green); height: 100%;"></div>
+        <div style="flex: 14; background: var(--red); height: 100%;"></div>
+      </div>
+      <div class="batch-foot">started 21:45 yesterday · retry available</div>
+    </div>
+
+    <div class="batch-card">
+      <div class="batch-head">
+        <div class="batch-name">Weekly digest send<span class="sub">batch_digest_w20 · finished Sun</span></div>
+        <span class="pill ok"><span class="dot"></span>Complete</span>
+      </div>
+      <div class="batch-counts">
+        <div class="item"><span class="l">Total</span><span class="v">1,204</span></div>
+        <div class="item"><span class="l">Pending</span><span class="v">0</span></div>
+        <div class="item"><span class="l">Failed</span><span class="v">0</span></div>
+        <div class="item done"><span class="l">Done</span><span class="v">1,204</span></div>
+      </div>
+      <div class="batch-progress"><div class="bar ok" style="width: 100%"></div></div>
+      <div class="batch-foot">finished Sun 09:00</div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     SUPERVISORS
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="supervisors" data-title="Supervisors">
+  <div class="page-head">
+    <h1 class="page-title">Supervisors</h1>
+    <span class="page-sub">1 master · 4 supervisors · 28 workers</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-refresh"/></svg></button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Process tree</h2></div>
+    <div class="table"><table>
+      <thead><tr><th>Supervisor</th><th>Status</th><th class="r">Workers</th><th>Connection</th><th>Queues</th><th style="text-align:right;">Actions</th></tr></thead>
+      <tbody>
+        <tr><td><span class="q-name">master-1:emails</span></td><td><span class="pill ok"><span class="dot"></span>Running</span></td><td class="r">8 / 12</td><td><span class="pill neutral">redis</span></td><td>emails</td><td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pause"/></svg>Pause</button></td></tr>
+        <tr><td><span class="q-name">master-1:webhooks</span></td><td><span class="pill ok"><span class="dot"></span>Running</span></td><td class="r">16 / 24</td><td><span class="pill neutral">sqs</span></td><td>webhooks</td><td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pause"/></svg>Pause</button></td></tr>
+        <tr><td><span class="q-name">master-1:indexing</span></td><td><span class="pill ok"><span class="dot"></span>Running</span></td><td class="r">4 / 8</td><td><span class="pill neutral">redis</span></td><td>indexing, geocode</td><td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pause"/></svg>Pause</button></td></tr>
+        <tr><td><span class="q-name">master-1:nightly</span></td><td><span class="pill warn"><span class="dot"></span>Paused</span></td><td class="r">0 / 2</td><td><span class="pill neutral">rabbitmq</span></td><td>nightly-rollup</td><td style="text-align:right;"><button class="btn sm primary"><svg><use href="#i-play"/></svg>Resume</button></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Workers</h2><span class="meta">live telemetry</span></div>
+    <div class="table"><table>
+      <thead><tr><th>Worker</th><th class="r">PID</th><th class="r">RSS</th><th class="r">CPU %</th><th class="r">Uptime</th><th>RSS trace</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="q-name">master-1:emails</span> <span class="muted">· default</span></td>
+          <td class="r">91801</td><td class="r">42.4 MB</td><td class="r">14.2%</td><td class="r">8d 14h</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,10 L10,9 L20,7 L30,11 L40,8 L50,5 L60,7 L72,6"/></svg></td>
+        </tr>
+        <tr>
+          <td><span class="q-name">master-1:webhooks</span> <span class="muted">· default</span></td>
+          <td class="r">91812</td><td class="r">78.1 MB</td><td class="r">31.8%</td><td class="r">8d 14h</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,4 L10,7 L20,5 L30,3 L40,8 L50,6 L60,4 L72,5"/></svg></td>
+        </tr>
+        <tr>
+          <td><span class="q-name">master-1:webhooks</span> <span class="muted">· default</span></td>
+          <td class="r">91813</td><td class="r">80.6 MB</td><td class="r">29.4%</td><td class="r">8d 14h</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,6 L10,5 L20,7 L30,4 L40,6 L50,8 L60,5 L72,4"/></svg></td>
+        </tr>
+        <tr>
+          <td><span class="q-name">master-1:indexing</span> <span class="muted">· default</span> <span class="pill warn" style="margin-left:6px"><span class="dot"></span>High mem</span></td>
+          <td class="r">91824</td><td class="r" style="color:var(--red)">112.3 MB</td><td class="r">62.1%</td><td class="r">3h 12m</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--red)"><path class="line" d="M0,12 L10,11 L20,9 L30,7 L40,6 L50,4 L60,3 L72,2"/></svg></td>
+        </tr>
+        <tr>
+          <td><span class="q-name">master-1:indexing</span> <span class="muted">· default</span></td>
+          <td class="r">91825</td><td class="r">48.9 MB</td><td class="r">28.4%</td><td class="r">8d 14h</td>
+          <td><svg class="spark-mini" viewBox="0 0 72 18" preserveAspectRatio="none" style="color:var(--violet)"><path class="line" d="M0,8 L10,7 L20,9 L30,6 L40,8 L50,7 L60,5 L72,6"/></svg></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="banner warn">
+    <svg><use href="#i-alert"/></svg>
+    <div>
+      Worker <code>91824</code> RSS climbing — likely indexing-bulk-payload leak.
+      Auto-restart at memory limit 128 MB · estimated 18 minutes.
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     RATE LIMITS
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="rate-limits" data-title="Rate limits">
+  <div class="page-head">
+    <h1 class="page-title">Rate limits</h1>
+    <span class="page-sub">4 registered · 147 rejects in past hour</span>
+    <div class="page-actions">
+      <button class="btn primary"><svg><use href="#i-plus"/></svg>Add limit</button>
+    </div>
+  </div>
+
+  <div class="table"><table>
+    <thead><tr><th>Name</th><th>Target</th><th class="r">Throttle</th><th class="r">Concurrency</th><th>Strategy</th><th class="r">Rejects (1h)</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="q-name">gmaps</span></td>
+        <td><span class="pill neutral">queue · geocode</span></td>
+        <td class="r">10/min</td><td class="r">3</td>
+        <td><span class="pill warn"><span class="dot"></span>release-computed</span></td>
+        <td class="r" style="color:var(--amber)">128</td>
+      </tr>
+      <tr>
+        <td><span class="q-name">stripe-charge</span></td>
+        <td><span class="pill neutral">job · ChargeSubscription</span></td>
+        <td class="r">100/hour</td><td class="r">5</td>
+        <td><span class="pill info"><span class="dot"></span>release-fixed</span></td>
+        <td class="r">2</td>
+      </tr>
+      <tr>
+        <td><span class="q-name">elastic-bulk</span></td>
+        <td><span class="pill neutral">queue · indexing</span></td>
+        <td class="r">600/min</td><td class="r">8</td>
+        <td><span class="pill warn"><span class="dot"></span>release-computed</span></td>
+        <td class="r">17</td>
+      </tr>
+      <tr>
+        <td><span class="q-name">postmark</span></td>
+        <td><span class="pill neutral">queue · emails</span></td>
+        <td class="r">300/min</td><td class="r">12</td>
+        <td><span class="pill err"><span class="dot"></span>drop</span></td>
+        <td class="r">0</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    Declare limits fluently in any service provider —
+    <code>Sunset::for('geocode')->throttle(perMinute: 10)->concurrency(3);</code>
+    Zero overhead when no limits are registered.
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     MONITORING
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="monitoring" data-title="Monitoring">
+  <div class="page-head">
+    <h1 class="page-title">Monitoring</h1>
+    <span class="page-sub">monitored tags · trace anything tagged</span>
+    <div class="page-actions">
+      <button class="btn primary"><svg><use href="#i-plus"/></svg>Pin tag</button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-input">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="Filter tags…"/>
+    </div>
+    <button class="btn sm" style="margin-left:auto;"><svg><use href="#i-plus"/></svg>Monitor new tag…</button>
+  </div>
+
+  <div class="table"><table>
+    <thead><tr>
+      <th class="sortable" data-sort="text">Tag</th>
+      <th>Pinned</th>
+      <th class="r sortable desc" data-sort="num">Total seen</th>
+      <th class="r sortable" data-sort="num">Failed</th>
+      <th class="r sortable" data-sort="text">First seen</th>
+      <th style="text-align:right;">Actions</th>
+    </tr></thead>
+    <tbody>
+      <tr class="clickable" data-tag="tenant:acme">
+        <td><span class="q-name">tenant:acme</span></td>
+        <td><span class="pill ok"><span class="dot"></span>Pinned</span></td>
+        <td class="r">48,217</td>
+        <td class="r" style="color:var(--red)">3</td>
+        <td class="r">2026-04-12</td>
+        <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pin"/></svg>Unpin</button></td>
+      </tr>
+      <tr class="clickable" data-tag="product:91823">
+        <td><span class="q-name">product:91823</span></td>
+        <td><span class="pill ok"><span class="dot"></span>Pinned</span></td>
+        <td class="r">412</td>
+        <td class="r" style="color:var(--red)">1</td>
+        <td class="r">2026-05-19</td>
+        <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pin"/></svg>Unpin</button></td>
+      </tr>
+      <tr class="clickable" data-tag="campaign:summer-2026">
+        <td><span class="q-name">campaign:summer-2026</span></td>
+        <td><span class="muted">No</span></td>
+        <td class="r">8,412</td>
+        <td class="r">0</td>
+        <td class="r">2026-05-15</td>
+        <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pin"/></svg>Pin</button></td>
+      </tr>
+      <tr class="clickable" data-tag="tenant:beta-co">
+        <td><span class="q-name">tenant:beta-co</span></td>
+        <td><span class="muted">No</span></td>
+        <td class="r">2,108</td>
+        <td class="r">0</td>
+        <td class="r">2026-05-08</td>
+        <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pin"/></svg>Pin</button></td>
+      </tr>
+      <tr class="clickable" data-tag="user:1421">
+        <td><span class="q-name">user:1421</span></td>
+        <td><span class="muted">No</span></td>
+        <td class="r">94</td>
+        <td class="r">0</td>
+        <td class="r">2026-05-21</td>
+        <td style="text-align:right;"><button class="btn sm"><svg><use href="#i-pin"/></svg>Pin</button></td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    Tags are arbitrary strings you attach to jobs — <code>public function tags() { return ['tenant:' . $this->tenantId]; }</code>.
+    Pinned tags survive the trim window so you can audit one tenant's flow indefinitely.
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     TAG DETAIL (drill-down from Monitoring)
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="tag-detail" data-title="Tag">
+  <button class="back-link" onclick="nav('monitoring')">
+    <svg><use href="#i-arrow-right"/></svg>
+    Back to Monitoring
+  </button>
+
+  <div class="page-head">
+    <div>
+      <div class="kicker"><svg><use href="#i-tag"/></svg>Monitored tag</div>
+      <h1 class="class-name" id="tag-detail-name">tenant:acme</h1>
+    </div>
+    <span class="page-sub" style="margin-left:auto;">since 2026-04-12 · 39 days</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-pin"/></svg>Unpin</button>
+      <button class="btn"><svg><use href="#i-refresh"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stats cols-6">
+    <div class="stat">
+      <div class="stat-label" data-tooltip="Total jobs ever seen with this tag">Total seen</div>
+      <div class="stat-value">48,217</div>
+      <div class="stat-delta">since 39d ago</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">In last hour</div>
+      <div class="stat-value">1,124</div>
+      <div class="stat-delta up"><svg style="width:11px;height:11px"><use href="#i-arrow-up"/></svg> 18/min</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Last seen</div>
+      <div class="stat-value" style="font-size: 22px;">3s ago</div>
+      <div class="stat-delta">04:22:15</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Classes</div>
+      <div class="stat-value">7</div>
+      <div class="stat-delta">across 5 queues</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Failed</div>
+      <div class="stat-value red">3</div>
+      <div class="stat-delta">0.006% rate</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Pinned by</div>
+      <div class="stat-value" style="font-size: 17px; font-family: 'Geist Mono', monospace;">jimmy@</div>
+      <div class="stat-delta">2026-04-12</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Activity over time</h2><span class="meta">jobs/min · last 24 h</span></div>
+    <div class="chart-card">
+      <svg class="full-spark" viewBox="0 0 800 160" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="vfade2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#a78bfa" stop-opacity="0.35"/><stop offset="1" stop-color="#a78bfa" stop-opacity="0"/></linearGradient>
+        </defs>
+        <g stroke="currentColor" stroke-width="0.5" opacity="0.08">
+          <line x1="0" x2="800" y1="40" y2="40"/><line x1="0" x2="800" y1="80" y2="80"/><line x1="0" x2="800" y1="120" y2="120"/>
+        </g>
+        <path d="M0,90 L30,85 L60,92 L90,78 L120,80 L150,72 L180,68 L210,60 L240,55 L270,52 L300,48 L330,50 L360,42 L390,48 L420,44 L450,38 L480,40 L510,32 L540,28 L570,34 L600,30 L630,28 L660,24 L690,32 L720,28 L750,22 L800,18 L800,160 L0,160 Z" fill="url(#vfade2)"/>
+        <path d="M0,90 L30,85 L60,92 L90,78 L120,80 L150,72 L180,68 L210,60 L240,55 L270,52 L300,48 L330,50 L360,42 L390,48 L420,44 L450,38 L480,40 L510,32 L540,28 L570,34 L600,30 L630,28 L660,24 L690,32 L720,28 L750,22 L800,18" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="chart-axis">
+        <span>04:22 yesterday</span><span>10:00</span><span>14:00</span><span>18:00</span><span>22:00</span><span>02:00</span><span>04:22 now</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Job classes seen with this tag</h2><span class="meta">7 classes</span></div>
+    <div class="table"><table>
+      <thead><tr>
+        <th class="sortable" data-sort="text">Job class</th>
+        <th>Queue</th>
+        <th class="r sortable desc" data-sort="num">Count</th>
+        <th class="r sortable" data-sort="num">Failed</th>
+        <th class="r">Last seen</th>
+      </tr></thead>
+      <tbody>
+        <tr class="clickable" data-class="App\Jobs\IndexProduct"><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">18,412</td><td class="r" style="color:var(--red)">2</td><td class="r">04:22:08</td></tr>
+        <tr class="clickable" data-class="App\Jobs\NotifySlack"><td><span class="q-name">App\Jobs\NotifySlack</span></td><td><span class="pill neutral">webhooks</span></td><td class="r">12,890</td><td class="r">0</td><td class="r">04:22:14</td></tr>
+        <tr class="clickable" data-class="App\Jobs\RefreshAnalytics"><td><span class="q-name">App\Jobs\RefreshAnalytics</span></td><td><span class="pill neutral">analytics</span></td><td class="r">8,124</td><td class="r">0</td><td class="r">04:22:11</td></tr>
+        <tr class="clickable" data-class="App\Jobs\SendDigest"><td><span class="q-name">App\Jobs\SendDigest</span></td><td><span class="pill neutral">emails</span></td><td class="r">4,892</td><td class="r">0</td><td class="r">04:21:42</td></tr>
+        <tr class="clickable" data-class="App\Jobs\ChargeSubscription"><td><span class="q-name">App\Jobs\ChargeSubscription</span></td><td><span class="pill neutral">billing</span></td><td class="r">2,481</td><td class="r" style="color:var(--red)">1</td><td class="r">04:18:32</td></tr>
+        <tr class="clickable" data-class="App\Jobs\GeocodeAddress"><td><span class="q-name">App\Jobs\GeocodeAddress</span></td><td><span class="pill neutral">geocode</span></td><td class="r">1,108</td><td class="r">0</td><td class="r">04:11:08</td></tr>
+        <tr class="clickable" data-class="App\Jobs\SyncShopifyOrders"><td><span class="q-name">App\Jobs\SyncShopifyOrders</span></td><td><span class="pill neutral">webhooks</span></td><td class="r">310</td><td class="r">0</td><td class="r">03:08:54</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Recent runs</h2><span class="meta">last 10 with this tag</span></div>
+    <div class="table"><table>
+      <thead><tr><th class="r">At</th><th>Class</th><th>Queue</th><th class="r">Runtime</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="r">04:22:14</td><td><span class="q-name">App\Jobs\NotifySlack</span></td><td><span class="pill neutral">webhooks</span></td><td class="r">241 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td></tr>
+        <tr><td class="r">04:22:11</td><td><span class="q-name">App\Jobs\RefreshAnalytics</span></td><td><span class="pill neutral">analytics</span></td><td class="r">2.1 s</td><td><span class="pill ok"><span class="dot"></span>Done</span></td></tr>
+        <tr><td class="r">04:22:08</td><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">412 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td></tr>
+        <tr><td class="r">04:22:01</td><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">1.2 s</td><td><span class="pill err"><span class="dot"></span>Failed</span></td></tr>
+        <tr><td class="r">04:21:54</td><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">218 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td></tr>
+        <tr><td class="r">04:21:42</td><td><span class="q-name">App\Jobs\SendDigest</span></td><td><span class="pill neutral">emails</span></td><td class="r">112 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td></tr>
+        <tr><td class="r">04:21:31</td><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">240 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td></tr>
+        <tr><td class="r">04:21:18</td><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">184 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td></tr>
+        <tr><td class="r">04:21:02</td><td><span class="q-name">App\Jobs\NotifySlack</span></td><td><span class="pill neutral">webhooks</span></td><td class="r">189 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td></tr>
+        <tr><td class="r">04:20:48</td><td><span class="q-name">App\Jobs\IndexProduct</span></td><td><span class="pill neutral">indexing</span></td><td class="r">220 ms</td><td><span class="pill ok"><span class="dot"></span>Done</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="callout">
+    Pinned tags persist past the normal trim window so you can audit one tenant's flow indefinitely.
+    The audit data lives under <code>sunset:tags:{tag}</code> Redis sorted sets — pin-protected from the periodic sweep.
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     HEALTH
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<section class="page" data-page="health" data-title="Health">
+  <div class="page-head">
+    <h1 class="page-title">Health</h1>
+    <span class="page-sub">runtime probe · last checked 04:22:14 UTC</span>
+    <div class="page-actions">
+      <button class="btn"><svg><use href="#i-refresh"/></svg>Re-probe</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Versions</h2></div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-label">Sunset</div>
+        <div class="card-value">v1.3.0</div>
+        <div class="card-foot">queue pause/resume</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Laravel</div>
+        <div class="card-value">11.42.1</div>
+        <div class="card-foot">LTS · supported until 2027</div>
+      </div>
+      <div class="card">
+        <div class="card-label">PHP</div>
+        <div class="card-value">8.3.13</div>
+        <div class="card-foot">opcache enabled</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Transports</h2><span class="meta">connection probes</span></div>
+    <div class="grid-3">
+      <div class="probe">
+        <div class="probe-dot"></div>
+        <div class="probe-body">
+          <div class="probe-name">sqs</div>
+          <div class="probe-meta">driver: sqs · us-east-1</div>
+        </div>
+        <div class="probe-stat"><span class="v">38</span><span class="u">ms</span></div>
+      </div>
+      <div class="probe">
+        <div class="probe-dot"></div>
+        <div class="probe-body">
+          <div class="probe-name">redis</div>
+          <div class="probe-meta">driver: redis · phpredis 6.0.2</div>
+        </div>
+        <div class="probe-stat"><span class="v">2</span><span class="u">ms</span></div>
+      </div>
+      <div class="probe">
+        <div class="probe-dot"></div>
+        <div class="probe-body">
+          <div class="probe-name">rabbitmq</div>
+          <div class="probe-meta">driver: rabbitmq · vhost /</div>
+        </div>
+        <div class="probe-stat"><span class="v">11</span><span class="u">ms</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Redis keyspace</h2></div>
+    <div class="card">
+      <div class="grid-4" style="gap:24px;">
+        <div>
+          <div class="card-label">Connection</div>
+          <div style="font-size:15px; font-weight:500; margin-top:4px;">default</div>
+        </div>
+        <div>
+          <div class="card-label">Prefix</div>
+          <div style="font-size:15px; font-weight:500; margin-top:4px; color: var(--violet); font-family: 'Geist Mono', monospace;">sunset</div>
+        </div>
+        <div>
+          <div class="card-label">Used memory</div>
+          <div style="font-size:15px; font-weight:500; margin-top:4px;">14.2 MB</div>
+        </div>
+        <div>
+          <div class="card-label">Key count</div>
+          <div style="font-size:15px; font-weight:500; margin-top:4px;">8,412</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Scheduled commands</h2></div>
+    <div class="schedule">
+      <div class="row">
+        <div class="cmd">sunset:sweep-delayed</div>
+        <div class="cad"><svg><use href="#i-clock"/></svg>every minute</div>
+        <div class="desc">re-enqueue ZSET-buffered long-delay SQS jobs as they come due</div>
+      </div>
+      <div class="row">
+        <div class="cmd">sunset:sweep-rate-limit-slots</div>
+        <div class="cad"><svg><use href="#i-clock"/></svg>every minute</div>
+        <div class="desc">reconcile orphan concurrency semaphores from killed workers</div>
+      </div>
+      <div class="row">
+        <div class="cmd">sunset:sweep-worker-metrics</div>
+        <div class="cad"><svg><use href="#i-clock"/></svg>every minute</div>
+        <div class="desc">SREM dead PIDs from the worker-metrics set</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    Run <code>php artisan schedule:run</code> in your cron once per minute to keep these alive.
+    Sunset auto-registers them via the package service provider.
+  </div>
+</section>
+
+</main>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     COMMAND PALETTE
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="palette-backdrop" id="palette-backdrop">
+  <div class="palette" onclick="event.stopPropagation()">
+    <div class="palette-input">
+      <svg><use href="#i-search"/></svg>
+      <input id="palette-input" placeholder="Jump to anything — pages, queues, job classes, supervisors…" autocomplete="off"/>
+      <span class="esc">esc</span>
+    </div>
+    <div class="palette-results" id="palette-results">
+      <div class="palette-group">
+        <div class="gh">Pages</div>
+        <div class="palette-item active" data-page-nav="overview"><svg class="ico"><use href="#i-home"/></svg><span class="label">Overview</span><span class="meta">G O</span></div>
+        <div class="palette-item" data-page-nav="activity"><svg class="ico"><use href="#i-activity"/></svg><span class="label">Activity stream</span><span class="meta">G A</span></div>
+        <div class="palette-item" data-page-nav="workload"><svg class="ico"><use href="#i-list"/></svg><span class="label">Workload</span><span class="meta">G W</span></div>
+        <div class="palette-item" data-page-nav="failed"><svg class="ico"><use href="#i-alert"/></svg><span class="label">Failed jobs</span><span class="meta">G F</span></div>
+        <div class="palette-item" data-page-nav="supervisors"><svg class="ico"><use href="#i-server"/></svg><span class="label">Supervisors</span><span class="meta">G S</span></div>
+      </div>
+      <div class="palette-group">
+        <div class="gh">Queues</div>
+        <div class="palette-item"><svg class="ico"><use href="#i-list"/></svg><span class="label">emails</span><span class="meta">redis · 128 pending</span></div>
+        <div class="palette-item"><svg class="ico"><use href="#i-list"/></svg><span class="label">webhooks</span><span class="meta">sqs · 2,431 pending</span></div>
+        <div class="palette-item"><svg class="ico"><use href="#i-list"/></svg><span class="label">indexing</span><span class="meta">redis · backlog 48s</span></div>
+        <div class="palette-item"><svg class="ico"><use href="#i-list"/></svg><span class="label">geocode</span><span class="meta">redis · paused</span></div>
+      </div>
+      <div class="palette-group">
+        <div class="gh">Job classes</div>
+        <div class="palette-item" data-class-nav="App\Jobs\NotifySlack"><svg class="ico"><use href="#i-zap"/></svg><span class="label">App\Jobs\NotifySlack</span><span class="meta">405/min</span></div>
+        <div class="palette-item" data-class-nav="App\Jobs\IndexProduct"><svg class="ico"><use href="#i-zap"/></svg><span class="label">App\Jobs\IndexProduct</span><span class="meta">196/min · 2 failed</span></div>
+        <div class="palette-item" data-class-nav="App\Jobs\SendWelcomeEmail"><svg class="ico"><use href="#i-zap"/></svg><span class="label">App\Jobs\SendWelcomeEmail</span><span class="meta">218/min</span></div>
+      </div>
+      <div class="palette-group">
+        <div class="gh">Actions</div>
+        <div class="palette-item"><svg class="ico"><use href="#i-pause"/></svg><span class="label">Pause queue…</span><span class="meta">action</span></div>
+        <div class="palette-item"><svg class="ico"><use href="#i-retry"/></svg><span class="label">Retry all failed</span><span class="meta">action · ⌘⏎</span></div>
+        <div class="palette-item"><svg class="ico"><use href="#i-refresh"/></svg><span class="label">Re-probe transports</span><span class="meta">action</span></div>
+      </div>
+    </div>
+    <div class="palette-foot">
+      <span class="pf-grp"><span class="kbd">↑</span><span class="kbd">↓</span> navigate</span>
+      <span class="pf-grp"><span class="kbd">↵</span> open</span>
+      <span class="pf-grp"><span class="kbd">esc</span> close</span>
+      <span class="right">Search across 13 pages, 5 queues, 11 classes</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     KEYBOARD SHORTCUTS MODAL
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="kbd-modal-backdrop" id="kbd-backdrop">
+  <div class="kbd-modal" onclick="event.stopPropagation()">
+    <div class="head">
+      <h3>Keyboard shortcuts</h3>
+      <button class="close" onclick="closeShortcuts()">esc</button>
+    </div>
+    <div class="kbd-grid">
+      <div class="kbd-section-label">Navigation</div>
+      <div class="kbd-row"><span>Command palette</span><span class="kbd-keys"><span class="kbd-key">⌘</span><span class="kbd-key">K</span></span></div>
+      <div class="kbd-row"><span>This help</span><span class="kbd-keys"><span class="kbd-key">?</span></span></div>
+      <div class="kbd-row"><span>Overview</span><span class="kbd-keys"><span class="kbd-key">G</span><span class="kbd-key">O</span></span></div>
+      <div class="kbd-row"><span>Activity</span><span class="kbd-keys"><span class="kbd-key">G</span><span class="kbd-key">A</span></span></div>
+      <div class="kbd-row"><span>Workload</span><span class="kbd-keys"><span class="kbd-key">G</span><span class="kbd-key">W</span></span></div>
+      <div class="kbd-row"><span>Failed jobs</span><span class="kbd-keys"><span class="kbd-key">G</span><span class="kbd-key">F</span></span></div>
+      <div class="kbd-row"><span>Supervisors</span><span class="kbd-keys"><span class="kbd-key">G</span><span class="kbd-key">S</span></span></div>
+      <div class="kbd-row"><span>Health</span><span class="kbd-keys"><span class="kbd-key">G</span><span class="kbd-key">H</span></span></div>
+
+      <div class="kbd-section-label">Actions</div>
+      <div class="kbd-row"><span>Refresh page</span><span class="kbd-keys"><span class="kbd-key">R</span></span></div>
+      <div class="kbd-row"><span>Toggle theme</span><span class="kbd-keys"><span class="kbd-key">T</span></span></div>
+      <div class="kbd-row"><span>Retry selected</span><span class="kbd-keys"><span class="kbd-key">⌘</span><span class="kbd-key">⏎</span></span></div>
+      <div class="kbd-row"><span>Delete selected</span><span class="kbd-keys"><span class="kbd-key">⌘</span><span class="kbd-key">⌫</span></span></div>
+      <div class="kbd-row"><span>Pause queue (cursor)</span><span class="kbd-keys"><span class="kbd-key">P</span></span></div>
+      <div class="kbd-row"><span>Select all</span><span class="kbd-keys"><span class="kbd-key">⌘</span><span class="kbd-key">A</span></span></div>
+      <div class="kbd-row"><span>Close modal</span><span class="kbd-keys"><span class="kbd-key">esc</span></span></div>
+      <div class="kbd-row"><span>Open shortcuts</span><span class="kbd-keys"><span class="kbd-key">?</span></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     TOAST CONTAINER
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="toasts" id="toasts"></div>
+
+<script>
+  function nav(page) {
+    document.querySelectorAll('.rail a').forEach(a => a.classList.toggle('active', a.dataset.page === page));
+    document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.dataset.page === page));
+    const sec = document.querySelector(`.page[data-page="${page}"]`);
+    if (sec) {
+      const title = sec.dataset.title || 'Overview';
+      document.getElementById('crumb-page').textContent = title;
+      document.title = `Sunset · ${title}`;
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  document.querySelectorAll('.rail a').forEach(a => a.addEventListener('click', () => nav(a.dataset.page)));
+
+  // Master-detail row swap (Failed page)
+  document.querySelectorAll('.master-item').forEach(it => {
+    it.addEventListener('click', () => {
+      document.querySelectorAll('.master-item').forEach(x => x.classList.remove('active'));
+      it.classList.add('active');
+    });
+  });
+
+  // Activity filter swap
+  document.querySelectorAll('.filters .filter').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.filters .filter').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+
+  // Recent tabs
+  document.querySelectorAll('.tabs .tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tabs .tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+
+  // ─── Sortable table headers ──────────────────────────────────────
+  function sortTable(table, th) {
+    const headers = th.parentNode.children;
+    const idx = Array.from(headers).indexOf(th);
+    const cur = th.classList.contains('desc') ? 'desc' : th.classList.contains('asc') ? 'asc' : null;
+    const next = cur === 'desc' ? 'asc' : 'desc';
+
+    Array.from(headers).forEach(x => x.classList.remove('asc', 'desc'));
+    th.classList.add(next);
+
+    const kind = th.dataset.sort;
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.rows);
+
+    const parse = (s) => {
+      s = s.trim().replace(/,/g, '');
+      if (s === '—' || s === '') return next === 'asc' ? Infinity : -Infinity;
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    };
+
+    rows.sort((a, b) => {
+      const av = (a.cells[idx]?.innerText || '');
+      const bv = (b.cells[idx]?.innerText || '');
+      if (kind === 'num') {
+        const an = parse(av), bn = parse(bv);
+        return next === 'asc' ? an - bn : bn - an;
+      }
+      return next === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+    rows.forEach(r => tbody.appendChild(r));
+  }
+  document.querySelectorAll('.table th.sortable').forEach(th => {
+    th.addEventListener('click', () => sortTable(th.closest('table'), th));
+  });
+
+  // ─── Click-to-drill on job-class & tag rows ──────────────────────────
+  document.querySelectorAll('.table tr.clickable').forEach(tr => {
+    tr.addEventListener('click', (e) => {
+      // ignore clicks on the action buttons inside a row
+      if (e.target.closest('button')) return;
+      const cls = tr.dataset.class;
+      const tag = tr.dataset.tag;
+      if (cls) {
+        document.getElementById('class-detail-name').textContent = cls;
+        document.querySelector('.page[data-page="class-detail"]').setAttribute('data-title', cls);
+        nav('class-detail');
+      } else if (tag) {
+        document.getElementById('tag-detail-name').textContent = tag;
+        document.querySelector('.page[data-page="tag-detail"]').setAttribute('data-title', tag);
+        nav('tag-detail');
+      }
+    });
+  });
+
+  // ─── Command palette ──────────────────────────────────────────────────
+  const paletteBackdrop = document.getElementById('palette-backdrop');
+  const paletteInput = document.getElementById('palette-input');
+  function openPalette() {
+    paletteBackdrop.classList.add('open');
+    setTimeout(() => paletteInput?.focus(), 50);
+  }
+  function closePalette() {
+    paletteBackdrop.classList.remove('open');
+    if (paletteInput) paletteInput.value = '';
+    document.querySelectorAll('#palette-results .palette-item').forEach(it => it.style.display = '');
+  }
+  paletteBackdrop.addEventListener('click', closePalette);
+  document.querySelector('.search-wrap .search').addEventListener('click', openPalette);
+
+  // Palette result filtering
+  if (paletteInput) {
+    paletteInput.addEventListener('input', () => {
+      const q = paletteInput.value.toLowerCase().trim();
+      document.querySelectorAll('#palette-results .palette-item').forEach(it => {
+        const text = it.innerText.toLowerCase();
+        it.style.display = !q || text.includes(q) ? '' : 'none';
+      });
+      document.querySelectorAll('#palette-results .palette-group').forEach(g => {
+        const visible = g.querySelectorAll('.palette-item:not([style*="none"])').length;
+        g.style.display = visible ? '' : 'none';
+      });
+    });
+  }
+
+  // Palette item clicks
+  document.querySelectorAll('#palette-results .palette-item').forEach(it => {
+    it.addEventListener('click', () => {
+      const pageNav = it.dataset.pageNav;
+      const classNav = it.dataset.classNav;
+      if (pageNav) {
+        nav(pageNav);
+        closePalette();
+      } else if (classNav) {
+        document.getElementById('class-detail-name').textContent = classNav;
+        document.querySelector('.page[data-page="class-detail"]').setAttribute('data-title', classNav);
+        nav('class-detail');
+        closePalette();
+      } else {
+        // action items — just toast
+        toast({ kind: 'ok', title: it.querySelector('.label').textContent, sub: 'Action queued.' });
+        closePalette();
+      }
+    });
+  });
+
+  // ─── Keyboard shortcuts modal ────────────────────────────────────────
+  const kbdBackdrop = document.getElementById('kbd-backdrop');
+  function openShortcuts() { kbdBackdrop.classList.add('open'); }
+  function closeShortcuts() { kbdBackdrop.classList.remove('open'); }
+  window.closeShortcuts = closeShortcuts;
+  kbdBackdrop.addEventListener('click', closeShortcuts);
+  document.getElementById('help-btn').addEventListener('click', openShortcuts);
+
+  // ─── Toast system ─────────────────────────────────────────────────────
+  const toastsEl = document.getElementById('toasts');
+  function toast({ kind = 'info', title = 'Done.', sub, undo = false }) {
+    const el = document.createElement('div');
+    el.className = 'toast ' + kind;
+    const ico = kind === 'ok' ? 'i-check' : kind === 'err' ? 'i-alert' : kind === 'warn' ? 'i-alert' : 'i-info';
+    el.innerHTML =
+      `<svg class="icon"><use href="#${ico}"/></svg>` +
+      `<div class="body"><div class="t-title">${title}</div>` +
+      (sub ? `<div class="t-sub">${sub}</div>` : '') + `</div>` +
+      (undo ? `<button class="undo">Undo</button>` : '');
+    toastsEl.appendChild(el);
+    setTimeout(() => { el.classList.add('fade'); setTimeout(() => el.remove(), 220); }, 3800);
+    el.querySelector('.undo')?.addEventListener('click', () => { el.remove(); toast({ kind: 'info', title: 'Action reverted.' }); });
+  }
+  window.toast = toast;
+
+  // ─── Wire action buttons to toasts (mock confirmations) ──────────────
+  document.body.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn, .icon-btn');
+    if (!btn) return;
+    const txt = (btn.innerText || '').toLowerCase().trim();
+    if (!txt) return;
+    if (txt.startsWith('pause')) toast({ kind: 'ok', title: 'Queue paused.', sub: 'Workers will stop popping on next loop.', undo: true });
+    else if (txt.startsWith('resume')) toast({ kind: 'ok', title: 'Queue resumed.', sub: 'Workers resume popping immediately.' });
+    else if (txt.startsWith('retry selected') || txt === 'retry all') toast({ kind: 'ok', title: 'Retry queued.', sub: '2 jobs re-enqueued.' });
+    else if (txt.startsWith('retry')) toast({ kind: 'ok', title: 'Retry queued.', sub: 'Job re-enqueued for processing.' });
+    else if (txt.startsWith('delete selected')) toast({ kind: 'warn', title: 'Deleted 2 failed jobs.', undo: true });
+    else if (txt.startsWith('delete')) toast({ kind: 'warn', title: 'Job deleted.', undo: true });
+    else if (txt.startsWith('unpin')) toast({ kind: 'info', title: 'Tag unpinned.', sub: 'Will be trimmed at next sweep.' });
+    else if (txt === 'pin') toast({ kind: 'ok', title: 'Tag pinned.', sub: 'Survives the trim window.' });
+    else if (txt.startsWith('refresh') || txt.startsWith('re-probe')) toast({ kind: 'info', title: 'Refreshed.' });
+    else if (txt === 'export csv') toast({ kind: 'ok', title: 'Export queued.', sub: 'CSV will download shortly.' });
+  });
+
+  // ─── Bulk select on Failed jobs ───────────────────────────────────────
+  const bulkBar = document.getElementById('failed-bulk-bar');
+  const bulkCount = document.getElementById('failed-bulk-count');
+  function updateBulk() {
+    const n = document.querySelectorAll('.master-item .checkbox.checked').length;
+    if (bulkCount) bulkCount.textContent = `${n} selected`;
+    if (bulkBar) bulkBar.classList.toggle('visible', n > 0);
+  }
+  document.querySelectorAll('.master-item .checkbox[data-bulk]').forEach(cb => {
+    cb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cb.classList.toggle('checked');
+      updateBulk();
+    });
+  });
+  document.querySelector('.master-item ~ .master-item') ; // touch-only
+  const bulkAll = document.querySelector('.checkbox[data-bulk-all]');
+  if (bulkAll) {
+    bulkAll.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willCheck = !bulkAll.classList.contains('checked');
+      bulkAll.classList.toggle('checked', willCheck);
+      document.querySelectorAll('.master-item .checkbox[data-bulk]').forEach(c => c.classList.toggle('checked', willCheck));
+      updateBulk();
+    });
+  }
+  document.getElementById('failed-bulk-clear')?.addEventListener('click', () => {
+    document.querySelectorAll('.master-item .checkbox, .checkbox[data-bulk-all]').forEach(c => c.classList.remove('checked'));
+    updateBulk();
+  });
+
+  // ─── Search inputs filter visible rows in the next table ─────────────
+  document.querySelectorAll('.filter-bar .search-input input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const q = inp.value.toLowerCase().trim();
+      // find the table or list that follows the filter-bar
+      const fb = inp.closest('.filter-bar');
+      let next = fb.nextElementSibling;
+      while (next && !next.matches('.table, .log, .split, .tabs')) next = next.nextElementSibling;
+      if (!next) return;
+      // tabs are followed by .table — skip tabs to the next table
+      if (next.classList.contains('tabs')) {
+        next = next.nextElementSibling;
+        while (next && !next.matches('.table')) next = next.nextElementSibling;
+        if (!next) return;
+      }
+      // for split (failed), filter .master-item
+      if (next.classList.contains('split')) {
+        next.querySelectorAll('.master-item').forEach(it => {
+          it.style.display = !q || it.innerText.toLowerCase().includes(q) ? '' : 'none';
+        });
+        return;
+      }
+      // for tables and logs, filter rows
+      next.querySelectorAll('tbody tr, .log-entry').forEach(r => {
+        r.style.display = !q || r.innerText.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+  });
+
+  // ─── Range chip toggles ──────────────────────────────────────────────
+  document.querySelectorAll('.range-group').forEach(grp => {
+    grp.querySelectorAll('.chip').forEach(c => {
+      c.addEventListener('click', () => {
+        grp.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+      });
+    });
+  });
+
+  // ─── Keyboard shortcuts ──────────────────────────────────────────────
+  let goPrefix = false;
+  let goTimer = null;
+  function isTypingIn(el) {
+    return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+  }
+  document.addEventListener('keydown', (e) => {
+    // ⌘K / Ctrl+K — palette
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      openPalette();
+      return;
+    }
+    if (e.key === 'Escape') {
+      closePalette();
+      closeShortcuts();
+      return;
+    }
+    if (isTypingIn(document.activeElement)) return;
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openShortcuts(); return; }
+    if (e.key === 't' || e.key === 'T') { cycleTheme(); return; }
+    if (e.key === 'r' || e.key === 'R') { toast({ kind: 'info', title: 'Refreshed.' }); return; }
+    if (e.key === 'g' || e.key === 'G') {
+      goPrefix = true;
+      clearTimeout(goTimer);
+      goTimer = setTimeout(() => { goPrefix = false; }, 800);
+      return;
+    }
+    if (goPrefix) {
+      const map = { o: 'overview', a: 'activity', w: 'workload', m: 'metrics', f: 'failed', s: 'supervisors', h: 'health', p: 'pending', c: 'completed', l: 'rate-limits' };
+      const target = map[e.key.toLowerCase()];
+      if (target) { goPrefix = false; clearTimeout(goTimer); nav(target); }
+    }
+  });
+
+  nav('overview');
+
+  // ─── Theme: light · dark · system ──────────────────────────────────────
+  const THEME_KEY = 'sunset-theme';
+  const themeMedia = window.matchMedia('(prefers-color-scheme: light)');
+
+  function applyTheme() {
+    const stored = localStorage.getItem(THEME_KEY) || 'system';
+    const effective = stored === 'system'
+      ? (themeMedia.matches ? 'light' : 'dark')
+      : stored;
+    document.documentElement.setAttribute('data-theme', effective);
+    const iconHref = stored === 'light' ? '#i-sun' : stored === 'dark' ? '#i-moon' : '#i-monitor';
+    document.querySelector('#theme-icon use').setAttribute('href', iconHref);
+    const btn = document.getElementById('theme-toggle');
+    btn.title = `Theme: ${stored}${stored === 'system' ? ' (' + effective + ')' : ''} — click to cycle`;
+  }
+  function cycleTheme() {
+    const cur = localStorage.getItem(THEME_KEY) || 'system';
+    const next = cur === 'system' ? 'light' : cur === 'light' ? 'dark' : 'system';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme();
+  }
+  document.getElementById('theme-toggle').addEventListener('click', cycleTheme);
+  themeMedia.addEventListener('change', () => {
+    if ((localStorage.getItem(THEME_KEY) || 'system') === 'system') applyTheme();
+  });
+  applyTheme();
+</script>
+</body>
+</html>

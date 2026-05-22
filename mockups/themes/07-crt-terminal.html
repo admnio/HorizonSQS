@@ -1,0 +1,191 @@
+<!doctype html><html><head><meta charset="utf-8"><title>07 · Retrofuturist CRT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #050a05;
+  --green: #00ff41;
+  --green-dim: #008f24;
+  --green-bright: #5dff7e;
+  --amber: #ffb000;
+  --amber-dim: #885a00;
+  --red: #ff4040;
+  --dim: #2d4a32;
+}
+html, body { background: var(--bg); color: var(--green); font-family: 'VT323', 'IBM Plex Mono', monospace; font-size: 19px; line-height: 1.2; min-height: 100vh; overflow-x: hidden; }
+body {
+  text-shadow: 0 0 4px var(--green), 0 0 12px rgba(0, 255, 65, 0.4);
+  background-image: radial-gradient(ellipse at center, rgba(0, 100, 30, 0.06) 0, transparent 70%);
+  background-attachment: fixed;
+}
+/* Scanline + curvature */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 99;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0, 0, 0, 0.18) 2px, rgba(0, 0, 0, 0.18) 3px);
+}
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 100;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 95%);
+}
+.app { padding: 28px 40px 56px; max-width: 1240px; margin: 0 auto; position: relative; z-index: 1; }
+.ibm { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+
+.head {
+  border: 2px solid var(--green); padding: 8px 16px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 18px;
+  box-shadow: inset 0 0 12px rgba(0, 255, 65, 0.1), 0 0 20px rgba(0, 255, 65, 0.15);
+}
+.head .logo { font-family: 'VT323'; font-size: 36px; letter-spacing: 0.12em; text-shadow: 0 0 8px var(--green), 0 0 24px var(--green); }
+.head .logo .cursor { animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.head .sub { font-size: 18px; color: var(--green-dim); text-shadow: 0 0 4px var(--green-dim); border-left: 1px solid var(--green-dim); padding-left: 14px; }
+.head .right { margin-left: auto; font-size: 16px; color: var(--amber); text-shadow: 0 0 6px var(--amber); letter-spacing: 0.06em; }
+
+.ascii-art {
+  white-space: pre;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--green-dim);
+  text-shadow: 0 0 4px var(--green-dim);
+  text-align: center;
+  margin: 6px 0 18px;
+}
+
+.section-bar { margin: 22px 0 8px; font-size: 22px; color: var(--amber); text-shadow: 0 0 6px var(--amber); letter-spacing: 0.04em; display: flex; align-items: baseline; gap: 8px;}
+.section-bar::before { content: '> '; color: var(--green); text-shadow: 0 0 6px var(--green); }
+.section-bar .meta { margin-left: auto; font-size: 16px; color: var(--green-dim); text-shadow: 0 0 4px var(--green-dim); letter-spacing: 0.02em; }
+
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.stat {
+  border: 1px solid var(--green); padding: 14px 16px;
+  position: relative;
+  box-shadow: inset 0 0 8px rgba(0, 255, 65, 0.08);
+}
+.stat .l { font-size: 16px; color: var(--green-dim); text-shadow: 0 0 4px var(--green-dim); letter-spacing: 0.04em; text-transform: uppercase; }
+.stat .n { font-size: 56px; line-height: 1; margin-top: 4px; letter-spacing: 0.02em; text-shadow: 0 0 8px var(--green), 0 0 18px rgba(0, 255, 65, 0.5); }
+.stat .n.amber { color: var(--amber); text-shadow: 0 0 8px var(--amber), 0 0 18px rgba(255, 176, 0, 0.5); }
+.stat .n.red { color: var(--red); text-shadow: 0 0 8px var(--red), 0 0 18px rgba(255, 64, 64, 0.5); }
+.stat .n sub { font-size: 18px; color: var(--green-dim); text-shadow: 0 0 4px var(--green-dim); }
+.stat .d { font-size: 16px; color: var(--green-dim); margin-top: 4px; letter-spacing: 0.04em; }
+.stat .d.up { color: var(--green-bright); text-shadow: 0 0 6px var(--green-bright); }
+.stat .d.down { color: var(--red); text-shadow: 0 0 6px var(--red); }
+.stat .bar { margin-top: 6px; font-family: 'VT323'; color: var(--green); text-shadow: 0 0 4px var(--green); letter-spacing: 0; font-size: 18px; }
+
+.panel { border: 1px solid var(--green); margin-top: 14px; padding: 14px 0; box-shadow: inset 0 0 8px rgba(0, 255, 65, 0.06); }
+.panel .ph {
+  border-bottom: 1px dashed var(--green-dim); padding: 0 16px 10px; margin-bottom: 8px;
+  display: flex; gap: 12px; align-items: baseline;
+}
+.panel .ph .name { font-size: 20px; color: var(--amber); text-shadow: 0 0 6px var(--amber); letter-spacing: 0.04em; }
+.panel .ph .name::before { content: '[ '; color: var(--green-dim); text-shadow: 0 0 4px var(--green-dim); }
+.panel .ph .name::after { content: ' ]'; color: var(--green-dim); text-shadow: 0 0 4px var(--green-dim); }
+.panel .ph .meta { color: var(--green-dim); font-size: 16px; text-shadow: 0 0 4px var(--green-dim); margin-left: auto; }
+
+table.crt { width: 100%; border-collapse: collapse; font-family: 'VT323', monospace; font-size: 20px; }
+table.crt th { text-align: left; padding: 4px 16px; color: var(--amber); text-shadow: 0 0 4px var(--amber); font-weight: normal; letter-spacing: 0.04em; border-bottom: 1px dotted var(--green-dim); }
+table.crt th.r { text-align: right; }
+table.crt td { padding: 4px 16px; }
+table.crt td.r { text-align: right; }
+table.crt td.dim { color: var(--green-dim); text-shadow: 0 0 4px var(--green-dim); }
+table.crt td.amber { color: var(--amber); text-shadow: 0 0 4px var(--amber); }
+table.crt td.red { color: var(--red); text-shadow: 0 0 4px var(--red); }
+table.crt tr:hover td { background: rgba(0, 255, 65, 0.05); }
+table.crt .ok::before { content: '[OK] '; color: var(--green-bright); text-shadow: 0 0 4px var(--green-bright); }
+table.crt .warn::before { content: '[!!] '; color: var(--amber); text-shadow: 0 0 4px var(--amber); }
+table.crt .err::before { content: '[XX] '; color: var(--red); text-shadow: 0 0 4px var(--red); }
+table.crt .pause::before { content: '[||] '; color: var(--amber); text-shadow: 0 0 4px var(--amber); }
+
+.events-row { display: grid; grid-template-columns: 130px 110px 1fr 80px; gap: 14px; padding: 5px 16px; font-family: 'VT323'; font-size: 19px; }
+.events-row:nth-child(even) { background: rgba(0, 255, 65, 0.025); }
+.events-row .ts { color: var(--amber); text-shadow: 0 0 4px var(--amber); }
+.events-row .lvl-err { color: var(--red); text-shadow: 0 0 4px var(--red); }
+.events-row .lvl-warn { color: var(--amber); text-shadow: 0 0 4px var(--amber); }
+.events-row .lvl-info { color: var(--green-bright); text-shadow: 0 0 4px var(--green-bright); }
+.events-row .lvl-ok { color: var(--green-bright); text-shadow: 0 0 4px var(--green-bright); }
+.events-row .id { text-align: right; color: var(--green-dim); text-shadow: 0 0 4px var(--green-dim); font-size: 16px; }
+
+.cmdline {
+  border: 1px solid var(--green); padding: 8px 16px; margin-top: 18px;
+  font-size: 22px; box-shadow: inset 0 0 8px rgba(0, 255, 65, 0.08);
+  display: flex; align-items: center; gap: 8px;
+}
+.cmdline .prompt { color: var(--amber); text-shadow: 0 0 6px var(--amber); }
+.cmdline .text { color: var(--green-bright); text-shadow: 0 0 6px var(--green-bright); }
+.cmdline .cursor { background: var(--green); color: var(--bg); padding: 0 4px; text-shadow: none; animation: blink 1s steps(2) infinite; }
+.cmdline .right { margin-left: auto; font-size: 18px; color: var(--green-dim); text-shadow: 0 0 4px var(--green-dim); }
+
+</style>
+</head><body>
+<div class="app">
+  <div class="head">
+    <div class="logo">SUNSET-Q v1.3.0<span class="cursor">_</span></div>
+    <div class="sub">DEC TERMINAL · 80×24 · GREEN PHOSPHOR</div>
+    <div class="right">21-MAY-2026 04:22:18 UTC</div>
+  </div>
+
+  <div class="ascii-art">
+╔════════════════════════════════════════════════════════════════════════════╗
+║   ◈   QUEUE OBSERVER — REMOTE NODE: prod-east-01   ◈   uplink: 03 ms   ◈   ║
+╚════════════════════════════════════════════════════════════════════════════╝</div>
+
+  <div class="section-bar">OVERVIEW · screen 01<span class="meta">F1 HELP · F2 NAV · CTRL+C BREAK</span></div>
+
+  <div class="grid">
+    <div class="stat">
+      <div class="l">QUEUE DEPTH</div>
+      <div class="n">3,847</div>
+      <div class="d down">▼ 412 LAST HR</div>
+      <div class="bar">████████████░░░░░░░ 65%</div>
+    </div>
+    <div class="stat">
+      <div class="l">SUPERVISORS</div>
+      <div class="n amber">04<sub>/04</sub></div>
+      <div class="d">28 / 46 PROCS</div>
+      <div class="bar">██████████████░░░░░ 61%</div>
+    </div>
+    <div class="stat">
+      <div class="l">JOBS / MIN</div>
+      <div class="n">1,247</div>
+      <div class="d up">▲ 8.2 %</div>
+      <div class="bar">████████████████░░░ 84%</div>
+    </div>
+    <div class="stat">
+      <div class="l">FAIL RATE</div>
+      <div class="n red">0.84<sub>%</sub></div>
+      <div class="d down">5 IN 1H</div>
+      <div class="bar">████░░░░░░░░░░░░░░░ 21%</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><span class="name">WORKLOAD</span><span class="meta">5 queues · 3 transports</span></div>
+    <table class="crt">
+      <thead><tr><th>QUEUE</th><th>TRANSPORT</th><th class="r">LEN</th><th class="r">PROC</th><th class="r">WAIT</th><th>STATE</th></tr></thead>
+      <tbody>
+        <tr><td>emails</td><td class="dim">redis</td><td class="r">128</td><td class="r">8</td><td class="r">2</td><td class="ok">run</td></tr>
+        <tr><td>webhooks</td><td class="dim">sqs</td><td class="r">2,431</td><td class="r">16</td><td class="r">14</td><td class="ok">run</td></tr>
+        <tr><td>indexing</td><td class="dim">redis</td><td class="r">901</td><td class="r">4</td><td class="r">48</td><td class="warn amber">backlog</td></tr>
+        <tr><td>geocode</td><td class="dim">redis</td><td class="r">312</td><td class="r">0</td><td class="r dim">—</td><td class="pause amber">paused</td></tr>
+        <tr><td>nightly-rollup</td><td class="dim">rabbitmq</td><td class="r">75</td><td class="r">2</td><td class="r">5</td><td class="ok">run</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><span class="name">EVENT LOG</span><span class="meta">tail -f · last 10m</span></div>
+    <div class="events-row"><span class="ts">04:18:42</span><span class="lvl-ok">DEPLOY</span><span>master-1 supervisors loaded from sunset.environments[]</span><span class="id">#48201</span></div>
+    <div class="events-row"><span class="ts">04:17:11</span><span class="lvl-warn">L-WAIT</span><span>sqs:webhooks idle 48s over wait-threshold</span><span class="id">#48198</span></div>
+    <div class="events-row"><span class="ts">04:15:08</span><span class="lvl-info">PAUSED</span><span>redis:geocode paused by dashboard (8 workers stop next loop)</span><span class="id">#48192</span></div>
+    <div class="events-row"><span class="ts">04:14:32</span><span class="lvl-warn">HI-MEM</span><span>worker pid 91824 RSS 112.3MB approaching 128MB limit</span><span class="id">#48188</span></div>
+    <div class="events-row"><span class="ts">04:13:01</span><span class="lvl-err">FAILED</span><span>App\Jobs\IndexProduct → Elastic\ClientResponseException 429</span><span class="id">#48184</span></div>
+  </div>
+
+  <div class="cmdline">
+    <span class="prompt">SUNSET&gt;</span>
+    <span class="text">QUEUE RESUME redis geocode</span><span class="cursor">_</span>
+    <span class="right">RAM 14.2/16K BLOCKS · 8412 KEYS</span>
+  </div>
+</div>
+</body></html>

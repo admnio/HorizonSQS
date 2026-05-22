@@ -1,0 +1,201 @@
+<!doctype html><html><head><meta charset="utf-8"><title>05 · Naturalist Almanac</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --paper: #f0e6cf;
+  --paper-2: #e3d5b6;
+  --paper-3: #d9c89c;
+  --ink: #2a1d10;
+  --ink-2: #5a4733;
+  --ink-3: #8b7657;
+  --sienna: #7c2d12;
+  --moss: #3f6b3a;
+  --azure: #2c4f7a;
+  --rule: #b8a380;
+}
+html, body { background: var(--paper); color: var(--ink); font-family: 'EB Garamond', 'Cormorant Garamond', serif; font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+body {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(124, 45, 18, 0.05) 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(63, 107, 58, 0.04) 0, transparent 50%);
+  background-attachment: fixed;
+  position: relative;
+}
+/* paper texture */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.18  0 0 0 0 0.12  0 0 0 0 0.05  0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.55; mix-blend-mode: multiply;
+}
+.mono { font-family: 'Special Elite', 'Courier New', monospace; }
+
+.app { max-width: 1200px; margin: 0 auto; padding: 48px 64px 96px; position: relative; z-index: 2; }
+
+.masthead {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 32px;
+  padding-bottom: 18px; border-bottom: 3px double var(--ink); position: relative;
+}
+.brand { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 60px; line-height: 0.9; letter-spacing: -0.02em; color: var(--ink); }
+.brand .amp { color: var(--sienna); font-style: normal; font-weight: 400; }
+.brand-sub {
+  margin-top: 6px; font-style: italic; font-size: 14px; color: var(--ink-3); letter-spacing: 0.05em; text-transform: lowercase;
+}
+.brand-sub::before, .brand-sub::after { content: ' ❦ '; color: var(--sienna); }
+.edition { text-align: right; font-family: 'Cormorant Garamond', serif; font-size: 13px; color: var(--ink-2); line-height: 1.6; }
+.edition .label { font-style: italic; color: var(--ink-3); }
+.edition .val { font-variant: small-caps; letter-spacing: 0.08em; }
+.flourish { text-align: center; padding: 14px 0; font-size: 22px; color: var(--sienna); letter-spacing: 0.8em; }
+
+.lead { margin: 28px 0 56px; text-align: center; }
+.section-mark {
+  font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 14px; color: var(--sienna); letter-spacing: 0.32em; text-transform: uppercase;
+}
+.section-mark::before { content: '⌘  '; letter-spacing: 0; }
+.section-mark::after { content: '  ⌘'; letter-spacing: 0; }
+.title { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 72px; line-height: 1; margin: 12px 0 16px; letter-spacing: -0.02em; }
+.lede { font-family: 'EB Garamond', serif; font-style: italic; font-weight: 400; font-size: 18px; max-width: 640px; margin: 0 auto; color: var(--ink-2); line-height: 1.6; }
+.lede::before, .lede::after { content: '“'; color: var(--sienna); font-size: 32px; }
+.lede::after { content: '”'; }
+
+.section-head {
+  margin: 56px 0 18px; display: flex; align-items: baseline; gap: 14px;
+  border-bottom: 1px solid var(--rule); padding-bottom: 10px;
+}
+.section-head .roman { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 22px; color: var(--sienna); font-weight: 500; }
+.section-head h2 { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 28px; letter-spacing: -0.01em; }
+.section-head .meta { margin-left: auto; font-style: italic; color: var(--ink-3); font-size: 13px; }
+
+.body-grid { display: grid; grid-template-columns: 1fr 200px; gap: 32px; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border: 1.5px solid var(--ink); border-bottom: none; background: var(--paper-2); }
+.stat { padding: 22px 24px; border-right: 1px solid var(--rule); border-bottom: 1.5px solid var(--ink); position: relative; }
+.stat:nth-child(2n) { border-right: none; }
+.stat .l { font-style: italic; font-size: 14px; color: var(--ink-3); letter-spacing: 0.02em; margin-bottom: 6px; }
+.stat .l::before { content: '✶ '; color: var(--sienna); font-style: normal; }
+.stat .n { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 52px; line-height: 1; color: var(--ink); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.stat .n.sienna { color: var(--sienna); }
+.stat .n sub { font-family: 'EB Garamond', serif; font-style: italic; font-size: 16px; color: var(--ink-3); font-weight: 400; letter-spacing: 0; margin-left: 4px; }
+.stat .d { font-style: italic; font-size: 13px; color: var(--ink-3); margin-top: 6px; }
+.stat .d .arrow { color: var(--sienna); font-style: normal; }
+
+.margin-note {
+  font-family: 'EB Garamond', serif; font-style: italic; font-size: 13px; color: var(--ink-3); line-height: 1.5;
+  padding-top: 22px;
+  position: relative;
+}
+.margin-note::before {
+  content: ''; position: absolute; left: -20px; top: 0; height: 100%; width: 1px; background: var(--rule);
+}
+.margin-note .label {
+  display: block; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-style: normal; font-variant: small-caps; color: var(--sienna); font-size: 11px; letter-spacing: 0.15em; margin-bottom: 6px;
+}
+.margin-note + .margin-note { margin-top: 28px; }
+
+table.wk { width: 100%; border-collapse: collapse; }
+table.wk th { text-align: left; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-variant: small-caps; letter-spacing: 0.06em; font-size: 13px; color: var(--ink-3); padding: 10px 0 8px; border-bottom: 1.5px solid var(--ink); }
+table.wk th.r { text-align: right; }
+table.wk td { padding: 14px 0; border-bottom: 1px dotted var(--rule); vertical-align: baseline; font-size: 17px; }
+table.wk td.r { text-align: right; font-variant-numeric: tabular-nums; }
+table.wk td.r.mono-r { font-family: 'Special Elite', monospace; font-size: 14px; color: var(--ink-2); }
+table.wk td .q { font-weight: 500; }
+table.wk td .conn { font-style: italic; color: var(--ink-3); font-size: 14px; margin-left: 6px; }
+.tag { display: inline-block; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-variant: small-caps; letter-spacing: 0.12em; font-size: 12px; padding: 1px 8px; border: 1px solid currentColor; }
+.tag.ok { color: var(--moss); }
+.tag.warn { color: var(--sienna); }
+.tag.err { color: #991b1b; }
+.tag.info { color: var(--azure); }
+
+.log .e {
+  display: grid; grid-template-columns: 90px 1fr 80px; gap: 24px; padding: 16px 0;
+  border-bottom: 1px dotted var(--rule); align-items: baseline;
+}
+.log .ts { font-family: 'Special Elite', monospace; font-size: 13px; color: var(--ink-3); letter-spacing: 0.02em; }
+.log .body { font-size: 16px; line-height: 1.55; }
+.log .body strong { font-weight: 600; font-variant: small-caps; letter-spacing: 0.06em; color: var(--sienna); margin-right: 4px; }
+.log .body em { font-style: italic; color: var(--ink-2); }
+.log .body .src { display: block; font-style: italic; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.log .id { text-align: right; font-family: 'Special Elite', monospace; font-size: 12px; color: var(--ink-3); }
+
+.footer {
+  margin-top: 84px; padding: 16px 0; border-top: 3px double var(--ink);
+  display: flex; align-items: baseline; gap: 14px;
+  font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 13px; color: var(--ink-3);
+}
+.footer .ornament { color: var(--sienna); font-size: 18px; letter-spacing: 0.3em; }
+.footer .right { margin-left: auto; font-variant: small-caps; letter-spacing: 0.08em; }
+
+</style>
+</head><body>
+<div class="app">
+  <header class="masthead">
+    <div>
+      <div class="brand">Sun<span class="amp">·</span>set</div>
+      <div class="brand-sub">an almanac for queue observation</div>
+    </div>
+    <div></div>
+    <div class="edition">
+      <span class="label">Thursday,</span> <span class="val">21 May 2026</span><br>
+      <span class="label">Edition</span> <span class="val">M·MMXXVI · 04:22 utc</span><br>
+      <span class="label">Vol.</span> <span class="val">I · No. 3</span>
+    </div>
+  </header>
+
+  <div class="flourish">✦  ❦  ✦  ❦  ✦  ❦  ✦</div>
+
+  <div class="lead">
+    <div class="section-mark">part the first</div>
+    <h1 class="title">Of the Overview</h1>
+    <p class="lede">Wherein five queues are observed: four currently in motion, one at rest. The total accumulation stands at three thousand eight hundred and forty-seven jobs awaiting their workers.</p>
+  </div>
+
+  <div class="section-head"><span class="roman">i.</span><h2>Vital signs</h2><span class="meta">polled every three seconds</span></div>
+
+  <div class="body-grid">
+    <div class="stat-grid">
+      <div class="stat"><div class="l">Queue depth</div><div class="n">3,847</div><div class="d"><span class="arrow">↘</span> 412 fewer than the prior hour</div></div>
+      <div class="stat"><div class="l">Supervisors</div><div class="n">iv</div><div class="d">twenty-eight workers across forty-six slots</div></div>
+      <div class="stat"><div class="l">Throughput</div><div class="n">1.2k<sub>per minute</sub></div><div class="d"><span class="arrow">↗</span> 8.2% over the hour</div></div>
+      <div class="stat"><div class="l">Failure rate</div><div class="n sienna">0.84<sub>percent</sub></div><div class="d">five sorrows in the last hour</div></div>
+    </div>
+    <div>
+      <div class="margin-note">
+        <span class="label">marginalia</span>
+        Failures concentrated upon the <em>indexing</em> queue — the Elasticsearch endpoint hath returned six and twenty 429s, suggesting the bulk indexer requires moderation.
+      </div>
+      <div class="margin-note">
+        <span class="label">a kindness</span>
+        Worker pid 91824 climbeth steadily towards its memory ceiling. Anticipate restart within the next quarter-hour.
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head"><span class="roman">ii.</span><h2>The workload</h2><span class="meta">across three transports</span></div>
+  <table class="wk">
+    <thead><tr><th>Queue</th><th class="r">Length</th><th class="r">Workers</th><th class="r">Wait</th><th class="r">Throughput</th><th>Condition</th></tr></thead>
+    <tbody>
+      <tr><td><span class="q">Emails</span><span class="conn">— redis</span></td><td class="r mono-r">128</td><td class="r mono-r">8</td><td class="r mono-r">2 s</td><td class="r mono-r">412 / min</td><td><span class="tag ok">running</span></td></tr>
+      <tr><td><span class="q">Webhooks</span><span class="conn">— sqs</span></td><td class="r mono-r">2,431</td><td class="r mono-r">16</td><td class="r mono-r">14 s</td><td class="r mono-r">605 / min</td><td><span class="tag ok">running</span></td></tr>
+      <tr><td><span class="q">Indexing</span><span class="conn">— redis</span></td><td class="r mono-r">901</td><td class="r mono-r">4</td><td class="r mono-r">48 s</td><td class="r mono-r">196 / min</td><td><span class="tag warn">backlog</span></td></tr>
+      <tr><td><span class="q">Geocode</span><span class="conn">— redis</span></td><td class="r mono-r">312</td><td class="r mono-r">0</td><td class="r mono-r">—</td><td class="r mono-r">—</td><td><span class="tag warn">paused</span></td></tr>
+      <tr><td><span class="q">Nightly rollup</span><span class="conn">— rabbitmq</span></td><td class="r mono-r">75</td><td class="r mono-r">2</td><td class="r mono-r">5 s</td><td class="r mono-r">34 / min</td><td><span class="tag ok">running</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-head"><span class="roman">iii.</span><h2>Notable events</h2><span class="meta">since dawn</span></div>
+  <div class="log">
+    <div class="e"><div class="ts">04:18:42</div><div class="body"><strong>deployed.</strong> <em>Master-1</em> hath loaded its supervisors from the configured environments. Four supervisors raised across redis, sqs, rabbitmq.<span class="src">— master · sunset.environments[]</span></div><div class="id">№ 48201</div></div>
+    <div class="e"><div class="ts">04:17:11</div><div class="body"><strong>long-wait.</strong> The <em>webhooks</em> queue on SQS hath sat idle eight-and-forty seconds. The auto-scaler will dispatch two new workers.<span class="src">— sqs · webhooks</span></div><div class="id">№ 48198</div></div>
+    <div class="e"><div class="ts">04:15:08</div><div class="body"><strong>paused.</strong> The <em>geocode</em> queue hath been paused by the operator from the dashboard. Eight workers shall cease popping at the next iteration.<span class="src">— redis · geocode · actor: dashboard</span></div><div class="id">№ 48192</div></div>
+    <div class="e"><div class="ts">04:13:01</div><div class="body"><strong>failed.</strong> <em>App\Jobs\IndexProduct</em> hath suffered an Elastic\ClientResponseException — too many requests. Three attempts spent.<span class="src">— redis · indexing</span></div><div class="id">№ 48184</div></div>
+  </div>
+
+  <footer class="footer">
+    <span class="ornament">❦ ❦ ❦</span>
+    <span>Sunset · Vol.1.3</span>
+    <span>· Issued under Free Use, May twenty-six twenty-six</span>
+    <span class="right">Page i — Continued overleaf</span>
+  </footer>
+</div>
+</body></html>

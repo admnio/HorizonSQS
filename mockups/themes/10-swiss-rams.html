@@ -1,0 +1,285 @@
+<!doctype html><html><head><meta charset="utf-8"><title>10 · Swiss · Rams</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #e8e1d4;
+  --bg-2: #ddd5c4;
+  --card: #ffffff;
+  --ink: #0a0a0a;
+  --ink-2: #555555;
+  --ink-3: #999999;
+  --rule: #1a1a1a;
+  --rule-soft: #c4baa8;
+  --yellow: #f5b800;
+  --red: #d92626;
+  --blue: #1e40af;
+  --green: #15803d;
+}
+html, body { background: var(--bg); color: var(--ink); font-family: 'Inter', 'Helvetica Neue', sans-serif; font-size: 13px; line-height: 1.45; min-height: 100vh; -webkit-font-smoothing: antialiased; font-feature-settings: 'cv11', 'tnum'; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+.app { max-width: 1280px; margin: 0 auto; padding: 32px; }
+
+.grid-12 { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+
+.top {
+  grid-column: span 12;
+  background: var(--card); padding: 24px 28px;
+  display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 24px; align-items: center;
+  border: 2px solid var(--ink);
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark { display: flex; gap: 3px; }
+.brand-mark .sq { width: 10px; height: 10px; background: var(--yellow); }
+.brand-mark .sq:nth-child(2) { background: var(--red); }
+.brand-mark .sq:nth-child(3) { background: var(--blue); }
+.brand-mark .sq:nth-child(4) { background: var(--ink); border-radius: 50%; }
+.brand-name { font-weight: 800; font-size: 22px; letter-spacing: -0.04em; }
+.crumb { font-size: 11px; color: var(--ink-2); letter-spacing: 0.04em; text-transform: uppercase; font-weight: 500; padding-left: 24px; border-left: 1px solid var(--rule-soft); }
+.crumb .v { color: var(--ink); }
+
+.tag-square {
+  display: inline-flex; align-items: center; padding: 4px 10px;
+  font-weight: 600; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.tag-square .dot { width: 6px; height: 6px; margin-right: 8px; }
+.tag-square.live { background: var(--ink); color: var(--bg); }
+.tag-square.live .dot { background: var(--green); }
+.btn-sq {
+  display: inline-flex; align-items: center; padding: 7px 14px;
+  background: var(--ink); color: var(--bg); border: none; cursor: pointer;
+  font-family: 'Inter'; font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.btn-sq.ghost { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+
+.title-block {
+  grid-column: span 12;
+  background: var(--card); padding: 32px 28px 28px;
+  border: 2px solid var(--ink); border-top: none;
+  display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px;
+}
+.numwrap { display: flex; align-items: baseline; gap: 24px; }
+.idx {
+  font-weight: 800; font-size: 56px; line-height: 0.9; letter-spacing: -0.04em;
+  color: var(--yellow); background: var(--ink); padding: 4px 14px 8px; align-self: flex-start;
+}
+.title { font-weight: 700; font-size: 48px; line-height: 0.95; letter-spacing: -0.03em; }
+.title .sub { display: block; font-size: 14px; font-weight: 500; color: var(--ink-2); letter-spacing: 0; margin-top: 8px; }
+.title-meta {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-2); letter-spacing: 0.06em; text-transform: uppercase;
+  text-align: right; line-height: 1.6;
+}
+.title-meta .v { color: var(--ink); font-weight: 600; }
+
+.stat {
+  background: var(--card); padding: 22px 22px 22px;
+  border: 2px solid var(--ink);
+  position: relative;
+}
+.stat:nth-child(1) { grid-column: span 3; }
+.stat:nth-child(2) { grid-column: span 3; }
+.stat:nth-child(3) { grid-column: span 3; }
+.stat:nth-child(4) { grid-column: span 3; }
+.stat .color-mark {
+  position: absolute; top: 0; left: 0; right: 0; height: 6px;
+}
+.stat.s-yellow .color-mark { background: var(--yellow); }
+.stat.s-blue .color-mark { background: var(--blue); }
+.stat.s-red .color-mark { background: var(--red); }
+.stat.s-green .color-mark { background: var(--green); }
+.stat .l {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2);
+  margin-bottom: 18px; margin-top: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.stat .l .index {
+  display: inline-flex; width: 22px; height: 22px;
+  background: var(--ink); color: var(--bg);
+  font-family: 'IBM Plex Mono'; font-size: 11px; font-weight: 700; letter-spacing: 0;
+  align-items: center; justify-content: center;
+}
+.stat .n {
+  font-weight: 700; font-size: 52px; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+}
+.stat .n .unit { font-size: 16px; font-weight: 500; color: var(--ink-2); margin-left: 4px; letter-spacing: 0; }
+.stat .delta {
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule-soft);
+  display: flex; align-items: baseline; gap: 8px; font-size: 12px;
+}
+.stat .delta .arrow { font-weight: 700; }
+.stat .delta.up .arrow { color: var(--green); }
+.stat .delta.down .arrow { color: var(--red); }
+.stat .delta .label { color: var(--ink-2); letter-spacing: 0.04em; }
+
+.section {
+  grid-column: span 12;
+  margin-top: 16px;
+}
+.section-head {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: end; gap: 18px;
+  padding-bottom: 12px; border-bottom: 2px solid var(--ink); margin-bottom: 0;
+}
+.section-head .name {
+  font-weight: 700; font-size: 22px; letter-spacing: -0.02em;
+}
+.section-head .name .idx {
+  display: inline-block; background: var(--ink); color: var(--bg);
+  font-family: 'IBM Plex Mono'; font-size: 11px; font-weight: 700; padding: 2px 8px; vertical-align: 5px; margin-right: 10px; letter-spacing: 0;
+}
+.section-head .meta { font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--ink-2); letter-spacing: 0.06em; }
+
+.tbl-wrap { background: var(--card); border: 2px solid var(--ink); border-top: none; }
+table.t { width: 100%; border-collapse: collapse; }
+table.t th {
+  text-align: left; padding: 14px 18px;
+  font-weight: 600; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2);
+  border-bottom: 1px solid var(--ink);
+  background: var(--card);
+}
+table.t th.r { text-align: right; }
+table.t td {
+  padding: 16px 18px; border-bottom: 1px solid var(--rule-soft); vertical-align: middle;
+  font-size: 14px;
+}
+table.t tr:last-child td { border-bottom: none; }
+table.t td.r { text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 500; }
+table.t td.muted { color: var(--ink-3); }
+table.t .q { font-weight: 600; }
+table.t .conn {
+  display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.04em;
+  color: var(--ink-2); background: var(--bg); padding: 2px 6px; margin-left: 10px; font-weight: 500;
+}
+.flag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.flag .sq { width: 10px; height: 10px; }
+.flag.ok { color: var(--green); }
+.flag.ok .sq { background: var(--green); }
+.flag.warn { color: var(--yellow); }
+.flag.warn .sq { background: var(--yellow); }
+.flag.err { color: var(--red); }
+.flag.err .sq { background: var(--red); }
+.flag.pause { color: var(--ink); }
+.flag.pause .sq { background: var(--ink); }
+
+.events {
+  background: var(--card); border: 2px solid var(--ink); border-top: none;
+}
+.events .e {
+  display: grid; grid-template-columns: 72px 22px 110px 1fr 60px; gap: 18px;
+  padding: 16px 22px; border-bottom: 1px solid var(--rule-soft); align-items: center;
+}
+.events .e:last-child { border-bottom: none; }
+.events .e .ts { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink); font-weight: 500; }
+.events .e .index {
+  width: 22px; height: 22px; background: var(--ink); color: var(--bg);
+  font-family: 'IBM Plex Mono'; font-size: 11px; font-weight: 700; display: grid; place-items: center;
+}
+.events .e .body { font-size: 14px; }
+.events .e .body strong { font-weight: 600; }
+.events .e .body em { font-style: normal; color: var(--ink-2); }
+.events .e .id { text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-2); }
+
+.footer {
+  grid-column: span 12; margin-top: 16px;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: baseline;
+  padding-top: 12px; border-top: 2px solid var(--ink);
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: var(--ink-2); text-transform: uppercase;
+}
+.footer .right { font-weight: 600; color: var(--ink); }
+
+</style>
+</head><body>
+<div class="app">
+  <div class="grid-12">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark"><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span></div>
+      <div class="brand-name">Sunset</div>
+    </div>
+    <div class="crumb"><span class="v">prod-cluster-east</span> · uptime <span class="v">8d 14h</span></div>
+    <span class="tag-square live"><span class="dot"></span>Online</span>
+    <button class="btn-sq ghost">⌘ Search</button>
+    <button class="btn-sq">Refresh</button>
+  </header>
+
+  <div class="title-block">
+    <div class="numwrap">
+      <div class="idx">01</div>
+      <h1 class="title">Overview<span class="sub">A current and complete account of the queue system.</span></h1>
+    </div>
+    <div class="title-meta">21 May 2026<br><span class="v">04:22:18 UTC</span><br>polled · 3 seconds</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat s-yellow">
+    <div class="color-mark"></div>
+    <div class="l"><span class="index">01</span>Queue depth</div>
+    <div class="n">3,847</div>
+    <div class="delta down"><span class="arrow">▼</span><span>412</span><span class="label">vs last hour</span></div>
+  </div>
+  <div class="stat s-blue">
+    <div class="color-mark"></div>
+    <div class="l"><span class="index">02</span>Supervisors</div>
+    <div class="n">4<span class="unit">/ 4</span></div>
+    <div class="delta"><span class="label">28 of 46 processes</span></div>
+  </div>
+  <div class="stat s-green">
+    <div class="color-mark"></div>
+    <div class="l"><span class="index">03</span>Throughput</div>
+    <div class="n">1.2k<span class="unit">/ min</span></div>
+    <div class="delta up"><span class="arrow">▲</span><span>8.2%</span><span class="label">vs last hour</span></div>
+  </div>
+  <div class="stat s-red">
+    <div class="color-mark"></div>
+    <div class="l"><span class="index">04</span>Failure rate</div>
+    <div class="n">0.84<span class="unit">%</span></div>
+    <div class="delta"><span class="label">5 failures in last hour</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="name"><span class="idx">05</span>Workload</div>
+      <div class="meta">5 queues</div>
+      <div class="meta">3 transports</div>
+    </div>
+    <div class="tbl-wrap"><table class="t">
+      <thead><tr><th>Queue</th><th class="r">Length</th><th class="r">Workers</th><th class="r">Wait</th><th class="r">Throughput</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td><span class="q">emails</span><span class="conn">redis</span></td><td class="r">128</td><td class="r">8</td><td class="r">2 s</td><td class="r">412 /min</td><td><span class="flag ok"><span class="sq"></span>Running</span></td></tr>
+        <tr><td><span class="q">webhooks</span><span class="conn">sqs</span></td><td class="r">2,431</td><td class="r">16</td><td class="r">14 s</td><td class="r">605 /min</td><td><span class="flag ok"><span class="sq"></span>Running</span></td></tr>
+        <tr><td><span class="q">indexing</span><span class="conn">redis</span></td><td class="r">901</td><td class="r">4</td><td class="r">48 s</td><td class="r">196 /min</td><td><span class="flag warn"><span class="sq"></span>Backlog</span></td></tr>
+        <tr><td><span class="q">geocode</span><span class="conn">redis</span></td><td class="r">312</td><td class="r">0</td><td class="r muted">—</td><td class="r muted">—</td><td><span class="flag pause"><span class="sq"></span>Paused</span></td></tr>
+        <tr><td><span class="q">nightly-rollup</span><span class="conn">rabbitmq</span></td><td class="r">75</td><td class="r">2</td><td class="r">5 s</td><td class="r">34 /min</td><td><span class="flag ok"><span class="sq"></span>Running</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="name"><span class="idx">06</span>Recent events</div>
+      <div class="meta">Live</div>
+      <div class="meta">Last 10 minutes</div>
+    </div>
+    <div class="events">
+      <div class="e"><span class="ts">04:18:42</span><span class="index">01</span><span class="flag ok"><span class="sq"></span>Deploy</span><span class="body"><strong>master-1</strong> · <em>supervisors loaded from sunset.environments[]</em></span><span class="id">48201</span></div>
+      <div class="e"><span class="ts">04:17:11</span><span class="index">02</span><span class="flag warn"><span class="sq"></span>Long-wait</span><span class="body"><strong>sqs:webhooks</strong> · <em>idle 48s over wait threshold</em></span><span class="id">48198</span></div>
+      <div class="e"><span class="ts">04:15:08</span><span class="index">03</span><span class="flag pause"><span class="sq"></span>Pause</span><span class="body"><strong>redis:geocode</strong> · <em>paused by dashboard</em></span><span class="id">48192</span></div>
+      <div class="e"><span class="ts">04:14:32</span><span class="index">04</span><span class="flag warn"><span class="sq"></span>High mem</span><span class="body">Worker <strong>pid 91824</strong> · <em>RSS 112.3MB approaching 128MB limit</em></span><span class="id">48188</span></div>
+      <div class="e"><span class="ts">04:13:01</span><span class="index">05</span><span class="flag err"><span class="sq"></span>Failed</span><span class="body"><strong>App\Jobs\IndexProduct</strong> · <em>Elastic\ClientResponseException 429</em></span><span class="id">48184</span></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>Sunset · v1.3.0</span>
+    <span>Page 01 / 13</span>
+    <span class="right">End ■</span>
+  </footer>
+
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,297 @@
+<!doctype html><html><head><meta charset="utf-8"><title>06 · Industrial SCADA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=Inconsolata:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --steel: #2a2e35;
+  --steel-2: #353a43;
+  --steel-3: #424954;
+  --bezel: #1a1d22;
+  --panel: #2e3239;
+  --readout: #0f1216;
+  --rivet: #16181c;
+  --plate: #c9bba5;
+  --plate-2: #a89a82;
+  --ink: #e8e0d0;
+  --ink-2: #a5a09a;
+  --amber: #ffa500;
+  --amber-glow: #ffb84d;
+  --red: #ff3030;
+  --red-glow: #ff6060;
+  --green: #1aff5f;
+  --green-glow: #4dff80;
+}
+html, body { background: var(--steel); color: var(--ink); font-family: 'Inconsolata', 'IBM Plex Mono', monospace; font-size: 13px; line-height: 1.5; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+body {
+  background-image:
+    linear-gradient(135deg, transparent 0%, rgba(0,0,0,0.18) 100%),
+    repeating-linear-gradient(45deg, transparent 0, transparent 4px, rgba(255,255,255,0.012) 4px, rgba(255,255,255,0.012) 5px);
+  background-attachment: fixed;
+}
+.lcd { font-family: 'Oxanium', monospace; }
+
+.app { max-width: 1400px; margin: 0 auto; padding: 14px; }
+
+.bezel {
+  background: linear-gradient(to bottom, var(--steel-3) 0, var(--steel-2) 100%);
+  border: 2px solid var(--bezel);
+  border-radius: 4px;
+  padding: 14px;
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -2px 0 rgba(0,0,0,0.4),
+    0 4px 12px rgba(0,0,0,0.5);
+}
+.bezel::before, .bezel::after, .bezel > .rv-tl, .bezel > .rv-tr, .bezel > .rv-bl, .bezel > .rv-br {
+  position: absolute; content: ''; width: 12px; height: 12px;
+  background: radial-gradient(circle at 35% 30%, #5a626d 0%, #2a2e35 70%, #16181c 100%);
+  border-radius: 50%;
+  box-shadow: inset 0 -1px 1px rgba(255,255,255,0.15), 0 1px 1px rgba(0,0,0,0.5);
+}
+.bezel > .rv-tl { top: 8px; left: 8px; }
+.bezel > .rv-tr { top: 8px; right: 8px; }
+.bezel > .rv-bl { bottom: 8px; left: 8px; }
+.bezel > .rv-br { bottom: 8px; right: 8px; }
+
+.top {
+  background: var(--steel-2);
+  border: 2px solid var(--bezel);
+  border-radius: 4px;
+  padding: 12px 24px 12px 56px;
+  position: relative;
+  display: flex; align-items: center; gap: 24px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.4);
+  margin-bottom: 14px;
+}
+.top .rivet { position: absolute; top: 50%; transform: translateY(-50%); left: 14px; }
+.brand {
+  font-family: 'Oxanium', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: 0.06em;
+  color: var(--amber); text-shadow: 0 0 12px rgba(255, 165, 0, 0.5), 0 1px 0 rgba(0,0,0,0.5);
+}
+.brand .div { color: var(--ink-2); margin: 0 8px; }
+.brand .sub { font-size: 10px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.32em; text-shadow: none; }
+.warning-strip {
+  margin-left: auto; padding: 6px 12px; background: repeating-linear-gradient(45deg, #1a1d22 0, #1a1d22 8px, var(--amber) 8px, var(--amber) 16px);
+  font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.2em;
+  color: var(--steel); border: 1px solid #16181c; text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+}
+.warning-strip span { background: var(--steel); color: var(--amber); padding: 2px 8px; }
+.led {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--green-glow), var(--green) 60%, #003311);
+  box-shadow: 0 0 8px var(--green), inset 0 1px 0 rgba(255,255,255,0.4);
+  animation: ledPulse 1.5s ease-in-out infinite;
+}
+@keyframes ledPulse { 50% { opacity: 0.55; } }
+.led-row { display: flex; align-items: center; gap: 8px; }
+.led-row .label { font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.2em; color: var(--green); text-shadow: 0 0 4px var(--green); }
+
+.dial-row { display: flex; align-items: center; gap: 14px; }
+.swkey {
+  display: inline-block; width: 30px; height: 30px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #6a6f78 0%, #353a43 60%, #1a1d22 100%);
+  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.5);
+  position: relative;
+}
+.swkey::after { content:''; position: absolute; left: 50%; top: 4px; bottom: 50%; width: 2px; transform: translateX(-50%); background: var(--amber); box-shadow: 0 0 4px var(--amber); }
+
+.subhead {
+  padding: 8px 18px; background: var(--bezel); border: 2px solid var(--bezel); border-radius: 4px;
+  display: flex; align-items: center; gap: 18px;
+  margin-bottom: 14px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+}
+.subhead .stencil {
+  font-family: 'Oxanium', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.2em;
+  color: var(--plate-2); text-shadow: 1px 1px 0 #000;
+}
+.subhead .id {
+  font-family: 'Inconsolata', monospace; font-weight: 700; font-size: 11px; color: var(--amber); padding: 2px 8px;
+  background: var(--readout); border: 1px solid var(--steel); letter-spacing: 0.1em;
+}
+.subhead .clock {
+  margin-left: auto;
+  font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 20px; color: var(--amber);
+  text-shadow: 0 0 8px rgba(255, 165, 0, 0.5);
+  letter-spacing: 0.08em;
+  background: var(--readout); padding: 4px 12px; border: 1px solid var(--rivet);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+}
+
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px; }
+
+.gauge {
+  position: relative; background: var(--steel-2); border: 2px solid var(--bezel); border-radius: 4px;
+  padding: 16px 18px 22px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -1px 0 rgba(0,0,0,0.3),
+    0 2px 6px rgba(0,0,0,0.4);
+}
+.gauge .nameplate {
+  position: absolute; top: -2px; left: 14px; padding: 2px 8px;
+  background: var(--plate); color: var(--steel);
+  font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: 0.18em;
+  border-radius: 0 0 3px 3px;
+}
+.gauge .readout {
+  background: var(--readout); border: 1px inset var(--steel);
+  padding: 14px 14px 10px; margin-top: 12px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.7);
+  text-align: center;
+}
+.gauge .n {
+  font-family: 'Oxanium', monospace; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em;
+  color: var(--amber); text-shadow: 0 0 10px var(--amber), 0 0 24px rgba(255, 165, 0, 0.4);
+}
+.gauge .n.red { color: var(--red); text-shadow: 0 0 10px var(--red), 0 0 24px rgba(255, 48, 48, 0.4); }
+.gauge .n.green { color: var(--green); text-shadow: 0 0 10px var(--green), 0 0 24px rgba(26, 255, 95, 0.4); }
+.gauge .n sub { font-size: 13px; color: var(--ink-2); text-shadow: none; margin-left: 4px; }
+.gauge .meter {
+  margin-top: 12px; height: 6px; background: var(--readout); border: 1px solid var(--rivet); position: relative;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+}
+.gauge .meter::after {
+  content: ''; position: absolute; left: 1px; top: 1px; bottom: 1px; width: 65%;
+  background: linear-gradient(to right, #884400, var(--amber));
+  box-shadow: 0 0 6px var(--amber);
+}
+.gauge.red .meter::after { background: linear-gradient(to right, #441010, var(--red)); width: 84%; box-shadow: 0 0 6px var(--red); }
+.gauge.green .meter::after { background: linear-gradient(to right, #003311, var(--green)); width: 60%; box-shadow: 0 0 6px var(--green); }
+.gauge .delta {
+  margin-top: 6px;
+  font-family: 'Inconsolata', monospace; font-size: 11px; color: var(--ink-2);
+  text-align: center; letter-spacing: 0.1em;
+}
+.gauge .delta.up { color: var(--green); }
+.gauge .delta.down { color: var(--red); }
+
+.panel {
+  background: var(--steel-2); border: 2px solid var(--bezel); border-radius: 4px;
+  position: relative; padding: 32px 18px 14px;
+  margin-bottom: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.4);
+}
+.panel .nameplate {
+  position: absolute; top: -2px; left: 14px; padding: 2px 12px;
+  background: var(--plate); color: var(--steel);
+  font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.22em;
+  border-radius: 0 0 3px 3px;
+}
+
+table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.data th {
+  text-align: left;
+  font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.18em;
+  color: var(--plate-2); padding: 8px 12px;
+  background: var(--bezel);
+  border-bottom: 1px solid var(--steel);
+}
+table.data th.r { text-align: right; }
+table.data td { padding: 11px 12px; border-bottom: 1px solid var(--bezel); color: var(--ink); font-family: 'Inconsolata', monospace; }
+table.data td.r { text-align: right; font-variant-numeric: tabular-nums; font-family: 'Oxanium', monospace; font-weight: 600; color: var(--amber); text-shadow: 0 0 6px rgba(255, 165, 0, 0.3); }
+table.data tr:last-child td { border-bottom: none; }
+table.data tr:hover td { background: rgba(255, 165, 0, 0.04); }
+table.data td .q { color: var(--ink); font-weight: 500; letter-spacing: 0.02em; }
+table.data td .conn { font-family: 'Oxanium', sans-serif; font-size: 10px; color: var(--ink-2); letter-spacing: 0.18em; text-transform: uppercase; margin-left: 6px; }
+
+.indicator {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.indicator .light {
+  width: 10px; height: 10px; border-radius: 50%;
+  box-shadow: inset 0 -1px 1px rgba(0,0,0,0.4);
+}
+.indicator.ok { color: var(--green); }
+.indicator.ok .light { background: radial-gradient(circle at 30% 30%, var(--green-glow), var(--green) 60%, #003311); box-shadow: 0 0 6px var(--green), inset 0 -1px 1px rgba(0,0,0,0.4); }
+.indicator.warn { color: var(--amber); }
+.indicator.warn .light { background: radial-gradient(circle at 30% 30%, var(--amber-glow), var(--amber) 60%, #4a2c00); box-shadow: 0 0 6px var(--amber), inset 0 -1px 1px rgba(0,0,0,0.4); }
+.indicator.err { color: var(--red); }
+.indicator.err .light { background: radial-gradient(circle at 30% 30%, var(--red-glow), var(--red) 60%, #441010); box-shadow: 0 0 6px var(--red), inset 0 -1px 1px rgba(0,0,0,0.4); }
+
+.log-panel { padding: 32px 0 0; }
+.log-entry {
+  display: grid; grid-template-columns: 90px 100px 1fr 60px; gap: 14px; padding: 9px 16px;
+  border-bottom: 1px solid var(--bezel);
+  align-items: center; font-family: 'Inconsolata', monospace; font-size: 12px;
+}
+.log-entry:last-child { border: none; }
+.log-entry .ts { color: var(--amber); font-weight: 600; letter-spacing: 0.04em; text-shadow: 0 0 4px rgba(255, 165, 0, 0.3); }
+.log-entry .id { text-align: right; color: var(--ink-2); font-size: 10px; }
+
+</style>
+</head><body>
+<div class="app">
+  <div class="top">
+    <span class="rivet" style="position:absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5a626d 0%, #2a2e35 70%, #16181c 100%); box-shadow: inset 0 -1px 1px rgba(255,255,255,0.15), 0 1px 1px rgba(0,0,0,0.5);"></span>
+    <div class="brand">SUNSET<span class="div">·</span><span class="sub">QUEUE CONTROL · UNIT 03</span></div>
+    <div class="led-row"><span class="led"></span><span class="label">SYSTEMS NOMINAL</span></div>
+    <div class="dial-row" style="margin-left: auto;">
+      <span class="swkey"></span>
+      <span class="swkey" style="transform: rotate(45deg);"></span>
+    </div>
+    <div class="warning-strip"><span>PROD · EAST</span></div>
+  </div>
+
+  <div class="subhead">
+    <span class="stencil">⎈ OVERVIEW</span>
+    <span class="id">SCREEN ID · 01</span>
+    <span class="clock lcd">04:22:18 UTC</span>
+  </div>
+
+  <div class="grid">
+    <div class="gauge">
+      <div class="nameplate">QUEUE DEPTH</div>
+      <div class="readout"><div class="n">3,847</div></div>
+      <div class="meter"></div>
+      <div class="delta down">▼ 412 / HR</div>
+    </div>
+    <div class="gauge green">
+      <div class="nameplate">SUPERVISORS</div>
+      <div class="readout"><div class="n green">04<sub>/ 04</sub></div></div>
+      <div class="meter"></div>
+      <div class="delta">28 / 46 PROCS</div>
+    </div>
+    <div class="gauge">
+      <div class="nameplate">THROUGHPUT</div>
+      <div class="readout"><div class="n">1,247<sub>/ MIN</sub></div></div>
+      <div class="meter"></div>
+      <div class="delta up">▲ 8.2 %</div>
+    </div>
+    <div class="gauge red">
+      <div class="nameplate">FAIL RATE</div>
+      <div class="readout"><div class="n red">0.84<sub>%</sub></div></div>
+      <div class="meter"></div>
+      <div class="delta down">5 IN LAST HOUR</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="nameplate">⎈ WORKLOAD · CHANNELS 1—5</div>
+    <table class="data">
+      <thead><tr><th>QUEUE</th><th class="r">LEN</th><th class="r">PROC</th><th class="r">WAIT</th><th class="r">RATE</th><th>STATE</th></tr></thead>
+      <tbody>
+        <tr><td><span class="q">emails</span><span class="conn">redis</span></td><td class="r">128</td><td class="r">8</td><td class="r">2 s</td><td class="r">412</td><td><span class="indicator ok"><span class="light"></span>Run</span></td></tr>
+        <tr><td><span class="q">webhooks</span><span class="conn">sqs</span></td><td class="r">2,431</td><td class="r">16</td><td class="r">14 s</td><td class="r">605</td><td><span class="indicator ok"><span class="light"></span>Run</span></td></tr>
+        <tr><td><span class="q">indexing</span><span class="conn">redis</span></td><td class="r">901</td><td class="r">4</td><td class="r">48 s</td><td class="r">196</td><td><span class="indicator warn"><span class="light"></span>Backlog</span></td></tr>
+        <tr><td><span class="q">geocode</span><span class="conn">redis</span></td><td class="r">312</td><td class="r">0</td><td class="r">—</td><td class="r">—</td><td><span class="indicator warn"><span class="light"></span>Paused</span></td></tr>
+        <tr><td><span class="q">nightly-rollup</span><span class="conn">rabbitmq</span></td><td class="r">75</td><td class="r">2</td><td class="r">5 s</td><td class="r">34</td><td><span class="indicator ok"><span class="light"></span>Run</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="nameplate">⎈ EVENT LOG · LAST 10 MIN</div>
+    <div class="log-panel">
+      <div class="log-entry"><span class="ts">04:18:42</span><span class="indicator ok"><span class="light"></span>Deploy</span><span>master-1 supervisors loaded from sunset.environments[]</span><span class="id">#48201</span></div>
+      <div class="log-entry"><span class="ts">04:17:11</span><span class="indicator warn"><span class="light"></span>L-Wait</span><span>sqs:webhooks idle 48s over wait-threshold</span><span class="id">#48198</span></div>
+      <div class="log-entry"><span class="ts">04:15:08</span><span class="indicator warn"><span class="light"></span>Pause</span><span>redis:geocode paused by dashboard</span><span class="id">#48192</span></div>
+      <div class="log-entry"><span class="ts">04:14:32</span><span class="indicator warn"><span class="light"></span>Hi-Mem</span><span>worker pid 91824 RSS 112.3 MB · limit 128 MB</span><span class="id">#48188</span></div>
+      <div class="log-entry"><span class="ts">04:13:01</span><span class="indicator err"><span class="light"></span>Failed</span><span>App\Jobs\IndexProduct → Elastic\ClientResponseException 429</span><span class="id">#48184</span></div>
+    </div>
+  </div>
+</div>
+</body></html>

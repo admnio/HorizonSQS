@@ -1,0 +1,2268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sunset — Queue Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --bg:         #0d1217;
+  --bg-2:       #131923;
+  --bg-3:       #1a212c;
+  --bg-card:    #161d28;
+  --rule:       #2a3340;
+  --rule-soft:  #1f2731;
+  --rule-amber: rgba(245, 158, 11, 0.28);
+  --ink:        #e8dcc4;
+  --ink-2:      #b3a48a;
+  --ink-3:      #786e5b;
+  --ink-4:      #4b463b;
+
+  --amber:      #f59e0b;
+  --amber-2:    #d97706;
+  --amber-soft: rgba(245, 158, 11, 0.10);
+  --ember:      #ef4444;
+  --ember-soft: rgba(239, 68, 68, 0.12);
+  --moss:       #84cc16;
+  --moss-soft:  rgba(132, 204, 22, 0.12);
+  --azure:      #38bdf8;
+  --azure-soft: rgba(56, 189, 248, 0.12);
+  --rose:       #fb7185;
+
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.02), 0 12px 24px -16px rgba(0,0,0,0.6);
+}
+
+html.light {
+  --bg:         #f5ede0;
+  --bg-2:       #ede3d0;
+  --bg-3:       #e3d8c1;
+  --bg-card:    #fbf6ec;
+  --rule:       #c9bda5;
+  --rule-soft:  #d9cdb5;
+  --rule-amber: rgba(194, 91, 5, 0.30);
+  --ink:        #1f1a14;
+  --ink-2:      #4f4537;
+  --ink-3:      #807260;
+  --ink-4:      #ada091;
+
+  --amber:      #c2570d;
+  --amber-2:    #9a4108;
+  --amber-soft: rgba(194, 91, 5, 0.10);
+  --ember:      #b91c1c;
+  --ember-soft: rgba(185, 28, 28, 0.10);
+  --moss:       #4d7c0f;
+  --moss-soft:  rgba(77, 124, 15, 0.10);
+  --azure:      #1d4ed8;
+  --azure-soft: rgba(29, 78, 216, 0.10);
+  --rose:       #be123c;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BASE
+   ───────────────────────────────────────────────────────────── */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  font-feature-settings: 'tnum' 1, 'zero' 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+body {
+  position: relative;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 12% 4%, var(--amber-soft) 0, transparent 28%),
+    radial-gradient(circle at 88% 110%, rgba(56,189,248,0.04) 0, transparent 36%);
+  background-attachment: fixed;
+}
+
+/* Subtle paper grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+html.light body::before { opacity: 0.55; mix-blend-mode: multiply; }
+
+::selection { background: var(--amber); color: var(--bg); }
+
+/* Display family */
+.serif { font-family: 'Fraunces', Georgia, serif; }
+
+/* ─────────────────────────────────────────────────────────────
+   TOP BAR
+   ───────────────────────────────────────────────────────────── */
+
+.topbar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--rule);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  color: var(--amber);
+  flex-shrink: 0;
+}
+
+.brand-wordmark {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 700, 'SOFT' 50;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.brand-wordmark .dot {
+  color: var(--amber);
+  font-family: 'Fraunces', serif;
+}
+
+.brand-sub {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 450;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-3);
+  padding-left: 12px;
+  border-left: 1px solid var(--rule);
+  line-height: 1.2;
+}
+
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-left: auto;
+}
+
+.topbar-status .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.15);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.topbar-btn {
+  font-family: 'JetBrains Mono', monospace;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-2);
+  padding: 6px 12px;
+  font-size: 11px;
+  border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.topbar-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+.topbar-btn .key {
+  color: var(--ink-3);
+  font-size: 10px;
+  margin-right: 4px;
+}
+
+/* The amber rule with tick marks */
+.measure-rule {
+  height: 16px;
+  position: relative;
+  border-bottom: 1px solid var(--rule);
+}
+.measure-rule::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, var(--rule) 1px, transparent 1px);
+  background-size: 80px 100%;
+  background-position: 200px center;
+  opacity: 0.5;
+}
+.measure-rule .star {
+  position: absolute;
+  left: 24px;
+  top: -1px;
+  height: 18px;
+  width: 1px;
+  background: var(--amber);
+}
+.measure-rule .star::before {
+  content: '✦';
+  position: absolute;
+  left: -5px;
+  top: 15px;
+  color: var(--amber);
+  font-size: 10px;
+  background: var(--bg);
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   APP LAYOUT
+   ───────────────────────────────────────────────────────────── */
+
+.app {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 73px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LEFT RAIL
+   ───────────────────────────────────────────────────────────── */
+
+.rail {
+  background: var(--bg);
+  border-right: 1px solid var(--rule);
+  padding: 24px 0;
+  position: sticky;
+  top: 73px;
+  align-self: start;
+  max-height: calc(100vh - 73px);
+  overflow-y: auto;
+}
+
+.rail-section {
+  margin-bottom: 24px;
+}
+
+.rail-section-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0 24px 6px;
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 600;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.rail-section-label::before {
+  content: '§';
+  color: var(--amber);
+  font-style: normal;
+  font-weight: 800;
+  font-size: 13px;
+  margin-right: 2px;
+}
+
+.rail-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 24px 5px 28px;
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+  transition: color 0.12s;
+  position: relative;
+}
+
+.rail-link::before {
+  content: '·';
+  position: absolute;
+  left: 18px;
+  color: var(--ink-4);
+}
+
+.rail-link:hover { color: var(--ink); }
+
+.rail-link.active {
+  color: var(--amber);
+  border-left-color: var(--amber);
+  background: linear-gradient(to right, var(--amber-soft), transparent 60%);
+}
+.rail-link.active::before { color: var(--amber); content: '◆'; }
+
+.rail-link .count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-foot {
+  padding: 16px 24px;
+  font-size: 10px;
+  color: var(--ink-4);
+  border-top: 1px solid var(--rule-soft);
+  margin-top: 24px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MAIN
+   ───────────────────────────────────────────────────────────── */
+
+main {
+  padding: 32px 40px 64px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.page { display: none; }
+.page.active {
+  display: block;
+  animation: pageIn 0.3s ease-out;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-head {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 16px;
+  position: relative;
+}
+
+.page-head::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 64px;
+  height: 1px;
+  background: var(--amber);
+}
+
+.section-mark {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 800;
+  font-size: 32px;
+  color: var(--amber);
+  line-height: 0.8;
+}
+
+.page-title {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 600, 'SOFT' 30;
+  font-size: 34px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1;
+}
+
+.page-sub {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 14, 'wght' 350;
+  font-size: 14px;
+  color: var(--ink-3);
+  margin-left: auto;
+}
+
+.page-meta {
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SECTION HEADERS
+   ───────────────────────────────────────────────────────────── */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 32px 0 16px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 14, 'wght' 500;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.section-head::before {
+  content: '§';
+  font-style: normal;
+  font-weight: 800;
+  color: var(--amber);
+  font-size: 16px;
+}
+
+.section-head::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background:
+    repeating-linear-gradient(to right, var(--rule) 0, var(--rule) 6px, transparent 6px, transparent 12px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HERO STATS
+   ───────────────────────────────────────────────────────────── */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 1px solid var(--rule);
+  background: var(--bg-card);
+  position: relative;
+}
+
+.stat-grid::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: -1px;
+  width: 12px; height: 12px;
+  border-top: 1.5px solid var(--amber);
+  border-left: 1.5px solid var(--amber);
+}
+.stat-grid::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; right: -1px;
+  width: 12px; height: 12px;
+  border-bottom: 1.5px solid var(--amber);
+  border-right: 1.5px solid var(--amber);
+}
+
+.stat {
+  padding: 24px 28px 20px;
+  border-right: 1px solid var(--rule);
+  position: relative;
+  overflow: hidden;
+}
+.stat:last-child { border-right: none; }
+
+.stat-label {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 14, 'wght' 450;
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.stat-label::before {
+  content: '';
+  width: 16px;
+  height: 1px;
+  background: var(--amber);
+}
+
+.stat-num {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 700, 'SOFT' 20;
+  font-size: 52px;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-unit {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 14, 'wght' 400;
+  font-size: 14px;
+  color: var(--ink-3);
+  margin-left: 4px;
+}
+
+.stat-delta {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-delta.up { color: var(--moss); }
+.stat-delta.down { color: var(--ember); }
+
+.stat-spark {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 32px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DATA TABLE
+   ───────────────────────────────────────────────────────────── */
+
+.table-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  position: relative;
+}
+
+.table-wrap::before {
+  /* Tick marks on the left edge — a sextant scale */
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 32px;
+  bottom: 0;
+  width: 8px;
+  background-image:
+    linear-gradient(to bottom, var(--rule) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rule-amber) 1px, transparent 1px);
+  background-size: 100% 24px, 100% 96px;
+  background-position: 0 0, 0 0;
+  background-repeat: repeat-y;
+  border-left: 1px solid var(--amber);
+}
+
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table.data thead th {
+  text-align: left;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 14, 'wght' 500;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--ink-3);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(to bottom, var(--bg-3) 0%, var(--bg-card) 100%);
+}
+
+table.data thead th.num,
+table.data tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+table.data tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink);
+}
+
+table.data tbody tr:last-child td { border-bottom: none; }
+table.data tbody tr:hover { background: rgba(245, 158, 11, 0.03); }
+
+table.data .name {
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+table.data .name .conn {
+  font-size: 10px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+}
+
+table.data .muted { color: var(--ink-3); }
+
+/* ─────────────────────────────────────────────────────────────
+   STAMPS (badges)
+   ───────────────────────────────────────────────────────────── */
+
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px 2px;
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 700;
+  font-size: 10px;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  line-height: 1.5;
+  border: 1.25px solid currentColor;
+  box-shadow:
+    inset 0 0 0 1px var(--bg-card),
+    inset 0 0 0 2px currentColor;
+  padding: 2px 10px 3px;
+  background: transparent;
+  position: relative;
+  transform: rotate(-0.8deg);
+  user-select: none;
+}
+
+.stamp.ok    { color: var(--moss);  background: var(--moss-soft); }
+.stamp.warn  { color: var(--amber); background: var(--amber-soft); }
+.stamp.err   { color: var(--ember); background: var(--ember-soft); }
+.stamp.info  { color: var(--azure); background: var(--azure-soft); }
+.stamp.muted { color: var(--ink-3); }
+
+/* Small inline tag — softer alternative */
+.tag {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg-3);
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.tag.amber  { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
+.tag.ember  { color: var(--ember); border-color: var(--ember); background: var(--ember-soft); }
+.tag.moss   { color: var(--moss);  border-color: var(--moss);  background: var(--moss-soft); }
+.tag.azure  { color: var(--azure); border-color: var(--azure); background: var(--azure-soft); }
+
+/* ─────────────────────────────────────────────────────────────
+   BUTTONS
+   ───────────────────────────────────────────────────────────── */
+
+.btn, button.btn {
+  font-family: 'JetBrains Mono', monospace;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  padding: 4px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  border-radius: 2px;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+.btn:hover { border-color: var(--amber); color: var(--amber); }
+.btn::before { content: '['; color: var(--ink-3); margin-right: 6px; transition: color 0.12s; }
+.btn::after  { content: ']'; color: var(--ink-3); margin-left: 6px; transition: color 0.12s; }
+.btn:hover::before, .btn:hover::after { color: var(--amber); }
+
+.btn-danger { color: var(--ember); }
+.btn-danger:hover { border-color: var(--ember); color: var(--ember); }
+.btn-danger:hover::before, .btn-danger:hover::after { color: var(--ember); }
+
+/* ─────────────────────────────────────────────────────────────
+   SPARKLINES
+   ───────────────────────────────────────────────────────────── */
+
+.spark {
+  display: block;
+  width: 100%;
+  height: 28px;
+}
+
+.spark .axis { stroke: var(--rule); stroke-width: 0.5; }
+.spark .line { fill: none; stroke: var(--amber); stroke-width: 1.5; }
+.spark .area { fill: var(--amber); opacity: 0.12; }
+.spark .baseline { stroke: var(--rule); stroke-dasharray: 2 3; stroke-width: 0.5; }
+.spark .tick { stroke: var(--ink-3); stroke-width: 0.5; }
+.spark .label { fill: var(--ink-3); font-size: 8px; font-family: 'JetBrains Mono', monospace; }
+
+/* Inline mini spark */
+.spark-mini {
+  display: inline-block;
+  width: 64px;
+  height: 16px;
+  vertical-align: middle;
+}
+.spark-mini .line { fill: none; stroke: var(--amber); stroke-width: 1.25; }
+
+/* ─────────────────────────────────────────────────────────────
+   CARD
+   ───────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: 16px 20px;
+  position: relative;
+}
+
+.card.bordered-corner::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: -1px;
+  width: 8px; height: 8px;
+  border-top: 1.25px solid var(--amber);
+  border-left: 1.25px solid var(--amber);
+}
+
+.card-label {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 14, 'wght' 450;
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+
+.card-value {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 600;
+  font-size: 22px;
+  color: var(--ink);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ACTIVITY LOG (logbook style)
+   ───────────────────────────────────────────────────────────── */
+
+.activity-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.activity-filters .label {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  color: var(--ink-3);
+  margin-right: 8px;
+}
+.activity-filters .filter {
+  padding: 3px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  cursor: pointer;
+  color: var(--ink-2);
+  background: transparent;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.activity-filters .filter:hover { border-color: var(--amber); color: var(--amber); }
+.activity-filters .filter.active {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--amber-soft);
+}
+
+.logbook {
+  border-left: 1px solid var(--rule);
+  margin-left: 12px;
+  padding-left: 0;
+}
+
+.log-entry {
+  display: grid;
+  grid-template-columns: 100px 110px 1fr 60px;
+  gap: 16px;
+  padding: 12px 16px 12px 24px;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 12px;
+  position: relative;
+  align-items: baseline;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.log-entry::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 22px;
+  width: 7px;
+  height: 1px;
+  background: var(--amber);
+}
+
+.log-entry:hover { background: rgba(245, 158, 11, 0.04); }
+
+.log-entry .ts {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 600;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+}
+
+.log-entry .ts-date {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 10px;
+  color: var(--ink-3);
+  display: block;
+  margin-top: -2px;
+}
+
+.log-entry .msg { color: var(--ink); line-height: 1.45; }
+.log-entry .msg .who { color: var(--amber); }
+.log-entry .msg .what { color: var(--ink-2); font-style: italic; font-family: 'Fraunces', serif; }
+.log-entry .msg .err { color: var(--ember); }
+
+.log-entry .id {
+  color: var(--ink-3);
+  font-size: 10px;
+  text-align: right;
+  letter-spacing: 0.04em;
+}
+
+.log-date-divider {
+  position: relative;
+  margin: 24px 0 12px;
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 600;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 16px;
+}
+.log-date-divider::before {
+  content: '☉';
+  color: var(--amber);
+  font-size: 14px;
+}
+.log-date-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background:
+    repeating-linear-gradient(to right, var(--rule) 0, var(--rule) 4px, transparent 4px, transparent 8px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MASTER-DETAIL (Failed jobs)
+   ───────────────────────────────────────────────────────────── */
+
+.split {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 0;
+  border: 1px solid var(--rule);
+  background: var(--bg-card);
+  min-height: 480px;
+}
+
+.split-master {
+  border-right: 1px solid var(--rule);
+  background: var(--bg);
+}
+.split-master-head {
+  padding: 10px 16px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--rule);
+  display: flex; align-items: baseline; gap: 8px;
+}
+
+.master-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule-soft);
+  cursor: pointer;
+  position: relative;
+}
+.master-item:hover { background: rgba(245, 158, 11, 0.04); }
+.master-item.active {
+  background: linear-gradient(to right, var(--amber-soft), transparent 50%);
+  border-left: 2px solid var(--amber);
+  padding-left: 14px;
+}
+.master-item .who { font-weight: 600; color: var(--ink); margin-bottom: 2px; font-size: 12px; }
+.master-item .what { color: var(--ember); font-size: 10px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.master-item .meta { color: var(--ink-3); font-size: 10px; letter-spacing: 0.04em; }
+
+.split-detail { padding: 24px 28px; overflow: auto; }
+.split-detail h3 {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 600;
+  font-size: 22px;
+  margin: 0 0 4px;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.detail-meta {
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--rule);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.detail-meta .key {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--ink-3);
+  margin-right: 4px;
+}
+
+.case-label {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 14, 'wght' 500;
+  font-size: 11px;
+  color: var(--amber);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.trace {
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  padding: 16px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-height: 380px;
+  overflow: auto;
+  border-left: 2px solid var(--amber);
+  position: relative;
+}
+.trace .first {
+  color: var(--ember);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.trace .frame { display: block; padding-left: 16px; text-indent: -16px; }
+.trace .frame .num { color: var(--ink-3); }
+.trace .frame .file { color: var(--amber); }
+.trace .frame .meth { color: var(--ink); }
+
+.detail-actions { display: flex; gap: 8px; margin-bottom: 20px; }
+
+/* ─────────────────────────────────────────────────────────────
+   METRICS / WORKER ROWS
+   ───────────────────────────────────────────────────────────── */
+
+.metric-row {
+  display: grid;
+  grid-template-columns: 200px 80px 90px 100px 1fr;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--rule-soft);
+  align-items: center;
+  font-size: 11px;
+}
+.metric-row .name { color: var(--ink); }
+.metric-row .name .meta { color: var(--ink-3); font-size: 10px; }
+.metric-row .num { font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* ─────────────────────────────────────────────────────────────
+   BANNERS
+   ───────────────────────────────────────────────────────────── */
+
+.banner {
+  padding: 12px 16px;
+  border-left: 3px solid;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 16px 0;
+}
+.banner.info { border-color: var(--azure); background: var(--azure-soft); color: var(--ink-2); }
+.banner.warn { border-color: var(--amber); background: var(--amber-soft); color: var(--ink-2); }
+.banner code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg);
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 11px;
+  color: var(--amber);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GRID UTILITIES
+   ───────────────────────────────────────────────────────────── */
+
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+.row-flex { display: flex; align-items: center; gap: 8px; }
+.ml-auto { margin-left: auto; }
+
+.callout {
+  position: relative;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 14, 'wght' 400;
+  font-size: 13px;
+  color: var(--ink-2);
+  padding: 0 24px;
+  margin: 16px 0;
+  line-height: 1.65;
+}
+.callout::before {
+  content: '“';
+  position: absolute;
+  left: -4px;
+  top: -8px;
+  font-size: 36px;
+  color: var(--amber);
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 700;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HEALTH PROBE CARDS
+   ───────────────────────────────────────────────────────────── */
+
+.probe {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--moss);
+}
+.probe.warn { border-left-color: var(--amber); }
+.probe.err { border-left-color: var(--ember); }
+
+.probe-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 0 4px var(--moss-soft);
+  flex-shrink: 0;
+}
+.probe.warn .probe-dot { background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft); }
+.probe.err .probe-dot { background: var(--ember); box-shadow: 0 0 0 4px var(--ember-soft); }
+
+.probe-name {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 600;
+  font-size: 16px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.probe-meta {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 1px;
+  letter-spacing: 0.03em;
+}
+
+.probe-stat {
+  margin-left: auto;
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 600;
+  font-size: 16px;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.probe-stat .unit {
+  font-style: italic;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SCHEDULE TABLE
+   ───────────────────────────────────────────────────────────── */
+
+.schedule {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  font-size: 11px;
+}
+
+.schedule .row {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 2fr;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--rule-soft);
+  align-items: baseline;
+}
+.schedule .row:last-child { border-bottom: none; }
+.schedule .cmd { color: var(--amber); }
+.schedule .cad {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.schedule .desc { color: var(--ink-3); }
+
+/* ─────────────────────────────────────────────────────────────
+   COMMAND PALETTE (decorative; not interactive)
+   ───────────────────────────────────────────────────────────── */
+
+.kbd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  background: var(--bg-3);
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVE (basic — collapse left rail under 900px)
+   ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat:nth-child(2) { border-right: none; }
+  .stat:nth-child(1), .stat:nth-child(2) { border-bottom: 1px solid var(--rule); }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ─────────── SVG SYMBOL DEFS ─────────── -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="sun" viewBox="0 0 32 32">
+      <circle cx="16" cy="16" r="5.5" fill="currentColor"/>
+      <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none">
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="16" y1="26" x2="16" y2="30"/>
+        <line x1="2" y1="16" x2="6" y2="16"/>
+        <line x1="26" y1="16" x2="30" y2="16"/>
+        <line x1="6.1" y1="6.1" x2="9.0" y2="9.0"/>
+        <line x1="23" y1="23" x2="25.9" y2="25.9"/>
+        <line x1="6.1" y1="25.9" x2="9.0" y2="23"/>
+        <line x1="23" y1="9.0" x2="25.9" y2="6.1"/>
+      </g>
+      <circle cx="16" cy="16" r="9" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.4"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ─────────── TOP BAR ─────────── -->
+<header class="topbar">
+  <a href="#" class="brand">
+    <svg class="brand-mark"><use href="#sun"/></svg>
+    <span class="brand-wordmark">SUNSET<span class="dot">.</span></span>
+  </a>
+  <div class="brand-sub">
+    queue observatory<br>
+    <span style="color:var(--ink-2)">prod-cluster-east</span>
+  </div>
+
+  <div class="topbar-status">
+    <span class="dot"></span>
+    <span>all transports nominal</span>
+  </div>
+
+  <button class="topbar-btn" id="palette"><span class="key">⌘K</span>jump to anything</button>
+  <button class="topbar-btn" id="theme-toggle">theme</button>
+</header>
+<div class="measure-rule"><span class="star"></span></div>
+
+<div class="app">
+
+<!-- ─────────── LEFT RAIL ─────────── -->
+<nav class="rail" aria-label="dashboard navigation">
+
+  <div class="rail-section">
+    <div class="rail-section-label">overview</div>
+    <a class="rail-link" data-page="overview">home</a>
+    <a class="rail-link" data-page="activity">activity <span class="count">+12</span></a>
+    <a class="rail-link" data-page="workload">workload</a>
+    <a class="rail-link" data-page="metrics">metrics</a>
+  </div>
+
+  <div class="rail-section">
+    <div class="rail-section-label">jobs</div>
+    <a class="rail-link" data-page="recent">recent</a>
+    <a class="rail-link" data-page="failed">failed <span class="count" style="color:var(--ember)">5</span></a>
+    <a class="rail-link" data-page="pending">pending</a>
+    <a class="rail-link" data-page="completed">completed</a>
+    <a class="rail-link" data-page="batches">batches</a>
+  </div>
+
+  <div class="rail-section">
+    <div class="rail-section-label">ops</div>
+    <a class="rail-link" data-page="supervisors">supervisors</a>
+    <a class="rail-link" data-page="rate-limits">limits</a>
+    <a class="rail-link" data-page="monitoring">monitoring</a>
+    <a class="rail-link" data-page="health">health</a>
+  </div>
+
+  <div class="rail-foot">
+    sunset v1.3.0<br>
+    <span style="color:var(--ink-3); font-style: normal; font-family: 'JetBrains Mono', monospace; font-size: 9px;">04:22 utc · uptime 8d 14h</span>
+  </div>
+</nav>
+
+<!-- ─────────── MAIN ─────────── -->
+<main>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     OVERVIEW
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="overview">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Overview</h1>
+    <span class="page-sub">at a glance · poll 3s</span>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="stat-label">queue depth</div>
+      <div class="stat-num">3,847<span class="stat-unit">jobs</span></div>
+      <div class="stat-delta down">↘ 412 from this hour</div>
+      <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path d="M0,8 L20,10 L40,14 L60,12 L80,18 L100,20 L120,24 L140,22 L160,26 L180,24 L200,28 L200,32 L0,32 Z" class="area" style="fill:var(--amber); opacity:0.15"/>
+        <path d="M0,8 L20,10 L40,14 L60,12 L80,18 L100,20 L120,24 L140,22 L160,26 L180,24 L200,28" class="line"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label">supervisors</div>
+      <div class="stat-num">4<span class="stat-unit">active</span></div>
+      <div class="stat-delta">28 / 46 procs</div>
+      <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path d="M0,20 L40,18 L80,22 L120,20 L160,18 L200,16" class="line"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label">throughput</div>
+      <div class="stat-num">1.2k<span class="stat-unit">/min</span></div>
+      <div class="stat-delta up">↗ 8% past hour</div>
+      <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path d="M0,18 L20,16 L40,18 L60,14 L80,12 L100,15 L120,10 L140,11 L160,8 L180,9 L200,6" class="line"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label">failure rate</div>
+      <div class="stat-num" style="color:var(--ember)">0.84<span class="stat-unit" style="color:var(--ember); opacity:0.7">%</span></div>
+      <div class="stat-delta">5 in last hour</div>
+      <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path d="M0,22 L40,20 L80,24 L120,18 L160,22 L200,16" class="line" style="stroke:var(--ember)"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="section-head">Workload</div>
+
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Queue</th>
+          <th class="num">Length</th>
+          <th class="num">Procs</th>
+          <th class="num">Wait (s)</th>
+          <th>State</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">emails <span class="conn">· redis</span></td>
+          <td class="num">128</td><td class="num">8</td><td class="num">2</td>
+          <td><span class="stamp ok">running</span></td>
+        </tr>
+        <tr>
+          <td class="name">webhooks <span class="conn">· sqs</span></td>
+          <td class="num">2,431</td><td class="num">16</td><td class="num">14</td>
+          <td><span class="stamp ok">running</span></td>
+        </tr>
+        <tr>
+          <td class="name">indexing <span class="conn">· redis</span></td>
+          <td class="num">901</td><td class="num">4</td><td class="num">48</td>
+          <td><span class="stamp warn">backlog</span></td>
+        </tr>
+        <tr>
+          <td class="name">geocode <span class="conn">· redis</span></td>
+          <td class="num">312</td><td class="num">0</td><td class="num muted">—</td>
+          <td><span class="stamp warn">paused</span></td>
+        </tr>
+        <tr>
+          <td class="name">nightly-rollup <span class="conn">· rabbitmq</span></td>
+          <td class="num">75</td><td class="num">2</td><td class="num">5</td>
+          <td><span class="stamp ok">running</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-head">Recent supervisor events</div>
+  <div class="logbook" style="border:0; margin:0; padding:0">
+    <div class="log-entry" style="grid-template-columns: 100px 110px 1fr 60px">
+      <div class="ts">04:18:42<span class="ts-date">may 21</span></div>
+      <div><span class="stamp ok">deployed</span></div>
+      <div class="msg"><span class="who">master-1</span> · <span class="what">supervisors loaded from sunset.environments[]</span></div>
+      <div class="id">#48201</div>
+    </div>
+    <div class="log-entry" style="grid-template-columns: 100px 110px 1fr 60px">
+      <div class="ts">04:17:11<span class="ts-date">may 21</span></div>
+      <div><span class="stamp warn">long-wait</span></div>
+      <div class="msg"><span class="who">sqs:webhooks</span> · idle <span class="what">48s</span> over wait-threshold</div>
+      <div class="id">#48198</div>
+    </div>
+    <div class="log-entry" style="grid-template-columns: 100px 110px 1fr 60px">
+      <div class="ts">04:15:08<span class="ts-date">may 21</span></div>
+      <div><span class="stamp info">paused</span></div>
+      <div class="msg"><span class="who">redis:geocode</span> · paused by <span class="what">dashboard</span></div>
+      <div class="id">#48192</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ACTIVITY
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="activity">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Activity</h1>
+    <span class="page-sub">logbook · live</span>
+  </div>
+
+  <div class="activity-filters">
+    <span class="label">filter</span>
+    <button class="filter active">errors</button>
+    <button class="filter">all</button>
+    <button class="filter">lifecycle</button>
+    <button class="filter">supervisor</button>
+    <button class="filter">rate-limit</button>
+    <span style="margin-left:auto; font-style:italic; font-family: 'Fraunces', serif; color:var(--ink-3)">5 entries since 04:00</span>
+  </div>
+
+  <div class="log-date-divider">21 May 2026 · Thursday</div>
+
+  <div class="logbook">
+    <div class="log-entry">
+      <div class="ts">04:22:18<span class="ts-date">14m ago</span></div>
+      <div><span class="stamp err">failed</span></div>
+      <div class="msg">
+        <span class="who">App\Jobs\SendWelcomeEmail</span> on <span class="what">redis:emails</span><br>
+        <span class="err">Symfony\Mailer\TransportException</span> — Connection timed out after 30s
+      </div>
+      <div class="id">#48211</div>
+    </div>
+
+    <div class="log-entry">
+      <div class="ts">04:22:09<span class="ts-date">14m ago</span></div>
+      <div><span class="stamp warn">limited</span></div>
+      <div class="msg">
+        <span class="who">App\Jobs\GeocodeAddress</span> on <span class="what">redis:geocode</span><br>
+        hit <code style="color:var(--amber)">gmaps</code> · strategy <span class="what">release-computed</span> · retry +4s
+      </div>
+      <div class="id">#48210</div>
+    </div>
+
+    <div class="log-entry">
+      <div class="ts">04:21:42<span class="ts-date">15m ago</span></div>
+      <div><span class="stamp info">paused</span></div>
+      <div class="msg">
+        <span class="who">redis:geocode</span> — queue paused by <span class="what">dashboard</span><br>
+        <span style="color:var(--ink-3); font-size:11px">8 workers will stop popping on next loop iteration</span>
+      </div>
+      <div class="id">#48207</div>
+    </div>
+
+    <div class="log-entry">
+      <div class="ts">04:21:31<span class="ts-date">15m ago</span></div>
+      <div><span class="stamp err">launch fail</span></div>
+      <div class="msg">
+        <span class="who">master-1:webhooks</span> — failed to launch pid <span class="what">91823</span><br>
+        <span style="color:var(--ink-3); font-size:11px; font-family:'JetBrains Mono', monospace">php artisan sunset:worker redis --name=default --supervisor=master-1:webhooks</span>
+      </div>
+      <div class="id">#48205</div>
+    </div>
+
+    <div class="log-entry">
+      <div class="ts">04:21:14<span class="ts-date">16m ago</span></div>
+      <div><span class="stamp warn">restart</span></div>
+      <div class="msg">
+        <span class="who">worker pid 91820</span> — process restarting<br>
+        <span style="color:var(--ink-3); font-size:11px">exit code 137 · likely memory-limit</span>
+      </div>
+      <div class="id">#48201</div>
+    </div>
+
+    <div class="log-entry">
+      <div class="ts">04:20:58<span class="ts-date">16m ago</span></div>
+      <div><span class="stamp warn">long-wait</span></div>
+      <div class="msg">
+        <span class="who">sqs:webhooks</span> — idle <span class="what">48s</span> over threshold<br>
+        <span style="color:var(--ink-3); font-size:11px">scaler will add 2 workers</span>
+      </div>
+      <div class="id">#48198</div>
+    </div>
+
+    <div class="log-entry">
+      <div class="ts">04:20:32<span class="ts-date">17m ago</span></div>
+      <div><span class="stamp err">failed</span></div>
+      <div class="msg">
+        <span class="who">App\Jobs\IndexProduct</span> on <span class="what">redis:indexing</span><br>
+        <span class="err">Elastic\ClientResponseException</span> — 429 Too Many Requests
+      </div>
+      <div class="id">#48195</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    Public events <code>QueuePaused</code>, <code>QueueResumed</code>, and <code>ActivityRecorded</code> let
+    you forward this log to Slack, your audit table, or Datadog. Subscribe in any service provider.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     WORKLOAD
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="workload">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Workload</h1>
+    <span class="page-sub">5 queues across 3 transports</span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Queue</th>
+          <th class="num">Length</th>
+          <th class="num">Workers</th>
+          <th class="num">Wait (s)</th>
+          <th class="num">Throughput</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">emails <span class="conn">· redis</span></td>
+          <td class="num">128</td><td class="num">8</td><td class="num">2</td>
+          <td class="num">412 <span class="muted">/min</span></td>
+          <td style="text-align:right;"><button class="btn">pause</button></td>
+        </tr>
+        <tr>
+          <td class="name">webhooks <span class="conn">· sqs</span></td>
+          <td class="num">2,431</td><td class="num">16</td><td class="num">14</td>
+          <td class="num">605 <span class="muted">/min</span></td>
+          <td style="text-align:right;"><button class="btn">pause</button></td>
+        </tr>
+        <tr>
+          <td class="name">indexing <span class="conn">· redis</span></td>
+          <td class="num">901</td><td class="num">4</td><td class="num">48</td>
+          <td class="num">196 <span class="muted">/min</span></td>
+          <td style="text-align:right;"><button class="btn">pause</button></td>
+        </tr>
+        <tr>
+          <td class="name">geocode <span class="conn">· redis</span> <span class="stamp warn">paused</span></td>
+          <td class="num">312</td><td class="num">0</td><td class="num muted">—</td>
+          <td class="num muted">—</td>
+          <td style="text-align:right;"><button class="btn">resume</button></td>
+        </tr>
+        <tr>
+          <td class="name">nightly-rollup <span class="conn">· rabbitmq</span></td>
+          <td class="num">75</td><td class="num">2</td><td class="num">5</td>
+          <td class="num">34 <span class="muted">/min</span></td>
+          <td style="text-align:right;"><button class="btn">pause</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="banner info">
+    Pausing a queue is a soft signal — workers stop popping on their next loop iteration (≤ worker sleep, default 3s).
+    Producers can still enqueue. The action fires <code>QueuePaused</code> with <code>actor=dashboard</code> and shows up in the activity log.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     METRICS
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="metrics">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Metrics</h1>
+    <span class="page-sub">throughput · latency · failures</span>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="stat-label">jobs / minute</div>
+      <div class="stat-num">1,247</div>
+      <div class="stat-delta up">↗ 8.2%</div>
+      <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path d="M0,18 L20,14 L40,16 L60,11 L80,12 L100,8 L120,9 L140,5 L160,7 L180,4 L200,6" class="line"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label">jobs / hour</div>
+      <div class="stat-num">74.8k</div>
+      <div class="stat-delta">peak 92k @ 02:00</div>
+      <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path d="M0,16 L20,14 L40,18 L60,12 L80,10 L100,8 L120,12 L140,6 L160,10 L180,8 L200,12" class="line"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label">avg runtime</div>
+      <div class="stat-num">218<span class="stat-unit">ms</span></div>
+      <div class="stat-delta">p99 1.2s</div>
+      <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path d="M0,10 L20,12 L40,8 L60,10 L80,14 L100,9 L120,12 L140,8 L160,11 L180,9 L200,10" class="line"/>
+      </svg>
+    </div>
+    <div class="stat">
+      <div class="stat-label">failure rate</div>
+      <div class="stat-num" style="color:var(--ember)">0.84<span class="stat-unit" style="color:var(--ember); opacity:0.7">%</span></div>
+      <div class="stat-delta">5 in last hour</div>
+      <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path d="M0,22 L20,24 L40,20 L60,26 L80,18 L100,22 L120,14 L140,18 L160,12 L180,16 L200,8" class="line" style="stroke:var(--ember)"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="section-head">Throughput by queue · last 60 min</div>
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Queue</th>
+          <th class="num">Jobs / min</th>
+          <th class="num">Avg (ms)</th>
+          <th class="num">p99 (ms)</th>
+          <th class="num">Failures</th>
+          <th>Trend</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">emails <span class="conn">· redis</span></td>
+          <td class="num">412</td><td class="num">91</td><td class="num">340</td><td class="num">1</td>
+          <td><svg class="spark-mini" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0,10 L20,8 L40,6 L60,9 L80,4 L100,5" class="line"/></svg></td>
+        </tr>
+        <tr>
+          <td class="name">webhooks <span class="conn">· sqs</span></td>
+          <td class="num">605</td><td class="num">147</td><td class="num">812</td><td class="num">2</td>
+          <td><svg class="spark-mini" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0,12 L20,10 L40,11 L60,7 L80,9 L100,5" class="line"/></svg></td>
+        </tr>
+        <tr>
+          <td class="name">indexing <span class="conn">· redis</span></td>
+          <td class="num">196</td><td class="num">812</td><td class="num">4,210</td><td class="num" style="color:var(--ember)">2</td>
+          <td><svg class="spark-mini" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0,8 L20,11 L40,9 L60,12 L80,10 L100,8" class="line"/></svg></td>
+        </tr>
+        <tr>
+          <td class="name">nightly-rollup <span class="conn">· rabbitmq</span></td>
+          <td class="num">34</td><td class="num">1,418</td><td class="num">8,400</td><td class="num">0</td>
+          <td><svg class="spark-mini" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0,7 L20,10 L40,6 L60,11 L80,7 L100,9" class="line"/></svg></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     RECENT
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="recent">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Recent jobs</h1>
+    <span class="page-sub">last 60 minutes · 512 entries</span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Queue</th>
+          <th class="num">Runtime</th>
+          <th>Status</th>
+          <th class="num">At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="name">App\Jobs\SendWelcomeEmail</td><td><span class="tag">emails</span></td><td class="num">82ms</td><td><span class="stamp ok">done</span></td><td class="num">04:22:08</td></tr>
+        <tr><td class="name">App\Jobs\IndexProduct</td><td><span class="tag">indexing</span></td><td class="num">1.2s</td><td><span class="stamp err">failed</span></td><td class="num">04:22:01</td></tr>
+        <tr><td class="name">App\Jobs\GeocodeAddress</td><td><span class="tag">geocode</span></td><td class="num muted">—</td><td><span class="stamp warn">limited</span></td><td class="num">04:21:58</td></tr>
+        <tr><td class="name">App\Jobs\NotifySlack</td><td><span class="tag">webhooks</span></td><td class="num">241ms</td><td><span class="stamp ok">done</span></td><td class="num">04:21:55</td></tr>
+        <tr><td class="name">App\Jobs\GenerateInvoicePdf</td><td><span class="tag">nightly-rollup</span></td><td class="num">8.4s</td><td><span class="stamp ok">done</span></td><td class="num">04:21:48</td></tr>
+        <tr><td class="name">App\Jobs\SendDigest</td><td><span class="tag">emails</span></td><td class="num">112ms</td><td><span class="stamp ok">done</span></td><td class="num">04:21:42</td></tr>
+        <tr><td class="name">App\Jobs\RetryWebhook</td><td><span class="tag">webhooks</span></td><td class="num muted">—</td><td><span class="stamp info">released</span></td><td class="num">04:21:38</td></tr>
+        <tr><td class="name">App\Jobs\RefreshAnalytics</td><td><span class="tag">analytics</span></td><td class="num">2.1s</td><td><span class="stamp ok">done</span></td><td class="num">04:21:31</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     FAILED
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="failed">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Failed jobs</h1>
+    <span class="page-sub">37 total · <span style="color:var(--ember)">5 in last hour</span></span>
+  </div>
+
+  <div class="split">
+    <div class="split-master">
+      <div class="split-master-head">
+        <span>5 recent</span>
+        <span class="ml-auto" style="color:var(--ink-3); font-style:italic; font-size:10px">sorted: newest</span>
+      </div>
+      <div class="master-item active">
+        <div class="who">App\Jobs\IndexProduct</div>
+        <div class="what">Elastic\ClientResponseException — 429 Too Many Requests</div>
+        <div class="meta">indexing · 04:22:01 · 3 attempts</div>
+      </div>
+      <div class="master-item">
+        <div class="who">App\Jobs\SendWelcomeEmail</div>
+        <div class="what">Symfony\Mailer\TransportException — Connection timed out</div>
+        <div class="meta">emails · 04:22:18 · 1 attempt</div>
+      </div>
+      <div class="master-item">
+        <div class="who">App\Jobs\ChargeSubscription</div>
+        <div class="what">Stripe\CardException — Your card was declined.</div>
+        <div class="meta">billing · 03:58:11 · 1 attempt</div>
+      </div>
+      <div class="master-item">
+        <div class="who">App\Jobs\GenerateThumbnail</div>
+        <div class="what">ImagickException — unable to open '/tmp/upload_xJ48z'</div>
+        <div class="meta">media · 03:42:08 · 2 attempts</div>
+      </div>
+      <div class="master-item">
+        <div class="who">App\Jobs\SyncShopifyOrders</div>
+        <div class="what">GuzzleHttp\ConnectException — cURL 28 timeout</div>
+        <div class="meta">webhooks · 03:08:54 · 3 attempts</div>
+      </div>
+    </div>
+    <div class="split-detail">
+      <div class="case-label">⌑ case file</div>
+      <h3>App\Jobs\IndexProduct</h3>
+      <div class="detail-meta">
+        <span><span class="key">conn:</span><span class="tag">redis</span></span>
+        <span><span class="key">queue:</span><span class="tag">indexing</span></span>
+        <span><span class="key">at:</span>2026-05-21 04:22:01 UTC</span>
+        <span><span class="key">attempts:</span>3 / 3</span>
+      </div>
+      <div class="detail-actions">
+        <button class="btn">retry</button>
+        <button class="btn">retry &amp; remove</button>
+        <button class="btn btn-danger">delete</button>
+      </div>
+      <div class="trace">
+<span class="first">Elastic\Exception\ClientResponseException: 429 Too Many Requests</span>
+<span class="frame"><span class="num">#0</span> <span class="file">/var/www/vendor/elastic/elasticsearch/src/Endpoints/IndexRequest.php(142)</span>: <span class="meth">Elastic\Endpoints\IndexRequest-&gt;execute()</span></span>
+<span class="frame"><span class="num">#1</span> <span class="file">/var/www/vendor/elastic/elasticsearch/src/Client.php(312)</span>: <span class="meth">Elastic\Client-&gt;index(['id' =&gt; 91823, ...])</span></span>
+<span class="frame"><span class="num">#2</span> <span class="file">/var/www/app/Services/Search/ProductIndexer.php(48)</span>: <span class="meth">App\Services\Search\ProductIndexer-&gt;index($product)</span></span>
+<span class="frame"><span class="num">#3</span> <span class="file">/var/www/app/Jobs/IndexProduct.php(34)</span>: <span class="meth">App\Jobs\IndexProduct-&gt;handle()</span></span>
+<span class="frame"><span class="num">#4</span> [internal function]: <span class="meth">App\Jobs\IndexProduct-&gt;handle()</span></span>
+<span class="frame"><span class="num">#5</span> <span class="file">/var/www/vendor/laravel/framework/.../BoundMethod.php(36)</span>: <span class="meth">call_user_func_array(...)</span></span>
+<span class="frame"><span class="num">#6</span> <span class="file">/var/www/vendor/laravel/framework/.../Util.php(41)</span>: <span class="meth">Illuminate\Container\BoundMethod::{closure}()</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     PENDING
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="pending">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Pending jobs</h1>
+    <span class="page-sub">3,847 across all queues · 142 delayed</span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Queue</th>
+          <th class="num">Reserved at</th>
+          <th class="num">Attempts</th>
+          <th>State</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="name">App\Jobs\SendDigest</td><td><span class="tag">emails</span></td><td class="num">04:21:42</td><td class="num">1</td><td><span class="stamp info">reserved</span></td></tr>
+        <tr><td class="name">App\Jobs\IndexProduct</td><td><span class="tag">indexing</span></td><td class="num">04:21:38</td><td class="num">2</td><td><span class="stamp info">reserved</span></td></tr>
+        <tr><td class="name">App\Jobs\NotifySlack</td><td><span class="tag">webhooks</span></td><td class="num">04:21:38</td><td class="num">1</td><td><span class="stamp info">reserved</span></td></tr>
+        <tr><td class="name">App\Jobs\GenerateInvoicePdf</td><td><span class="tag">nightly-rollup</span></td><td class="num muted">—</td><td class="num">0</td><td><span class="stamp warn">delayed +18m</span></td></tr>
+        <tr><td class="name">App\Jobs\SyncShopifyOrders</td><td><span class="tag">webhooks</span></td><td class="num muted">—</td><td class="num">0</td><td><span class="stamp warn">delayed +2h</span></td></tr>
+        <tr><td class="name">App\Jobs\ChargeSubscription</td><td><span class="tag">billing</span></td><td class="num muted">—</td><td class="num">0</td><td><span class="stamp warn">delayed +6h</span></td></tr>
+        <tr><td class="name">App\Jobs\WeeklyDigest</td><td><span class="tag">emails</span></td><td class="num muted">—</td><td class="num">0</td><td><span class="stamp warn">scheduled fri 09:00</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     COMPLETED
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="completed">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Completed jobs</h1>
+    <span class="page-sub">last 60 min · 487 successful</span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Queue</th>
+          <th class="num">Runtime</th>
+          <th class="num">Mem peak</th>
+          <th class="num">At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="name">App\Jobs\SendWelcomeEmail</td><td><span class="tag">emails</span></td><td class="num">82ms</td><td class="num">8.4 MB</td><td class="num">04:22:08</td></tr>
+        <tr><td class="name">App\Jobs\NotifySlack</td><td><span class="tag">webhooks</span></td><td class="num">241ms</td><td class="num">12.1 MB</td><td class="num">04:21:55</td></tr>
+        <tr><td class="name">App\Jobs\GenerateInvoicePdf</td><td><span class="tag">nightly-rollup</span></td><td class="num">8.4s</td><td class="num">128.6 MB</td><td class="num">04:21:48</td></tr>
+        <tr><td class="name">App\Jobs\SendDigest</td><td><span class="tag">emails</span></td><td class="num">112ms</td><td class="num">9.2 MB</td><td class="num">04:21:42</td></tr>
+        <tr><td class="name">App\Jobs\RefreshAnalytics</td><td><span class="tag">analytics</span></td><td class="num">2.1s</td><td class="num">42.8 MB</td><td class="num">04:21:31</td></tr>
+        <tr><td class="name">App\Jobs\IndexProduct</td><td><span class="tag">indexing</span></td><td class="num">412ms</td><td class="num">18.3 MB</td><td class="num">04:21:24</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     BATCHES
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="batches">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Batches</h1>
+    <span class="page-sub">4 in flight · 1 with failures</span>
+  </div>
+
+  <div class="grid-2">
+    <div class="card bordered-corner">
+      <div class="card-label">Nightly product reindex</div>
+      <div style="display:flex; align-items:baseline; gap:12px;">
+        <div class="card-value">12,481</div>
+        <span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces', serif;">total jobs</span>
+      </div>
+      <div style="margin-top:12px; display: flex; gap: 16px; font-size: 11px;">
+        <span><span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">pending</span> <span class="num">901</span></span>
+        <span><span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">failed</span> <span style="color:var(--ember)" class="num">3</span></span>
+        <span><span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">done</span> <span class="num">11,577</span></span>
+      </div>
+      <div style="margin-top:12px; height: 4px; background: var(--bg-3); position: relative;">
+        <div style="position:absolute; inset:0 27.7% 0 0; background: var(--amber);"></div>
+      </div>
+      <div style="margin-top:8px; font-size:10px; color:var(--ink-3); font-style:italic; font-family:'Fraunces', serif;">started 02:00 — eta 04:38 UTC</div>
+    </div>
+
+    <div class="card bordered-corner">
+      <div class="card-label">Bulk subscriber email</div>
+      <div style="display:flex; align-items:baseline; gap:12px;">
+        <div class="card-value">3,892</div>
+        <span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">total jobs</span>
+      </div>
+      <div style="margin-top:12px; display: flex; gap: 16px; font-size: 11px;">
+        <span><span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">pending</span> <span class="num">0</span></span>
+        <span><span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">failed</span> <span class="num">0</span></span>
+        <span><span style="color:var(--moss)" class="num">complete</span></span>
+      </div>
+      <div style="margin-top:12px; height: 4px; background: var(--bg-3); position: relative;">
+        <div style="position:absolute; inset:0; background: var(--moss);"></div>
+      </div>
+      <div style="margin-top:8px; font-size:10px; color:var(--ink-3); font-style:italic; font-family:'Fraunces', serif;">finished at 09:42</div>
+    </div>
+
+    <div class="card bordered-corner" style="border-left: 3px solid var(--ember);">
+      <div class="card-label" style="color:var(--ember)">Acme tenant migration</div>
+      <div style="display:flex; align-items:baseline; gap:12px;">
+        <div class="card-value">847</div>
+        <span style="color:var(--ember); font-style:italic; font-family:'Fraunces',serif;">14 failures</span>
+      </div>
+      <div style="margin-top:12px; display: flex; gap: 16px; font-size: 11px;">
+        <span><span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">pending</span> <span class="num">0</span></span>
+        <span><span style="color:var(--ember)" class="num">14 failed</span></span>
+        <span><span class="num">833 done</span></span>
+      </div>
+      <div style="margin-top:12px; height: 4px; background: var(--bg-3); position: relative;">
+        <div style="position:absolute; left:0; top:0; bottom:0; width:98.4%; background: var(--moss);"></div>
+        <div style="position:absolute; right:0; top:0; bottom:0; width:1.6%; background: var(--ember);"></div>
+      </div>
+      <div style="margin-top:8px; font-size:10px; color:var(--ink-3); font-style:italic; font-family:'Fraunces', serif;">started yesterday 21:45 — retry available</div>
+    </div>
+
+    <div class="card bordered-corner">
+      <div class="card-label">Weekly digest send</div>
+      <div style="display:flex; align-items:baseline; gap:12px;">
+        <div class="card-value">1,204</div>
+        <span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">total jobs</span>
+      </div>
+      <div style="margin-top:12px; display: flex; gap: 16px; font-size: 11px;">
+        <span><span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">pending</span> <span class="num">0</span></span>
+        <span><span style="color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif;">failed</span> <span class="num">0</span></span>
+      </div>
+      <div style="margin-top:12px; height: 4px; background: var(--bg-3); position: relative;">
+        <div style="position:absolute; inset:0; background: var(--moss);"></div>
+      </div>
+      <div style="margin-top:8px; font-size:10px; color:var(--ink-3); font-style:italic; font-family:'Fraunces', serif;">finished sun 09:00</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SUPERVISORS
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="supervisors">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Supervisors</h1>
+    <span class="page-sub">1 master · 4 supervisors · 28 workers</span>
+  </div>
+
+  <div class="section-head">Process tree</div>
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Supervisor</th>
+          <th>Status</th>
+          <th class="num">Procs</th>
+          <th>Connection</th>
+          <th>Queues</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">master-1<span class="muted">:</span>emails</td>
+          <td><span class="stamp ok">running</span></td>
+          <td class="num">8 / 12</td>
+          <td><span class="tag">redis</span></td>
+          <td>emails</td>
+          <td style="text-align:right;"><button class="btn">pause</button></td>
+        </tr>
+        <tr>
+          <td class="name">master-1<span class="muted">:</span>webhooks</td>
+          <td><span class="stamp ok">running</span></td>
+          <td class="num">16 / 24</td>
+          <td><span class="tag">sqs</span></td>
+          <td>webhooks</td>
+          <td style="text-align:right;"><button class="btn">pause</button></td>
+        </tr>
+        <tr>
+          <td class="name">master-1<span class="muted">:</span>indexing</td>
+          <td><span class="stamp ok">running</span></td>
+          <td class="num">4 / 8</td>
+          <td><span class="tag">redis</span></td>
+          <td>indexing, geocode</td>
+          <td style="text-align:right;"><button class="btn">pause</button></td>
+        </tr>
+        <tr>
+          <td class="name">master-1<span class="muted">:</span>nightly</td>
+          <td><span class="stamp warn">paused</span></td>
+          <td class="num">0 / 2</td>
+          <td><span class="tag">rabbitmq</span></td>
+          <td>nightly-rollup</td>
+          <td style="text-align:right;"><button class="btn">resume</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-head">Workers · live telemetry</div>
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Worker</th>
+          <th class="num">PID</th>
+          <th class="num">RSS</th>
+          <th class="num">CPU %</th>
+          <th class="num">Uptime</th>
+          <th>RSS trace</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">master-1:emails · default</td>
+          <td class="num">91801</td><td class="num">42.4 MB</td><td class="num">14.2%</td><td class="num">8d 14h</td>
+          <td><svg class="spark-mini" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0,10 L14,9 L28,7 L42,11 L56,8 L70,5 L84,7 L100,6" class="line"/></svg></td>
+        </tr>
+        <tr>
+          <td class="name">master-1:webhooks · default</td>
+          <td class="num">91812</td><td class="num">78.1 MB</td><td class="num">31.8%</td><td class="num">8d 14h</td>
+          <td><svg class="spark-mini" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0,4 L14,7 L28,5 L42,3 L56,8 L70,6 L84,4 L100,5" class="line"/></svg></td>
+        </tr>
+        <tr>
+          <td class="name">master-1:webhooks · default</td>
+          <td class="num">91813</td><td class="num">80.6 MB</td><td class="num">29.4%</td><td class="num">8d 14h</td>
+          <td><svg class="spark-mini" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0,6 L14,5 L28,7 L42,4 L56,6 L70,8 L84,5 L100,4" class="line"/></svg></td>
+        </tr>
+        <tr>
+          <td class="name">master-1:indexing · default <span class="stamp warn">high mem</span></td>
+          <td class="num">91824</td><td class="num" style="color:var(--ember)">112.3 MB</td><td class="num">62.1%</td><td class="num">3h 12m</td>
+          <td><svg class="spark-mini" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0,12 L14,11 L28,9 L42,7 L56,6 L70,4 L84,3 L100,2" class="line" style="stroke:var(--ember)"/></svg></td>
+        </tr>
+        <tr>
+          <td class="name">master-1:indexing · default</td>
+          <td class="num">91825</td><td class="num">48.9 MB</td><td class="num">28.4%</td><td class="num">8d 14h</td>
+          <td><svg class="spark-mini" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0,8 L14,7 L28,9 L42,6 L56,8 L70,7 L84,5 L100,6" class="line"/></svg></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="banner warn">
+    Worker <code>91824</code> RSS climbing — likely indexing-bulk-payload leak.
+    Auto-restart at memory-limit 128 MB · <span style="font-style:italic; font-family:'Fraunces', serif;">est. 18 minutes</span>.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     RATE LIMITS
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="rate-limits">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Rate limits</h1>
+    <span class="page-sub">4 registered · 147 rejects in past hour</span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Target</th>
+          <th class="num">Throttle</th>
+          <th class="num">Concurrency</th>
+          <th>Strategy</th>
+          <th class="num">Rejects (1h)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">gmaps</td>
+          <td><span class="tag">queue · geocode</span></td>
+          <td class="num">10 / min</td>
+          <td class="num">3</td>
+          <td><span class="stamp warn">release-computed</span></td>
+          <td class="num" style="color:var(--amber)">128</td>
+        </tr>
+        <tr>
+          <td class="name">stripe-charge</td>
+          <td><span class="tag">job · ChargeSubscription</span></td>
+          <td class="num">100 / hour</td>
+          <td class="num">5</td>
+          <td><span class="stamp info">release-fixed</span></td>
+          <td class="num">2</td>
+        </tr>
+        <tr>
+          <td class="name">elastic-bulk</td>
+          <td><span class="tag">queue · indexing</span></td>
+          <td class="num">600 / min</td>
+          <td class="num">8</td>
+          <td><span class="stamp warn">release-computed</span></td>
+          <td class="num">17</td>
+        </tr>
+        <tr>
+          <td class="name">postmark</td>
+          <td><span class="tag">queue · emails</span></td>
+          <td class="num">300 / min</td>
+          <td class="num">12</td>
+          <td><span class="stamp err">drop</span></td>
+          <td class="num">0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    Declare limits fluently in any service provider — <code style="font-family:'JetBrains Mono', monospace; font-style:normal; color:var(--amber);">Sunset::for('geocode')-&gt;throttle(perMinute:10)-&gt;concurrency(3);</code>
+    Zero overhead when no limits are registered.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MONITORING (tags)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="monitoring">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Monitoring</h1>
+    <span class="page-sub">monitored tags · trace anything tagged</span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Tag</th>
+          <th>Pinned</th>
+          <th class="num">Total seen</th>
+          <th class="num">Failed</th>
+          <th class="num">First seen</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">tenant:acme</td>
+          <td><span class="stamp ok">pinned</span></td>
+          <td class="num">48,217</td>
+          <td class="num" style="color:var(--ember)">3</td>
+          <td class="num">2026-04-12</td>
+          <td style="text-align:right;"><button class="btn">unpin</button></td>
+        </tr>
+        <tr>
+          <td class="name">product:91823</td>
+          <td><span class="stamp ok">pinned</span></td>
+          <td class="num">412</td>
+          <td class="num" style="color:var(--ember)">1</td>
+          <td class="num">2026-05-19</td>
+          <td style="text-align:right;"><button class="btn">unpin</button></td>
+        </tr>
+        <tr>
+          <td class="name">tenant:beta-co</td>
+          <td class="muted">no</td>
+          <td class="num">2,108</td>
+          <td class="num">0</td>
+          <td class="num">2026-05-08</td>
+          <td style="text-align:right;"><button class="btn">pin</button></td>
+        </tr>
+        <tr>
+          <td class="name">user:1421</td>
+          <td class="muted">no</td>
+          <td class="num">94</td>
+          <td class="num">0</td>
+          <td class="num">2026-05-21</td>
+          <td style="text-align:right;"><button class="btn">pin</button></td>
+        </tr>
+        <tr>
+          <td class="name">campaign:summer-2026</td>
+          <td class="muted">no</td>
+          <td class="num">8,412</td>
+          <td class="num">0</td>
+          <td class="num">2026-05-15</td>
+          <td style="text-align:right;"><button class="btn">pin</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    Tags are arbitrary strings you stuff onto jobs — <code style="font-family:'JetBrains Mono', monospace; font-style:normal; color:var(--amber);">tags() { return ['tenant:' . $this-&gt;tenantId]; }</code> —
+    pinned tags survive the trim window so you can audit one tenant's flow indefinitely.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     HEALTH
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page="health">
+  <div class="page-head">
+    <span class="section-mark">§</span>
+    <h1 class="page-title">Health</h1>
+    <span class="page-sub">runtime check · last 04:22:14 UTC</span>
+  </div>
+
+  <div class="section-head">Versions</div>
+  <div class="grid-3">
+    <div class="card bordered-corner">
+      <div class="card-label">sunset</div>
+      <div class="card-value">v1.3.0</div>
+      <div style="margin-top:6px; font-size:10px; color:var(--ink-3); font-family:'Fraunces', serif; font-style:italic;">queue pause/resume</div>
+    </div>
+    <div class="card bordered-corner">
+      <div class="card-label">laravel</div>
+      <div class="card-value">11.42.1</div>
+      <div style="margin-top:6px; font-size:10px; color:var(--ink-3); font-family:'Fraunces', serif; font-style:italic;">LTS · supported until 2027</div>
+    </div>
+    <div class="card bordered-corner">
+      <div class="card-label">php</div>
+      <div class="card-value">8.3.13</div>
+      <div style="margin-top:6px; font-size:10px; color:var(--ink-3); font-family:'Fraunces', serif; font-style:italic;">opcache enabled</div>
+    </div>
+  </div>
+
+  <div class="section-head">Transports</div>
+  <div class="grid-3">
+    <div class="probe">
+      <div class="probe-dot"></div>
+      <div>
+        <div class="probe-name">sqs</div>
+        <div class="probe-meta">driver: sqs · us-east-1</div>
+      </div>
+      <div class="probe-stat">38<span class="unit">ms</span></div>
+    </div>
+    <div class="probe">
+      <div class="probe-dot"></div>
+      <div>
+        <div class="probe-name">redis</div>
+        <div class="probe-meta">driver: redis · phpredis 6.0.2</div>
+      </div>
+      <div class="probe-stat">2<span class="unit">ms</span></div>
+    </div>
+    <div class="probe">
+      <div class="probe-dot"></div>
+      <div>
+        <div class="probe-name">rabbitmq</div>
+        <div class="probe-meta">driver: rabbitmq · v14 vhost /</div>
+      </div>
+      <div class="probe-stat">11<span class="unit">ms</span></div>
+    </div>
+  </div>
+
+  <div class="section-head">Redis keyspace</div>
+  <div class="card bordered-corner">
+    <div class="grid-4">
+      <div>
+        <div class="card-label">connection</div>
+        <div style="color:var(--ink); font-size:14px;">default</div>
+      </div>
+      <div>
+        <div class="card-label">prefix</div>
+        <div style="color:var(--amber); font-size:14px;">sunset</div>
+      </div>
+      <div>
+        <div class="card-label">used memory</div>
+        <div style="color:var(--ink); font-size:14px;">14.2 MB</div>
+      </div>
+      <div>
+        <div class="card-label">key count</div>
+        <div style="color:var(--ink); font-size:14px;">8,412</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head">Scheduled commands</div>
+  <div class="schedule">
+    <div class="row">
+      <div class="cmd">sunset:sweep-delayed</div>
+      <div class="cad">every minute</div>
+      <div class="desc">re-enqueue ZSET-buffered long-delay SQS jobs as they come due</div>
+    </div>
+    <div class="row">
+      <div class="cmd">sunset:sweep-rate-limit-slots</div>
+      <div class="cad">every minute</div>
+      <div class="desc">reconcile orphan concurrency semaphores from killed workers</div>
+    </div>
+    <div class="row">
+      <div class="cmd">sunset:sweep-worker-metrics</div>
+      <div class="cad">every minute</div>
+      <div class="desc">SREM dead PIDs from the worker-metrics set</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    Run <code style="font-family:'JetBrains Mono', monospace; font-style:normal; color:var(--amber);">php artisan schedule:run</code> in your cron once per minute to keep these alive.
+    Sunset auto-registers them via the package service provider.
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+  function nav(page) {
+    document.querySelectorAll('.rail-link').forEach(a => {
+      a.classList.toggle('active', a.dataset.page === page);
+    });
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.toggle('active', p.dataset.page === page);
+    });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  document.querySelectorAll('.rail-link').forEach(a => {
+    a.addEventListener('click', () => nav(a.dataset.page));
+  });
+
+  // Filter chip swap on Activity page (purely visual)
+  document.querySelectorAll('.activity-filters .filter').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.activity-filters .filter').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+
+  // Master-detail row swap on Failed page (purely visual)
+  document.querySelectorAll('.master-item').forEach(it => {
+    it.addEventListener('click', () => {
+      document.querySelectorAll('.master-item').forEach(x => x.classList.remove('active'));
+      it.classList.add('active');
+    });
+  });
+
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    document.documentElement.classList.toggle('light');
+  });
+
+  nav('overview');
+</script>
+
+</body>
+</html>

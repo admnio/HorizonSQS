@@ -1,0 +1,249 @@
+<!doctype html><html><head><meta charset="utf-8"><title>09 · Japanese Modernist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --paper: #ffffff;
+  --paper-2: #fafaf8;
+  --ink: #0f0f0f;
+  --ink-2: #4a4a4a;
+  --ink-3: #999999;
+  --ink-4: #cccccc;
+  --hairline: #e8e6e0;
+  --hairline-2: #d4d2cc;
+  --red: #c8102e;
+  --indigo: #2d3a5a;
+  --moss: #5a7050;
+  --sand: #e9e3d4;
+}
+html, body { background: var(--paper); color: var(--ink); font-family: 'Noto Sans JP', 'Helvetica Neue', sans-serif; font-size: 13px; line-height: 1.7; min-height: 100vh; font-weight: 300; -webkit-font-smoothing: antialiased; letter-spacing: 0.02em; }
+.jp-serif { font-family: 'Noto Serif JP', serif; font-weight: 400; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+.app { max-width: 1200px; margin: 0 auto; padding: 56px 64px 96px; }
+
+.top { display: flex; align-items: center; gap: 32px; padding-bottom: 56px; border-bottom: 1px solid var(--hairline); position: relative; }
+.top::after {
+  content: ''; position: absolute; left: 0; bottom: -1px; height: 1px; width: 80px; background: var(--red);
+}
+.brand-row { display: flex; align-items: center; gap: 16px; }
+.brand-mark {
+  width: 14px; height: 14px; border-radius: 50%; background: var(--red); flex-shrink: 0;
+}
+.brand {
+  font-family: 'Noto Serif JP', serif; font-weight: 200; font-size: 22px; letter-spacing: 0.16em; color: var(--ink);
+}
+.brand .jp { display: block; font-size: 10px; color: var(--ink-3); letter-spacing: 0.4em; font-weight: 400; margin-top: 2px; }
+.crumb { display: flex; align-items: baseline; gap: 14px; font-size: 11px; color: var(--ink-3); letter-spacing: 0.18em; text-transform: uppercase; }
+.crumb .k { color: var(--ink-4); font-weight: 400; }
+.crumb .v { color: var(--ink-2); }
+.crumb .sep { color: var(--ink-4); }
+.right-status { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: 10px; letter-spacing: 0.24em; color: var(--ink-3); text-transform: uppercase; }
+.right-status .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--moss); }
+
+.page-head {
+  display: grid; grid-template-columns: 60px 1fr; gap: 32px; align-items: end;
+  margin: 64px 0 56px;
+}
+.page-head .num {
+  font-family: 'Noto Serif JP', serif; font-weight: 200; font-size: 14px; color: var(--red); letter-spacing: 0.2em;
+  writing-mode: vertical-rl; text-orientation: mixed; height: 80px;
+}
+.page-head .num::after { content: ''; display: block; width: 1px; height: 24px; background: var(--red); margin: 8px auto 0; }
+.page-head .title { font-family: 'Noto Serif JP', serif; font-weight: 200; font-size: 56px; line-height: 0.9; letter-spacing: -0.01em; color: var(--ink); }
+.page-head .title .ja {
+  display: block; font-size: 14px; color: var(--ink-3); letter-spacing: 0.5em; font-weight: 400; margin-top: 14px;
+}
+.page-head .meta {
+  font-size: 11px; color: var(--ink-3); letter-spacing: 0.18em; text-transform: uppercase; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--hairline);
+}
+
+.section { margin: 64px 0 28px; }
+.section-head {
+  display: flex; align-items: baseline; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--hairline); margin-bottom: 28px;
+}
+.section-head .idx {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--red); letter-spacing: 0.18em; font-weight: 500;
+}
+.section-head h2 {
+  font-family: 'Noto Serif JP', serif; font-weight: 300; font-size: 18px; letter-spacing: 0.03em;
+}
+.section-head .ja { color: var(--ink-3); font-size: 11px; letter-spacing: 0.32em; font-weight: 400; }
+.section-head .meta { margin-left: auto; font-size: 11px; color: var(--ink-3); letter-spacing: 0.12em; text-transform: uppercase; }
+
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid var(--hairline); }
+.cell {
+  padding: 36px 24px;
+  border-bottom: 1px solid var(--hairline);
+  border-right: 1px solid var(--hairline);
+  position: relative;
+}
+.cell:nth-child(4n) { border-right: none; }
+.cell::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 18px; height: 1px; background: var(--ink);
+}
+.cell .l {
+  font-size: 10px; color: var(--ink-3); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 24px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.cell .l .ja { font-family: 'Noto Sans JP', sans-serif; font-size: 10px; letter-spacing: 0.18em; color: var(--ink-4); }
+.cell .n {
+  font-family: 'Noto Serif JP', serif; font-weight: 200; font-size: 56px; line-height: 1; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.cell .n .unit { font-size: 14px; color: var(--ink-3); font-weight: 300; margin-left: 6px; letter-spacing: 0; }
+.cell .n .dot {
+  display: inline-block; width: 8px; height: 8px; background: var(--red); border-radius: 50%; vertical-align: middle; margin-left: 8px;
+}
+.cell .delta {
+  font-size: 11px; color: var(--ink-2); margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--hairline);
+  letter-spacing: 0.06em;
+}
+.cell .delta .arrow { color: var(--red); }
+.cell .delta.muted { color: var(--ink-3); }
+
+.tbl { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.tbl table { width: 100%; border-collapse: collapse; }
+.tbl th {
+  text-align: left; padding: 14px 16px; font-weight: 400; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3);
+  border-bottom: 1px solid var(--hairline-2);
+}
+.tbl th.r { text-align: right; }
+.tbl td {
+  padding: 18px 16px; border-bottom: 1px solid var(--hairline); vertical-align: baseline; font-size: 14px; color: var(--ink);
+  font-weight: 300;
+}
+.tbl tr:last-child td { border-bottom: none; }
+.tbl td.r { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 400; }
+.tbl td.muted { color: var(--ink-3); }
+.tbl .q { font-weight: 400; letter-spacing: 0.03em; }
+.tbl .conn { color: var(--ink-3); font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-left: 10px; letter-spacing: 0.06em; }
+.tbl tr:hover td { background: var(--paper-2); }
+
+.mark {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.12em;
+}
+.mark .glyph {
+  display: inline-block; width: 8px; height: 8px;
+}
+.mark.ok { color: var(--moss); }
+.mark.ok .glyph { background: var(--moss); }
+.mark.warn { color: var(--red); }
+.mark.warn .glyph { background: var(--red); }
+.mark.pause { color: var(--ink-2); }
+.mark.pause .glyph { background: var(--ink-2); width: 8px; height: 8px; clip-path: polygon(0 0, 3px 0, 3px 8px, 0 8px, 0 0, 5px 0, 8px 0, 8px 8px, 5px 8px); }
+
+.events { }
+.events .e {
+  display: grid; grid-template-columns: 86px 100px 1fr 60px; gap: 28px;
+  padding: 22px 0; border-bottom: 1px solid var(--hairline); align-items: baseline;
+}
+.events .ts {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-2); letter-spacing: 0.02em;
+}
+.events .ts .date {
+  display: block; font-family: 'Noto Sans JP', sans-serif; font-weight: 300; font-size: 10px; color: var(--ink-3); margin-top: 2px; letter-spacing: 0.16em;
+}
+.events .body { font-size: 14px; line-height: 1.55; }
+.events .body strong { font-weight: 500; color: var(--ink); letter-spacing: 0.03em; }
+.events .body em { font-style: normal; color: var(--ink-2); border-bottom: 1px solid var(--ink-4); padding-bottom: 1px; }
+.events .body .src { display: block; margin-top: 6px; font-size: 11px; color: var(--ink-3); letter-spacing: 0.06em; }
+.events .id { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-3); letter-spacing: 0.04em; }
+
+.footer-rule { margin-top: 96px; padding-top: 28px; border-top: 1px solid var(--hairline); display: flex; gap: 32px; align-items: baseline; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-3); }
+.footer-rule .right { margin-left: auto; }
+.footer-rule .v { color: var(--ink-2); }
+
+</style>
+</head><body>
+<div class="app">
+  <header class="top">
+    <div class="brand-row">
+      <div class="brand-mark"></div>
+      <div class="brand">SUNSET<span class="jp">サンセット</span></div>
+    </div>
+    <div class="crumb">
+      <span class="k">node</span><span class="v">prod-east</span>
+      <span class="sep">/</span>
+      <span class="k">uptime</span><span class="v">8d 14h</span>
+    </div>
+    <div class="right-status"><span class="dot"></span> all systems · 04:22</div>
+  </header>
+
+  <div class="page-head">
+    <div class="num">No. <span style="writing-mode: horizontal-tb; display:inline-block;">01</span></div>
+    <div>
+      <h1 class="title">Overview<span class="ja">概観</span></h1>
+      <div class="meta">a quiet survey of background work · polled every three seconds</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="idx">i</span><h2>Vital signs</h2><span class="ja">指標</span>
+      <span class="meta">04:22:18 utc</span>
+    </div>
+    <div class="grid">
+      <div class="cell">
+        <div class="l">Queue depth<span class="ja">深さ</span></div>
+        <div class="n">3,847</div>
+        <div class="delta"><span class="arrow">↘</span> 412 fewer than the prior hour</div>
+      </div>
+      <div class="cell">
+        <div class="l">Supervisors<span class="ja">監督者</span></div>
+        <div class="n">4<span class="unit">/ 4</span></div>
+        <div class="delta muted">28 of 46 worker processes</div>
+      </div>
+      <div class="cell">
+        <div class="l">Throughput<span class="ja">処理量</span></div>
+        <div class="n">1.2k<span class="unit">/ min</span></div>
+        <div class="delta"><span class="arrow">↗</span> 8.2 % over the hour</div>
+      </div>
+      <div class="cell">
+        <div class="l">Failure rate<span class="ja">失敗率</span></div>
+        <div class="n">0.84<span class="unit">%</span><span class="dot"></span></div>
+        <div class="delta">5 failures in the last hour</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="idx">ii</span><h2>Workload</h2><span class="ja">作業量</span>
+      <span class="meta">five queues, three transports</span>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Queue</th><th class="r">Length</th><th class="r">Workers</th><th class="r">Wait</th><th class="r">Throughput</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td><span class="q">emails</span><span class="conn">redis</span></td><td class="r">128</td><td class="r">8</td><td class="r">2 s</td><td class="r">412 /min</td><td><span class="mark ok"><span class="glyph"></span>running</span></td></tr>
+        <tr><td><span class="q">webhooks</span><span class="conn">sqs</span></td><td class="r">2,431</td><td class="r">16</td><td class="r">14 s</td><td class="r">605 /min</td><td><span class="mark ok"><span class="glyph"></span>running</span></td></tr>
+        <tr><td><span class="q">indexing</span><span class="conn">redis</span></td><td class="r">901</td><td class="r">4</td><td class="r">48 s</td><td class="r">196 /min</td><td><span class="mark warn"><span class="glyph"></span>backlog</span></td></tr>
+        <tr><td><span class="q">geocode</span><span class="conn">redis</span></td><td class="r">312</td><td class="r">0</td><td class="r muted">—</td><td class="r muted">—</td><td><span class="mark pause"><span class="glyph"></span>paused</span></td></tr>
+        <tr><td><span class="q">nightly-rollup</span><span class="conn">rabbitmq</span></td><td class="r">75</td><td class="r">2</td><td class="r">5 s</td><td class="r">34 /min</td><td><span class="mark ok"><span class="glyph"></span>running</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="idx">iii</span><h2>Recent events</h2><span class="ja">出来事</span>
+      <span class="meta">live · last ten minutes</span>
+    </div>
+    <div class="events">
+      <div class="e"><div class="ts">04:18:42<span class="date">21 may</span></div><div><span class="mark ok"><span class="glyph"></span>deploy</span></div><div class="body"><strong>master-1</strong> · supervisors loaded from <em>sunset.environments[]</em><span class="src">four supervisors brought online</span></div><div class="id">№ 48201</div></div>
+      <div class="e"><div class="ts">04:17:11<span class="date">21 may</span></div><div><span class="mark warn"><span class="glyph"></span>long-wait</span></div><div class="body"><strong>sqs:webhooks</strong> · idle <em>48 seconds</em><span class="src">scaler will add 2 workers</span></div><div class="id">№ 48198</div></div>
+      <div class="e"><div class="ts">04:15:08<span class="date">21 may</span></div><div><span class="mark pause"><span class="glyph"></span>paused</span></div><div class="body"><strong>redis:geocode</strong> · paused by <em>dashboard</em><span class="src">eight workers stop popping on next loop</span></div><div class="id">№ 48192</div></div>
+      <div class="e"><div class="ts">04:14:32<span class="date">21 may</span></div><div><span class="mark warn"><span class="glyph"></span>high mem</span></div><div class="body">worker <strong>pid 91824</strong> · RSS <em>112.3 MB</em> approaching 128 MB limit<span class="src">auto-restart anticipated</span></div><div class="id">№ 48188</div></div>
+      <div class="e"><div class="ts">04:13:01<span class="date">21 may</span></div><div><span class="mark warn"><span class="glyph"></span>failed</span></div><div class="body"><strong>App\Jobs\IndexProduct</strong> · <em>Elastic\ClientResponseException</em> 429<span class="src">three attempts exhausted</span></div><div class="id">№ 48184</div></div>
+    </div>
+  </div>
+
+  <div class="footer-rule">
+    <span>Sunset</span><span class="v">v1.3.0</span>
+    <span>·</span>
+    <span>Page <span class="v">i / xiii</span></span>
+    <span class="right">end<span style="margin-left: 14px; color: var(--red); font-size: 16px; vertical-align: middle;">●</span></span>
+  </div>
+</div>
+</body></html>

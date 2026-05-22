@@ -1,0 +1,100 @@
+<!doctype html><html><head><meta charset="utf-8"><title>01 · Bloomberg Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #0a0a0a; color: #ffffff; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.5; }
+.app { padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
+.head { background: #ff8c00; color: #000; padding: 6px 12px; display: flex; align-items: baseline; gap: 16px; font-weight: 700; letter-spacing: 0.04em; }
+.head .cmd { font-size: 11px; color: #000; }
+.head .right { margin-left: auto; font-weight: 500; font-size: 11px; }
+.func { background: #1a1a1a; color: #ff8c00; padding: 4px 12px; display: flex; gap: 18px; font-size: 11px; border-bottom: 1px solid #333; }
+.func .key { color: #00ffff; }
+.func .item { color: #999; }
+.func .item.active { color: #ff8c00; font-weight: 600; }
+.main { padding: 14px 18px; flex: 1; }
+.bar { color: #00ffff; font-weight: 600; margin: 14px 0 4px; letter-spacing: 0.02em; }
+.bar::before { content: '▌ '; color: #ff8c00; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid #444; background: #050505; }
+.stat { padding: 8px 10px; border-right: 1px solid #444; }
+.stat:last-child { border: none; }
+.stat .label { color: #999; font-size: 10px; letter-spacing: 0.04em; }
+.stat .num { color: #fff; font-size: 28px; font-weight: 700; line-height: 1.1; margin-top: 2px; letter-spacing: -0.02em; }
+.stat .num.amber { color: #ff8c00; }
+.stat .num.green { color: #00ff00; }
+.stat .num.red { color: #ff3030; }
+.stat .delta { font-size: 10px; margin-top: 2px; color: #999; }
+.stat .delta.up { color: #00ff00; }
+.stat .delta.down { color: #ff3030; }
+.tbl { border: 1px solid #444; background: #050505; margin-top: 6px; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.tbl th { text-align: left; color: #ff8c00; padding: 6px 10px; border-bottom: 1px solid #444; font-weight: 600; font-size: 10px; letter-spacing: 0.06em; }
+.tbl td { padding: 5px 10px; border-bottom: 1px solid #1a1a1a; color: #ddd; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl .num { text-align: right; }
+.tbl .ok { color: #00ff00; }
+.tbl .warn { color: #ffd700; }
+.tbl .err { color: #ff3030; }
+.tbl .cyan { color: #00ffff; }
+.tbl .muted { color: #666; }
+.cmdbar { background: #0a0a0a; border-top: 1px solid #ff8c00; padding: 6px 12px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.cmdbar .prompt { color: #ff8c00; }
+.cmdbar .input { color: #fff; }
+.cmdbar .input::after { content: '█'; color: #ff8c00; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.cmdbar .help { margin-left: auto; color: #666; font-size: 10px; }
+.cmdbar .help span { color: #00ffff; }
+.log { font-size: 11px; }
+.log .e { display: grid; grid-template-columns: 80px 80px 1fr 60px; gap: 12px; padding: 4px 10px; border-bottom: 1px solid #1a1a1a; }
+.log .e:last-child { border: none; }
+.log .ts { color: #00ffff; }
+.log .lvl-err { color: #ff3030; font-weight: 600; }
+.log .lvl-warn { color: #ffd700; font-weight: 600; }
+.log .lvl-info { color: #00bfff; font-weight: 600; }
+.log .lvl-ok { color: #00ff00; font-weight: 600; }
+.log .id { text-align: right; color: #666; font-size: 10px; }
+</style>
+</head><body>
+<div class="app">
+  <div class="head"><span>SUNSET</span><span class="cmd">&lt;OVRV&gt; GO</span><span class="right">21-MAY-26 04:22:18 UTC · UPT 8D 14H · PROD-EAST</span></div>
+  <div class="func">
+    <span><span class="key">F1</span> <span class="item active">OVRV</span></span>
+    <span><span class="key">F2</span> <span class="item">ACTV</span></span>
+    <span><span class="key">F3</span> <span class="item">WORK</span></span>
+    <span><span class="key">F4</span> <span class="item">METR</span></span>
+    <span><span class="key">F5</span> <span class="item">FAIL</span></span>
+    <span><span class="key">F6</span> <span class="item">SUPV</span></span>
+    <span><span class="key">F7</span> <span class="item">LIMS</span></span>
+    <span><span class="key">F8</span> <span class="item">HLTH</span></span>
+  </div>
+  <div class="main">
+    <div class="bar">SUNSET OVERVIEW · PROD-CLUSTER-EAST</div>
+    <div class="grid">
+      <div class="stat"><div class="label">QUEUE DEPTH</div><div class="num">3,847</div><div class="delta down">▼ 412 / 1H</div></div>
+      <div class="stat"><div class="label">SUPERVISORS</div><div class="num green">4</div><div class="delta">28/46 PROCS</div></div>
+      <div class="stat"><div class="label">JOBS / MIN</div><div class="num amber">1,247</div><div class="delta up">▲ 8.2%</div></div>
+      <div class="stat"><div class="label">FAIL RATE</div><div class="num red">0.84%</div><div class="delta">5 IN 1H</div></div>
+    </div>
+    <div class="bar">WORKLOAD</div>
+    <div class="tbl"><table>
+      <thead><tr><th>QUEUE</th><th>CONN</th><th class="num">LEN</th><th class="num">PROC</th><th class="num">WAIT</th><th>STATE</th></tr></thead>
+      <tbody>
+        <tr><td class="cyan">emails</td><td>redis</td><td class="num">128</td><td class="num">8</td><td class="num">2</td><td class="ok">RUN</td></tr>
+        <tr><td class="cyan">webhooks</td><td>sqs</td><td class="num">2,431</td><td class="num">16</td><td class="num">14</td><td class="ok">RUN</td></tr>
+        <tr><td class="cyan">indexing</td><td>redis</td><td class="num">901</td><td class="num">4</td><td class="num">48</td><td class="warn">BACKLOG</td></tr>
+        <tr><td class="cyan">geocode</td><td>redis</td><td class="num">312</td><td class="num">0</td><td class="num muted">—</td><td class="warn">PAUSED</td></tr>
+        <tr><td class="cyan">nightly-rollup</td><td>rabbitmq</td><td class="num">75</td><td class="num">2</td><td class="num">5</td><td class="ok">RUN</td></tr>
+      </tbody>
+    </table></div>
+    <div class="bar">RECENT EVENTS</div>
+    <div class="tbl log">
+      <div class="e"><span class="ts">04:18:42</span><span class="lvl-ok">DEPLOY</span><span>master-1 supervisors loaded from sunset.environments[]</span><span class="id">#48201</span></div>
+      <div class="e"><span class="ts">04:17:11</span><span class="lvl-warn">L-WAIT</span><span>sqs:webhooks idle 48s over wait-threshold</span><span class="id">#48198</span></div>
+      <div class="e"><span class="ts">04:15:08</span><span class="lvl-info">PAUSE</span><span>redis:geocode paused by dashboard (8 workers will stop next loop)</span><span class="id">#48192</span></div>
+      <div class="e"><span class="ts">04:14:32</span><span class="lvl-warn">HI-MEM</span><span>worker pid 91824 RSS 112.3MB · limit 128MB · est restart 18m</span><span class="id">#48188</span></div>
+      <div class="e"><span class="ts">04:13:01</span><span class="lvl-err">FAIL</span><span>App\Jobs\IndexProduct on indexing → Elastic\ClientResponseException 429</span><span class="id">#48184</span></div>
+    </div>
+  </div>
+  <div class="cmdbar"><span class="prompt">►</span><span class="input">QUEUE geocode RESUME</span><span class="help"><span>F1</span> HELP  <span>F2</span> NAV  <span>ESC</span> CLEAR  <span>GO</span> EXEC</span></div>
+</div>
+</body></html>

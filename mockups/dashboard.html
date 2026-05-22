@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sunset Dashboard — Mockup</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --sunset-bg: 250 250 247;
+    --sunset-rail: 245 244 239;
+    --sunset-card: 255 255 255;
+    --sunset-border: 231 229 220;
+    --sunset-text: 24 24 27;
+    --sunset-muted: 113 113 122;
+    --sunset-accent: 245 158 11;
+    --status-error-text: rgb(185 28 28);
+    --status-warn-text:  rgb(146 64 14);
+    --status-ok-text:    rgb(21 128 61);
+    --status-info-text:  rgb(29 78 216);
+  }
+  html.dark {
+    --sunset-bg: 17 22 29;
+    --sunset-rail: 13 18 24;
+    --sunset-card: 10 13 18;
+    --sunset-border: 31 38 48;
+    --sunset-text: 228 231 236;
+    --sunset-muted: 154 163 173;
+    --sunset-accent: 245 158 11;
+    --status-error-text: rgb(239 68 68);
+    --status-warn-text:  rgb(245 158 11);
+    --status-ok-text:    rgb(34 197 94);
+    --status-info-text:  rgb(96 165 250);
+  }
+  body { background: rgb(var(--sunset-bg)); color: rgb(var(--sunset-text)); font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
+  .bg-sunset-bg { background: rgb(var(--sunset-bg)); }
+  .bg-sunset-rail { background: rgb(var(--sunset-rail)); }
+  .bg-sunset-card { background: rgb(var(--sunset-card)); }
+  .text-sunset-text { color: rgb(var(--sunset-text)); }
+  .text-sunset-muted { color: rgb(var(--sunset-muted)); }
+  .text-sunset-accent { color: rgb(var(--sunset-accent)); }
+  .border-sunset-border { border-color: rgb(var(--sunset-border)); }
+  .divide-sunset-border > * + * { border-color: rgb(var(--sunset-border)); }
+  .text-status-error { color: var(--status-error-text); }
+  .text-status-warn  { color: var(--status-warn-text); }
+  .text-status-ok    { color: var(--status-ok-text); }
+  .text-status-info  { color: var(--status-info-text); }
+  .pill-error { background: rgb(239 68 68 / 0.2); color: var(--status-error-text); }
+  .pill-warn  { background: rgb(245 158 11 / 0.2); color: var(--status-warn-text); }
+  .pill-ok    { background: rgb(34 197 94 / 0.2);  color: var(--status-ok-text); }
+  .pill-info  { background: rgb(96 165 250 / 0.2); color: var(--status-info-text); }
+  .pill { display: inline-block; padding: 0 6px; border-radius: 4px; font-size: 10px; line-height: 18px; font-weight: 600; }
+  .banner-warn { border: 1px solid rgb(245 158 11 / 0.4); background: rgb(245 158 11 / 0.1); color: var(--status-warn-text); }
+  .banner-info { border: 1px solid rgb(96 165 250 / 0.4); background: rgb(96 165 250 / 0.1); color: var(--status-info-text); }
+  .nav-active { background: rgb(var(--sunset-card)); color: rgb(var(--sunset-accent)); }
+  .nav-inactive { color: rgb(var(--sunset-muted)); }
+  .nav-inactive:hover { color: rgb(var(--sunset-text)); }
+  .data-grid { display: grid; }
+  .data-grid > .row { display: grid; padding: 6px 8px; border-bottom: 1px solid rgb(var(--sunset-border)); align-items: center; font-size: 12px; }
+  .data-grid > .row:last-child { border-bottom: 0; }
+  .data-grid > .header { font-size: 10px; text-transform: uppercase; color: rgb(var(--sunset-muted)); background: rgb(var(--sunset-rail) / 0.6); }
+  .sparkline { display: inline-block; height: 16px; vertical-align: middle; }
+  .sparkline polyline { fill: none; stroke: rgb(var(--sunset-accent)); stroke-width: 1.5; }
+  pre { font-family: inherit; white-space: pre-wrap; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .btn { padding: 4px 10px; border: 1px solid rgb(var(--sunset-border)); background: rgb(var(--sunset-card)); border-radius: 4px; font-size: 11px; color: rgb(var(--sunset-text)); cursor: pointer; }
+  .btn:hover { color: rgb(var(--sunset-accent)); }
+  .btn-danger { color: var(--status-error-text); }
+</style>
+</head>
+<body>
+
+<!-- ───────── Chrome ───────── -->
+<header class="h-12 bg-sunset-rail border-b border-sunset-border px-4 flex items-center gap-4 text-xs">
+  <span class="text-sunset-accent font-bold">sunset</span>
+  <span class="text-sunset-muted text-[10px]">localhost · production</span>
+  <button id="palette" class="ml-auto px-2 py-1 bg-sunset-card border border-sunset-border rounded text-sunset-muted">⌘K  jump</button>
+  <button id="theme-toggle" class="px-2 py-1 bg-sunset-card border border-sunset-border rounded text-sunset-muted">theme</button>
+</header>
+
+<div class="flex">
+
+<!-- ───────── Left Rail ───────── -->
+<nav class="w-[160px] min-h-[calc(100vh-48px)] bg-sunset-rail border-r border-sunset-border text-xs p-3 shrink-0">
+  <div class="mb-4">
+    <div class="text-[9px] uppercase tracking-wide text-sunset-muted mb-1">Overview</div>
+    <a data-page="overview" class="nav-link block px-2 py-1 rounded">home</a>
+    <a data-page="activity" class="nav-link block px-2 py-1 rounded">activity</a>
+    <a data-page="workload" class="nav-link block px-2 py-1 rounded">workload</a>
+    <a data-page="metrics" class="nav-link block px-2 py-1 rounded">metrics</a>
+  </div>
+  <div class="mb-4">
+    <div class="text-[9px] uppercase tracking-wide text-sunset-muted mb-1">Jobs</div>
+    <a data-page="recent" class="nav-link block px-2 py-1 rounded">recent</a>
+    <a data-page="failed" class="nav-link block px-2 py-1 rounded">failed</a>
+    <a data-page="pending" class="nav-link block px-2 py-1 rounded">pending</a>
+    <a data-page="completed" class="nav-link block px-2 py-1 rounded">completed</a>
+    <a data-page="batches" class="nav-link block px-2 py-1 rounded">batches</a>
+  </div>
+  <div class="mb-4">
+    <div class="text-[9px] uppercase tracking-wide text-sunset-muted mb-1">Ops</div>
+    <a data-page="supervisors" class="nav-link block px-2 py-1 rounded">supervisors</a>
+    <a data-page="rate-limits" class="nav-link block px-2 py-1 rounded">limits</a>
+    <a data-page="monitoring" class="nav-link block px-2 py-1 rounded">monitoring</a>
+    <a data-page="health" class="nav-link block px-2 py-1 rounded">health</a>
+  </div>
+</nav>
+
+<!-- ───────── Main ───────── -->
+<main class="flex-1 p-4">
+
+<!-- ===== Overview ===== -->
+<section class="page" data-page="overview">
+  <h1 class="text-base font-bold mb-3">Overview</h1>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+      <div class="text-[10px] uppercase text-sunset-muted">Queue depth</div>
+      <div class="text-2xl font-bold tabular-nums">3,847</div>
+    </div>
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+      <div class="text-[10px] uppercase text-sunset-muted">Supervisors</div>
+      <div class="text-2xl font-bold tabular-nums">4</div>
+    </div>
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+      <div class="text-[10px] uppercase text-sunset-muted">Masters</div>
+      <div class="text-2xl font-bold tabular-nums">1</div>
+    </div>
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+      <div class="text-[10px] uppercase text-sunset-muted">Recent jobs</div>
+      <div class="text-2xl font-bold tabular-nums">512</div>
+    </div>
+  </div>
+  <section>
+    <h2 class="text-xs uppercase text-sunset-muted mb-2">Workload</h2>
+    <div class="border border-sunset-border rounded data-grid" style="grid-template-columns: 1fr 90px 90px 90px;">
+      <div class="row header"><div>Queue</div><div>Length</div><div>Procs</div><div>Wait (s)</div></div>
+      <div class="row" style="grid-template-columns: 1fr 90px 90px 90px;"><div>emails</div><div class="tabular-nums">128</div><div class="tabular-nums">8</div><div class="tabular-nums">2</div></div>
+      <div class="row" style="grid-template-columns: 1fr 90px 90px 90px;"><div>webhooks</div><div class="tabular-nums">2,431</div><div class="tabular-nums">16</div><div class="tabular-nums">14</div></div>
+      <div class="row" style="grid-template-columns: 1fr 90px 90px 90px;"><div>indexing</div><div class="tabular-nums">901</div><div class="tabular-nums">4</div><div class="tabular-nums">48</div></div>
+      <div class="row" style="grid-template-columns: 1fr 90px 90px 90px;"><div>geocode <span class="pill pill-warn">paused</span></div><div class="tabular-nums">312</div><div class="tabular-nums">0</div><div class="tabular-nums">—</div></div>
+      <div class="row" style="grid-template-columns: 1fr 90px 90px 90px;"><div>nightly-rollup</div><div class="tabular-nums">75</div><div class="tabular-nums">2</div><div class="tabular-nums">5</div></div>
+    </div>
+  </section>
+</section>
+
+<!-- ===== Activity ===== -->
+<section class="page" data-page="activity">
+  <h1 class="text-base font-bold mb-3">Activity</h1>
+  <div class="flex gap-1 text-xs mb-3">
+    <button class="px-2 py-1 rounded border border-sunset-border bg-sunset-card font-bold">errors</button>
+    <button class="px-2 py-1 rounded border border-sunset-border">all</button>
+    <button class="px-2 py-1 rounded border border-sunset-border">lifecycle</button>
+    <button class="px-2 py-1 rounded border border-sunset-border">supervisor</button>
+  </div>
+  <ul class="space-y-1">
+    <li class="border border-sunset-border rounded p-2 text-xs cursor-pointer">
+      <div class="flex items-baseline gap-2">
+        <span class="text-sunset-muted">14:22:18</span>
+        <span class="pill pill-error">job_failed</span>
+        <span class="flex-1 truncate">App\Jobs\SendWelcomeEmail on emails: Symfony\\Component\\Mailer\\Exception\\TransportException — Connection timed out</span>
+        <span class="text-sunset-muted">#48211</span>
+      </div>
+    </li>
+    <li class="border border-sunset-border rounded p-2 text-xs cursor-pointer">
+      <div class="flex items-baseline gap-2">
+        <span class="text-sunset-muted">14:22:09</span>
+        <span class="pill pill-warn">job_rate_limited</span>
+        <span class="flex-1 truncate">App\Jobs\GeocodeAddress on geocode hit gmaps (release-computed, retry after 4s)</span>
+        <span class="text-sunset-muted">#48210</span>
+      </div>
+    </li>
+    <li class="border border-sunset-border rounded p-2 text-xs cursor-pointer">
+      <div class="flex items-baseline gap-2">
+        <span class="text-sunset-muted">14:21:42</span>
+        <span class="pill pill-info">queue_paused</span>
+        <span class="flex-1 truncate">redis:geocode paused by dashboard</span>
+        <span class="text-sunset-muted">#48207</span>
+      </div>
+    </li>
+    <li class="border border-sunset-border rounded p-2 text-xs cursor-pointer">
+      <div class="flex items-baseline gap-2">
+        <span class="text-sunset-muted">14:21:31</span>
+        <span class="pill pill-error">unable_to_launch_process</span>
+        <span class="flex-1 truncate">failed to launch worker pid 91823: /usr/bin/php artisan sunset:worker redis --name=default --supervisor=master-1:webhooks</span>
+        <span class="text-sunset-muted">#48205</span>
+      </div>
+    </li>
+    <li class="border border-sunset-border rounded p-2 text-xs cursor-pointer">
+      <div class="flex items-baseline gap-2">
+        <span class="text-sunset-muted">14:21:14</span>
+        <span class="pill pill-warn">worker_process_restarting</span>
+        <span class="flex-1 truncate">worker pid 91820 restarting</span>
+        <span class="text-sunset-muted">#48201</span>
+      </div>
+    </li>
+    <li class="border border-sunset-border rounded p-2 text-xs cursor-pointer">
+      <div class="flex items-baseline gap-2">
+        <span class="text-sunset-muted">14:20:58</span>
+        <span class="pill pill-warn">long_wait_detected</span>
+        <span class="flex-1 truncate">sqs:webhooks idle 48s</span>
+        <span class="text-sunset-muted">#48198</span>
+      </div>
+    </li>
+    <li class="border border-sunset-border rounded p-2 text-xs cursor-pointer">
+      <div class="flex items-baseline gap-2">
+        <span class="text-sunset-muted">14:20:32</span>
+        <span class="pill pill-error">job_failed</span>
+        <span class="flex-1 truncate">App\Jobs\IndexProduct on indexing: Elastic\Exception\ClientResponseException — 429 Too Many Requests</span>
+        <span class="text-sunset-muted">#48195</span>
+      </div>
+    </li>
+  </ul>
+  <div class="text-center mt-3">
+    <button class="text-xs px-3 py-1 border border-sunset-border rounded">Load older</button>
+  </div>
+</section>
+
+<!-- ===== Workload ===== -->
+<section class="page" data-page="workload">
+  <h1 class="text-base font-bold mb-3">Workload</h1>
+  <div class="border border-sunset-border rounded data-grid" style="grid-template-columns: 1fr 100px 110px 110px 140px;">
+    <div class="row header" style="grid-template-columns: 1fr 100px 110px 110px 140px;"><div>Queue</div><div>Length</div><div>Processes</div><div>Wait (s)</div><div></div></div>
+    <div class="row" style="grid-template-columns: 1fr 100px 110px 110px 140px;">
+      <div>redis:emails</div>
+      <div class="tabular-nums">128</div><div class="tabular-nums">8</div><div class="tabular-nums">2</div>
+      <div class="text-right"><button class="btn">pause</button></div>
+    </div>
+    <div class="row" style="grid-template-columns: 1fr 100px 110px 110px 140px;">
+      <div>sqs:webhooks</div>
+      <div class="tabular-nums">2,431</div><div class="tabular-nums">16</div><div class="tabular-nums">14</div>
+      <div class="text-right"><button class="btn">pause</button></div>
+    </div>
+    <div class="row" style="grid-template-columns: 1fr 100px 110px 110px 140px;">
+      <div>redis:indexing</div>
+      <div class="tabular-nums">901</div><div class="tabular-nums">4</div><div class="tabular-nums">48</div>
+      <div class="text-right"><button class="btn">pause</button></div>
+    </div>
+    <div class="row" style="grid-template-columns: 1fr 100px 110px 110px 140px;">
+      <div class="flex items-center gap-2">redis:geocode <span class="pill pill-warn">paused</span></div>
+      <div class="tabular-nums">312</div><div class="tabular-nums">0</div><div class="tabular-nums">—</div>
+      <div class="text-right"><button class="btn">resume</button></div>
+    </div>
+    <div class="row" style="grid-template-columns: 1fr 100px 110px 110px 140px;">
+      <div>rabbitmq:nightly-rollup</div>
+      <div class="tabular-nums">75</div><div class="tabular-nums">2</div><div class="tabular-nums">5</div>
+      <div class="text-right"><button class="btn">pause</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Metrics ===== -->
+<section class="page" data-page="metrics">
+  <h1 class="text-base font-bold mb-3">Metrics</h1>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+      <div class="text-[10px] uppercase text-sunset-muted">Jobs / min</div>
+      <div class="text-2xl font-bold tabular-nums">1,247</div>
+      <svg class="sparkline" width="100%" height="20" viewBox="0 0 100 20" preserveAspectRatio="none">
+        <polyline points="0,14 10,12 20,16 30,9 40,11 50,7 60,8 70,4 80,6 90,3 100,5"/>
+      </svg>
+    </div>
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+      <div class="text-[10px] uppercase text-sunset-muted">Jobs / hour</div>
+      <div class="text-2xl font-bold tabular-nums">74.8k</div>
+      <svg class="sparkline" width="100%" height="20" viewBox="0 0 100 20" preserveAspectRatio="none">
+        <polyline points="0,12 12,11 24,13 36,10 48,9 60,8 72,11 84,7 100,6"/>
+      </svg>
+    </div>
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+      <div class="text-[10px] uppercase text-sunset-muted">Avg runtime</div>
+      <div class="text-2xl font-bold tabular-nums">218ms</div>
+      <svg class="sparkline" width="100%" height="20" viewBox="0 0 100 20" preserveAspectRatio="none">
+        <polyline points="0,8 10,10 20,7 30,9 40,12 50,8 60,11 70,7 80,9 100,8"/>
+      </svg>
+    </div>
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+      <div class="text-[10px] uppercase text-sunset-muted">Failure rate</div>
+      <div class="text-2xl font-bold tabular-nums text-status-error">0.84%</div>
+      <svg class="sparkline" width="100%" height="20" viewBox="0 0 100 20" preserveAspectRatio="none">
+        <polyline points="0,15 12,16 24,14 36,17 48,12 60,15 72,9 84,13 100,11"/>
+      </svg>
+    </div>
+  </div>
+
+  <section class="mb-4">
+    <h2 class="text-xs uppercase text-sunset-muted mb-2">Throughput by queue</h2>
+    <div class="border border-sunset-border rounded">
+      <div class="data-grid" style="grid-template-columns: 1fr 110px 110px 1fr;">
+        <div class="row header" style="grid-template-columns: 1fr 110px 110px 1fr;"><div>Queue</div><div>Jobs / min</div><div>Avg (ms)</div><div>Trend</div></div>
+        <div class="row" style="grid-template-columns: 1fr 110px 110px 1fr;"><div>emails</div><div class="tabular-nums">412</div><div class="tabular-nums">91</div><div><svg class="sparkline" width="100%" height="16" viewBox="0 0 100 16" preserveAspectRatio="none"><polyline points="0,10 20,8 40,6 60,9 80,4 100,5"/></svg></div></div>
+        <div class="row" style="grid-template-columns: 1fr 110px 110px 1fr;"><div>webhooks</div><div class="tabular-nums">605</div><div class="tabular-nums">147</div><div><svg class="sparkline" width="100%" height="16" viewBox="0 0 100 16" preserveAspectRatio="none"><polyline points="0,12 20,10 40,11 60,7 80,9 100,5"/></svg></div></div>
+        <div class="row" style="grid-template-columns: 1fr 110px 110px 1fr;"><div>indexing</div><div class="tabular-nums">196</div><div class="tabular-nums">812</div><div><svg class="sparkline" width="100%" height="16" viewBox="0 0 100 16" preserveAspectRatio="none"><polyline points="0,8 20,11 40,9 60,12 80,10 100,8"/></svg></div></div>
+        <div class="row" style="grid-template-columns: 1fr 110px 110px 1fr;"><div>nightly-rollup</div><div class="tabular-nums">34</div><div class="tabular-nums">1,418</div><div><svg class="sparkline" width="100%" height="16" viewBox="0 0 100 16" preserveAspectRatio="none"><polyline points="0,7 20,10 40,6 60,11 80,7 100,9"/></svg></div></div>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- ===== Recent ===== -->
+<section class="page" data-page="recent">
+  <h1 class="text-base font-bold mb-3">Recent jobs <span class="text-sunset-muted text-xs ml-1">last 60 min</span></h1>
+  <div class="border border-sunset-border rounded data-grid" style="grid-template-columns: 1fr 130px 100px 100px 100px;">
+    <div class="row header" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>Name</div><div>Queue</div><div>Runtime</div><div>Status</div><div>At</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\SendWelcomeEmail</div><div>emails</div><div class="tabular-nums">82ms</div><div><span class="pill pill-ok">completed</span></div><div class="tabular-nums">14:22:08</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\IndexProduct</div><div>indexing</div><div class="tabular-nums">1.2s</div><div><span class="pill pill-error">failed</span></div><div class="tabular-nums">14:22:01</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\GeocodeAddress</div><div>geocode</div><div class="tabular-nums">—</div><div><span class="pill pill-warn">rate-limited</span></div><div class="tabular-nums">14:21:58</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\NotifySlack</div><div>webhooks</div><div class="tabular-nums">241ms</div><div><span class="pill pill-ok">completed</span></div><div class="tabular-nums">14:21:55</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\GenerateInvoicePdf</div><div>nightly-rollup</div><div class="tabular-nums">8.4s</div><div><span class="pill pill-ok">completed</span></div><div class="tabular-nums">14:21:48</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\SendDigest</div><div>emails</div><div class="tabular-nums">112ms</div><div><span class="pill pill-ok">completed</span></div><div class="tabular-nums">14:21:42</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\RetryWebhook</div><div>webhooks</div><div class="tabular-nums">—</div><div><span class="pill pill-info">released</span></div><div class="tabular-nums">14:21:38</div></div>
+  </div>
+</section>
+
+<!-- ===== Failed ===== -->
+<section class="page" data-page="failed">
+  <h1 class="text-base font-bold mb-3">
+    Failed jobs <span class="text-sunset-muted text-xs ml-1">37</span>
+    <span class="text-status-error text-xs ml-2">5 in the last hour</span>
+  </h1>
+  <div class="grid grid-cols-[280px_1fr] gap-3" style="min-height: 480px;">
+    <!-- Master -->
+    <div class="border border-sunset-border rounded overflow-hidden">
+      <div class="p-2 border-b border-sunset-border text-xs text-sunset-muted">Failures</div>
+      <div class="divide-y divide-sunset-border">
+        <div class="p-2 cursor-pointer text-xs nav-active">
+          <div class="font-bold truncate">App\Jobs\IndexProduct</div>
+          <div class="text-status-error text-[10px] truncate">Elastic\Exception\ClientResponseException — 429 Too Many Requests</div>
+          <div class="text-sunset-muted text-[10px] truncate">indexing · 2026-05-20 14:22:01</div>
+        </div>
+        <div class="p-2 cursor-pointer text-xs">
+          <div class="font-bold truncate">App\Jobs\SendWelcomeEmail</div>
+          <div class="text-status-error text-[10px] truncate">Symfony\\Component\\Mailer\\Exception\\TransportException — Connection timed out</div>
+          <div class="text-sunset-muted text-[10px] truncate">emails · 2026-05-20 14:22:18</div>
+        </div>
+        <div class="p-2 cursor-pointer text-xs">
+          <div class="font-bold truncate">App\Jobs\ChargeSubscription</div>
+          <div class="text-status-error text-[10px] truncate">Stripe\\Exception\\CardException — Your card was declined.</div>
+          <div class="text-sunset-muted text-[10px] truncate">billing · 2026-05-20 13:58:11</div>
+        </div>
+        <div class="p-2 cursor-pointer text-xs">
+          <div class="font-bold truncate">App\Jobs\GenerateThumbnail</div>
+          <div class="text-status-error text-[10px] truncate">ImagickException — unable to open image '/tmp/upload_xJ48z': No such file or directory</div>
+          <div class="text-sunset-muted text-[10px] truncate">media · 2026-05-20 13:42:08</div>
+        </div>
+        <div class="p-2 cursor-pointer text-xs">
+          <div class="font-bold truncate">App\Jobs\SyncShopifyOrders</div>
+          <div class="text-status-error text-[10px] truncate">GuzzleHttp\\Exception\\ConnectException — cURL error 28: Operation timed out</div>
+          <div class="text-sunset-muted text-[10px] truncate">webhooks · 2026-05-20 13:08:54</div>
+        </div>
+      </div>
+    </div>
+    <!-- Detail -->
+    <div class="border border-sunset-border rounded p-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="font-bold text-sm">App\Jobs\IndexProduct</span>
+        <div class="flex gap-2">
+          <button class="btn">retry</button>
+          <button class="btn btn-danger">delete</button>
+        </div>
+      </div>
+      <div class="text-xs text-sunset-muted mb-3">redis · indexing · 2026-05-20 14:22:01 UTC · 3 attempts</div>
+      <pre class="text-[11px] bg-sunset-rail border border-sunset-border rounded p-3 overflow-auto" style="max-height: 360px;">Elastic\Exception\ClientResponseException: 429 Too Many Requests
+  thrown in /var/www/vendor/elastic/elasticsearch/src/Endpoints/IndexRequest.php on line 142
+
+#0 /var/www/vendor/elastic/elasticsearch/src/Client.php(312): Elastic\\Endpoints\\IndexRequest->execute()
+#1 /var/www/app/Services/Search/ProductIndexer.php(48): Elastic\\Client->index(['id' => 91823, 'name' => 'Acme Widget XL', ...])
+#2 /var/www/app/Jobs/IndexProduct.php(34): App\\Services\\Search\\ProductIndexer->index($this->product)
+#3 [internal function]: App\\Jobs\\IndexProduct->handle()
+#4 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): call_user_func_array(...)
+#5 /var/www/vendor/laravel/framework/src/Illuminate/Container/Util.php(41): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+
+Payload (excerpt):
+{
+  "displayName": "App\\Jobs\\IndexProduct",
+  "data": { "command": "...", "product_id": 91823 },
+  "tags": ["product:91823", "tenant:acme"],
+  "tries": 3,
+  "timeout": 60
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Pending ===== -->
+<section class="page" data-page="pending">
+  <h1 class="text-base font-bold mb-3">Pending jobs <span class="text-sunset-muted text-xs ml-1">3,847 across all queues</span></h1>
+  <div class="border border-sunset-border rounded data-grid" style="grid-template-columns: 1fr 130px 100px 100px 100px;">
+    <div class="row header" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>Name</div><div>Queue</div><div>Reserved</div><div>Attempts</div><div>Pending</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\SendDigest</div><div>emails</div><div class="tabular-nums">14:21:42</div><div class="tabular-nums">1</div><div><span class="pill pill-info">reserved</span></div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\IndexProduct</div><div>indexing</div><div class="tabular-nums">14:21:38</div><div class="tabular-nums">2</div><div><span class="pill pill-info">reserved</span></div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\NotifySlack</div><div>webhooks</div><div class="tabular-nums">14:21:38</div><div class="tabular-nums">1</div><div><span class="pill pill-info">reserved</span></div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\GenerateInvoicePdf</div><div>nightly-rollup</div><div class="tabular-nums">—</div><div class="tabular-nums">0</div><div><span class="pill pill-warn">delayed</span></div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\SyncShopifyOrders</div><div>webhooks</div><div class="tabular-nums">—</div><div class="tabular-nums">0</div><div><span class="pill pill-warn">delayed</span></div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px 100px;"><div>App\Jobs\ChargeSubscription</div><div>billing</div><div class="tabular-nums">—</div><div class="tabular-nums">0</div><div><span class="pill pill-warn">delayed</span></div></div>
+  </div>
+</section>
+
+<!-- ===== Completed ===== -->
+<section class="page" data-page="completed">
+  <h1 class="text-base font-bold mb-3">Completed jobs <span class="text-sunset-muted text-xs ml-1">last 60 min</span></h1>
+  <div class="border border-sunset-border rounded data-grid" style="grid-template-columns: 1fr 130px 100px 100px;">
+    <div class="row header" style="grid-template-columns: 1fr 130px 100px 100px;"><div>Name</div><div>Queue</div><div>Runtime</div><div>At</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px;"><div>App\Jobs\SendWelcomeEmail</div><div>emails</div><div class="tabular-nums">82ms</div><div class="tabular-nums">14:22:08</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px;"><div>App\Jobs\NotifySlack</div><div>webhooks</div><div class="tabular-nums">241ms</div><div class="tabular-nums">14:21:55</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px;"><div>App\Jobs\GenerateInvoicePdf</div><div>nightly-rollup</div><div class="tabular-nums">8.4s</div><div class="tabular-nums">14:21:48</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px;"><div>App\Jobs\SendDigest</div><div>emails</div><div class="tabular-nums">112ms</div><div class="tabular-nums">14:21:42</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px;"><div>App\Jobs\RefreshAnalytics</div><div>analytics</div><div class="tabular-nums">2.1s</div><div class="tabular-nums">14:21:31</div></div>
+    <div class="row" style="grid-template-columns: 1fr 130px 100px 100px;"><div>App\Jobs\IndexProduct</div><div>indexing</div><div class="tabular-nums">412ms</div><div class="tabular-nums">14:21:24</div></div>
+  </div>
+</section>
+
+<!-- ===== Batches ===== -->
+<section class="page" data-page="batches">
+  <h1 class="text-base font-bold mb-3">Batches</h1>
+  <div class="border border-sunset-border rounded data-grid" style="grid-template-columns: 1.4fr 90px 90px 90px 160px;">
+    <div class="row header" style="grid-template-columns: 1.4fr 90px 90px 90px 160px;"><div>Name</div><div>Total</div><div>Pending</div><div>Failed</div><div>Created</div></div>
+    <div class="row" style="grid-template-columns: 1.4fr 90px 90px 90px 160px;"><div>Nightly product reindex</div><div class="tabular-nums">12,481</div><div class="tabular-nums">901</div><div class="tabular-nums text-status-error">3</div><div class="tabular-nums">2026-05-20 02:00:00</div></div>
+    <div class="row" style="grid-template-columns: 1.4fr 90px 90px 90px 160px;"><div>Bulk subscriber email</div><div class="tabular-nums">3,892</div><div class="tabular-nums">0</div><div class="tabular-nums">0</div><div class="tabular-nums">2026-05-20 09:14:22</div></div>
+    <div class="row" style="grid-template-columns: 1.4fr 90px 90px 90px 160px;"><div>Acme tenant migration</div><div class="tabular-nums">847</div><div class="tabular-nums">0</div><div class="tabular-nums text-status-error">14</div><div class="tabular-nums">2026-05-19 21:45:08</div></div>
+    <div class="row" style="grid-template-columns: 1.4fr 90px 90px 90px 160px;"><div>Weekly digest</div><div class="tabular-nums">1,204</div><div class="tabular-nums">0</div><div class="tabular-nums">0</div><div class="tabular-nums">2026-05-19 07:00:00</div></div>
+  </div>
+</section>
+
+<!-- ===== Supervisors ===== -->
+<section class="page" data-page="supervisors">
+  <h1 class="text-base font-bold mb-3">Supervisors</h1>
+
+  <section class="mb-5">
+    <h2 class="text-xs uppercase text-sunset-muted mb-2">Process tree</h2>
+    <div class="border border-sunset-border rounded">
+      <div class="data-grid" style="grid-template-columns: 1.2fr 110px 110px 110px 1fr 120px;">
+        <div class="row header" style="grid-template-columns: 1.2fr 110px 110px 110px 1fr 120px;"><div>Name</div><div>Status</div><div>Procs</div><div>Connection</div><div>Queues</div><div></div></div>
+        <div class="row" style="grid-template-columns: 1.2fr 110px 110px 110px 1fr 120px;"><div>master-1:emails</div><div><span class="pill pill-ok">running</span></div><div class="tabular-nums">8 / 12</div><div>redis</div><div>emails</div><div class="text-right"><button class="btn">pause</button></div></div>
+        <div class="row" style="grid-template-columns: 1.2fr 110px 110px 110px 1fr 120px;"><div>master-1:webhooks</div><div><span class="pill pill-ok">running</span></div><div class="tabular-nums">16 / 24</div><div>sqs</div><div>webhooks</div><div class="text-right"><button class="btn">pause</button></div></div>
+        <div class="row" style="grid-template-columns: 1.2fr 110px 110px 110px 1fr 120px;"><div>master-1:indexing</div><div><span class="pill pill-ok">running</span></div><div class="tabular-nums">4 / 8</div><div>redis</div><div>indexing</div><div class="text-right"><button class="btn">pause</button></div></div>
+        <div class="row" style="grid-template-columns: 1.2fr 110px 110px 110px 1fr 120px;"><div>master-1:nightly</div><div><span class="pill pill-warn">paused</span></div><div class="tabular-nums">0 / 2</div><div>rabbitmq</div><div>nightly-rollup</div><div class="text-right"><button class="btn">resume</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-xs uppercase text-sunset-muted mb-2">Workers</h2>
+    <div class="border border-sunset-border rounded">
+      <div class="data-grid" style="grid-template-columns: 1fr 80px 90px 90px 1fr;">
+        <div class="row header" style="grid-template-columns: 1fr 80px 90px 90px 1fr;"><div>Worker (supervisor · pid)</div><div>PID</div><div>RSS</div><div>CPU %</div><div>Trend</div></div>
+        <div class="row" style="grid-template-columns: 1fr 80px 90px 90px 1fr;"><div>master-1:emails — emails</div><div class="tabular-nums">91801</div><div class="tabular-nums">42.4 MB</div><div class="tabular-nums">14.2%</div><div><svg class="sparkline" width="100%" height="16" viewBox="0 0 100 16" preserveAspectRatio="none"><polyline points="0,10 14,9 28,7 42,11 56,8 70,5 84,7 100,6"/></svg></div></div>
+        <div class="row" style="grid-template-columns: 1fr 80px 90px 90px 1fr;"><div>master-1:webhooks — webhooks</div><div class="tabular-nums">91812</div><div class="tabular-nums">78.1 MB</div><div class="tabular-nums">31.8%</div><div><svg class="sparkline" width="100%" height="16" viewBox="0 0 100 16" preserveAspectRatio="none"><polyline points="0,4 14,7 28,5 42,3 56,8 70,6 84,4 100,5"/></svg></div></div>
+        <div class="row" style="grid-template-columns: 1fr 80px 90px 90px 1fr;"><div>master-1:webhooks — webhooks</div><div class="tabular-nums">91813</div><div class="tabular-nums">80.6 MB</div><div class="tabular-nums">29.4%</div><div><svg class="sparkline" width="100%" height="16" viewBox="0 0 100 16" preserveAspectRatio="none"><polyline points="0,6 14,5 28,7 42,4 56,6 70,8 84,5 100,4"/></svg></div></div>
+        <div class="row" style="grid-template-columns: 1fr 80px 90px 90px 1fr;"><div>master-1:indexing — indexing</div><div class="tabular-nums">91824</div><div class="tabular-nums">112.3 MB</div><div class="tabular-nums">62.1%</div><div><svg class="sparkline" width="100%" height="16" viewBox="0 0 100 16" preserveAspectRatio="none"><polyline points="0,2 14,4 28,3 42,5 56,3 70,2 84,4 100,3"/></svg></div></div>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- ===== Rate Limits ===== -->
+<section class="page" data-page="rate-limits">
+  <h1 class="text-base font-bold mb-3">Rate limits</h1>
+  <div class="border border-sunset-border rounded data-grid" style="grid-template-columns: 1fr 1.2fr 110px 110px 100px;">
+    <div class="row header" style="grid-template-columns: 1fr 1.2fr 110px 110px 100px;"><div>Limit</div><div>Target</div><div>Throttle</div><div>Concurrency</div><div>Rejects (1h)</div></div>
+    <div class="row" style="grid-template-columns: 1fr 1.2fr 110px 110px 100px;"><div>gmaps</div><div>queue(geocode)</div><div class="tabular-nums">10 / min</div><div class="tabular-nums">3</div><div class="tabular-nums text-status-warn">128</div></div>
+    <div class="row" style="grid-template-columns: 1fr 1.2fr 110px 110px 100px;"><div>stripe-charge</div><div>job(App\\Jobs\\ChargeSubscription)</div><div class="tabular-nums">100 / hour</div><div class="tabular-nums">5</div><div class="tabular-nums">2</div></div>
+    <div class="row" style="grid-template-columns: 1fr 1.2fr 110px 110px 100px;"><div>elastic-bulk</div><div>queue(indexing)</div><div class="tabular-nums">600 / min</div><div class="tabular-nums">8</div><div class="tabular-nums">17</div></div>
+    <div class="row" style="grid-template-columns: 1fr 1.2fr 110px 110px 100px;"><div>postmark</div><div>queue(emails)</div><div class="tabular-nums">300 / min</div><div class="tabular-nums">12</div><div class="tabular-nums">0</div></div>
+  </div>
+  <div class="banner-info rounded p-3 text-xs mt-4">
+    Strategies: <code>release-computed</code> (default — release with computed retry-after) · <code>release-fixed</code> (release with a fixed backoff) · <code>drop</code> (drop the job; optionally mark as failure). Configure via the <code>Sunset</code> facade in your <code>AppServiceProvider::boot()</code>.
+  </div>
+</section>
+
+<!-- ===== Monitoring ===== -->
+<section class="page" data-page="monitoring">
+  <h1 class="text-base font-bold mb-3">Monitored tags</h1>
+  <div class="border border-sunset-border rounded data-grid" style="grid-template-columns: 1fr 110px 110px 110px 100px;">
+    <div class="row header" style="grid-template-columns: 1fr 110px 110px 110px 100px;"><div>Tag</div><div>Pinned</div><div>Total seen</div><div>Failed</div><div></div></div>
+    <div class="row" style="grid-template-columns: 1fr 110px 110px 110px 100px;"><div>tenant:acme</div><div><span class="pill pill-ok">yes</span></div><div class="tabular-nums">48,217</div><div class="tabular-nums text-status-error">3</div><div class="text-right"><button class="btn">unpin</button></div></div>
+    <div class="row" style="grid-template-columns: 1fr 110px 110px 110px 100px;"><div>product:91823</div><div><span class="pill pill-ok">yes</span></div><div class="tabular-nums">412</div><div class="tabular-nums text-status-error">1</div><div class="text-right"><button class="btn">unpin</button></div></div>
+    <div class="row" style="grid-template-columns: 1fr 110px 110px 110px 100px;"><div>tenant:beta-co</div><div><span class="text-sunset-muted">no</span></div><div class="tabular-nums">2,108</div><div class="tabular-nums">0</div><div class="text-right"><button class="btn">pin</button></div></div>
+    <div class="row" style="grid-template-columns: 1fr 110px 110px 110px 100px;"><div>user:1421</div><div><span class="text-sunset-muted">no</span></div><div class="tabular-nums">94</div><div class="tabular-nums">0</div><div class="text-right"><button class="btn">pin</button></div></div>
+  </div>
+</section>
+
+<!-- ===== Health ===== -->
+<section class="page" data-page="health">
+  <h1 class="text-base font-bold mb-3">Health</h1>
+
+  <section class="mb-5">
+    <h2 class="text-xs uppercase text-sunset-muted mb-2">Versions</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+      <div class="border border-sunset-border rounded p-3 bg-sunset-card"><div class="text-[10px] uppercase text-sunset-muted">Sunset</div><div class="font-bold text-sm">v1.3.0</div></div>
+      <div class="border border-sunset-border rounded p-3 bg-sunset-card"><div class="text-[10px] uppercase text-sunset-muted">Laravel</div><div class="font-bold text-sm">11.42.1</div></div>
+      <div class="border border-sunset-border rounded p-3 bg-sunset-card"><div class="text-[10px] uppercase text-sunset-muted">PHP</div><div class="font-bold text-sm">8.3.13</div></div>
+    </div>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="text-xs uppercase text-sunset-muted mb-2">Transports</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+      <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+        <div class="flex items-center justify-between mb-1"><span class="font-bold">sqs</span><span class="pill pill-ok">reachable</span></div>
+        <div class="text-sunset-muted text-[10px]">driver: sqs</div>
+        <div class="text-sunset-muted text-[10px]">38ms · us-east-1</div>
+      </div>
+      <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+        <div class="flex items-center justify-between mb-1"><span class="font-bold">redis</span><span class="pill pill-ok">reachable</span></div>
+        <div class="text-sunset-muted text-[10px]">driver: redis</div>
+        <div class="text-sunset-muted text-[10px]">2ms</div>
+      </div>
+      <div class="border border-sunset-border rounded p-3 bg-sunset-card">
+        <div class="flex items-center justify-between mb-1"><span class="font-bold">rabbitmq</span><span class="pill pill-ok">reachable</span></div>
+        <div class="text-sunset-muted text-[10px]">driver: rabbitmq</div>
+        <div class="text-sunset-muted text-[10px]">11ms</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="text-xs uppercase text-sunset-muted mb-2">Redis (Sunset state)</h2>
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card text-xs">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div><div class="text-[10px] uppercase text-sunset-muted">Connection</div><div>default</div></div>
+        <div><div class="text-[10px] uppercase text-sunset-muted">Status</div><div><span class="pill pill-ok">reachable</span></div></div>
+        <div><div class="text-[10px] uppercase text-sunset-muted">Latency</div><div>2ms</div></div>
+        <div><div class="text-[10px] uppercase text-sunset-muted">Key prefix</div><div>sunset</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="text-xs uppercase text-sunset-muted mb-2">Rate limits</h2>
+    <div class="border border-sunset-border rounded p-3 bg-sunset-card text-xs">
+      <span class="font-bold text-sm">4</span><span class="text-sunset-muted ml-1">registered limits</span>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-xs uppercase text-sunset-muted mb-2">Scheduled commands</h2>
+    <div class="border border-sunset-border rounded divide-y divide-sunset-border">
+      <div class="px-3 py-2 grid gap-3 text-xs" style="grid-template-columns: 1.5fr 1fr 2fr;"><div>sunset:sweep-delayed</div><div class="text-sunset-muted">every minute</div><div class="text-sunset-muted">Re-enqueue ZSET-buffered long-delay SQS jobs.</div></div>
+      <div class="px-3 py-2 grid gap-3 text-xs" style="grid-template-columns: 1.5fr 1fr 2fr;"><div>sunset:sweep-rate-limit-slots</div><div class="text-sunset-muted">every minute</div><div class="text-sunset-muted">Reconcile orphaned concurrency-semaphore slots.</div></div>
+      <div class="px-3 py-2 grid gap-3 text-xs" style="grid-template-columns: 1.5fr 1fr 2fr;"><div>sunset:sweep-worker-metrics</div><div class="text-sunset-muted">every minute</div><div class="text-sunset-muted">SREM dead PIDs from the worker-metrics set.</div></div>
+    </div>
+  </section>
+</section>
+
+</main>
+</div>
+
+<script>
+  const nav = (page) => {
+    document.querySelectorAll('.nav-link').forEach(a => {
+      const active = a.dataset.page === page;
+      a.classList.toggle('nav-active', active);
+      a.classList.toggle('nav-inactive', !active);
+    });
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.toggle('active', p.dataset.page === page);
+    });
+  };
+  document.querySelectorAll('.nav-link').forEach(a => {
+    a.style.cursor = 'pointer';
+    a.addEventListener('click', () => nav(a.dataset.page));
+  });
+  // initial
+  nav('overview');
+
+  // theme toggle
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+  });
+</script>
+
+</body>
+</html>

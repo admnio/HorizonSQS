@@ -1,0 +1,243 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Sunset · Theme Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0d;
+  --bg-2: #14141a;
+  --card: #18181f;
+  --rule: #2a2a35;
+  --ink: #ededf2;
+  --ink-2: #9c9ca8;
+  --ink-3: #5c5c68;
+  --accent: #f59e0b;
+}
+html, body { background: var(--bg); color: var(--ink); font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.5; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+.serif { font-family: 'Fraunces', serif; }
+
+.app { max-width: 1400px; margin: 0 auto; padding: 48px 32px 96px; }
+
+header { display: flex; align-items: end; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; position: relative; }
+header::after { content: ''; position: absolute; left: 0; bottom: -1px; width: 80px; height: 2px; background: var(--accent); }
+.title {
+  font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'wght' 600;
+  font-size: 48px; letter-spacing: -0.03em; line-height: 1;
+}
+.title .amp { color: var(--accent); }
+.subtitle {
+  font-family: 'Fraunces', serif; font-style: italic; font-weight: 400;
+  font-size: 16px; color: var(--ink-2); margin-top: 8px;
+}
+.meta { margin-left: auto; font-size: 11px; letter-spacing: 0.12em; color: var(--ink-3); text-transform: uppercase; text-align: right; line-height: 1.8; }
+.meta .v { color: var(--accent); }
+
+.intro { font-family: 'Fraunces', serif; font-style: italic; font-size: 16px; color: var(--ink-2); max-width: 720px; line-height: 1.6; margin-bottom: 48px; }
+.intro strong { font-style: normal; color: var(--ink); font-weight: 600; }
+
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px 32px; }
+
+.card {
+  background: var(--card); border: 1px solid var(--rule); overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: border-color 0.15s, transform 0.15s;
+  text-decoration: none; color: inherit;
+  position: relative;
+}
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card-frame {
+  position: relative;
+  height: 380px;
+  overflow: hidden;
+  background: #000;
+}
+.card-frame iframe {
+  /* Render full mockup at native size, then scale down */
+  width: 1400px; height: 1100px;
+  border: 0;
+  transform: scale(0.4); transform-origin: top left;
+  pointer-events: none;
+}
+.card-meta {
+  padding: 20px 24px 22px; border-top: 1px solid var(--rule); background: var(--bg-2);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.card-num {
+  display: inline-block; font-family: 'JetBrains Mono', monospace; font-weight: 600;
+  font-size: 11px; color: var(--accent); letter-spacing: 0.16em;
+}
+.card-name {
+  font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'wght' 600;
+  font-size: 22px; letter-spacing: -0.01em; line-height: 1.1;
+}
+.card-desc {
+  font-family: 'Fraunces', serif; font-style: italic; font-weight: 400;
+  font-size: 13px; color: var(--ink-2); line-height: 1.55; margin-top: 4px;
+}
+.card-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.card-tags .tag {
+  font-size: 10px; padding: 2px 8px; background: var(--bg); border: 1px solid var(--rule); color: var(--ink-2);
+  letter-spacing: 0.04em; font-weight: 500;
+}
+.card-cta {
+  position: absolute; top: 16px; right: 16px;
+  background: var(--bg); color: var(--ink); padding: 5px 11px;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500;
+  border: 1px solid var(--rule);
+  opacity: 0; transition: opacity 0.15s;
+  pointer-events: none;
+  z-index: 2;
+}
+.card:hover .card-cta { opacity: 1; border-color: var(--accent); color: var(--accent); }
+
+.foot {
+  margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--rule);
+  display: flex; align-items: baseline; gap: 18px;
+  font-size: 11px; color: var(--ink-3); letter-spacing: 0.08em;
+}
+.foot .right { margin-left: auto; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-2); }
+
+</style>
+</head><body>
+<div class="app">
+  <header>
+    <div>
+      <h1 class="title">Sunset <span class="amp">·</span> Themes</h1>
+      <div class="subtitle">ten distinct visual directions, one product</div>
+    </div>
+    <div class="meta">
+      <div>10 mockups</div>
+      <div><span class="v">overview page</span> shown</div>
+      <div>click to open full size</div>
+    </div>
+  </header>
+
+  <p class="intro">
+    Each tile renders the dashboard's <strong>Overview</strong> page in a different aesthetic. They share the same content
+    (four hero stats, the workload table, recent events) so you can compare apples to apples. Pick a direction, and I'll
+    build out the other twelve pages in that style.
+  </p>
+
+  <div class="grid">
+
+    <a class="card" href="01-bloomberg.html" target="_blank">
+      <div class="card-frame"><iframe src="01-bloomberg.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 01 · TERMINAL</span>
+        <h2 class="card-name">Bloomberg Terminal</h2>
+        <p class="card-desc">Pure black, dense data, ASCII chrome, command bar at bottom. Color carries meaning; nothing is decorative.</p>
+        <div class="card-tags"><span class="tag">monospace</span><span class="tag">dense</span><span class="tag">function keys</span></div>
+      </div>
+    </a>
+
+    <a class="card" href="02-brutalist.html" target="_blank">
+      <div class="card-frame"><iframe src="02-brutalist.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 02 · EDITORIAL</span>
+        <h2 class="card-name">Brutalist Editorial</h2>
+        <p class="card-desc">Massive serif display headlines on cream paper, single red accent, manifesto whitespace. The dashboard as op-ed.</p>
+        <div class="card-tags"><span class="tag">huge serif</span><span class="tag">whitespace</span><span class="tag">red accent</span></div>
+      </div>
+    </a>
+
+    <a class="card" href="03-cyberpunk.html" target="_blank">
+      <div class="card-frame"><iframe src="03-cyberpunk.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 03 · NEON</span>
+        <h2 class="card-name">Cyberpunk Phosphor</h2>
+        <p class="card-desc">Hot magenta and electric cyan glowing on deep purple-black. Scanlines, angular clip-paths, futuristic chrome.</p>
+        <div class="card-tags"><span class="tag">neon</span><span class="tag">glow effects</span><span class="tag">orbitron</span></div>
+      </div>
+    </a>
+
+    <a class="card" href="04-linear-saas.html" target="_blank">
+      <div class="card-frame"><iframe src="04-linear-saas.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 04 · MODERN SAAS</span>
+        <h2 class="card-name">Linear · Vercel</h2>
+        <p class="card-desc">Refined dark slate with violet accent, soft gradients, rounded corners, Geist typography. The 2024 SaaS playbook executed cleanly.</p>
+        <div class="card-tags"><span class="tag">geist</span><span class="tag">violet</span><span class="tag">soft shadows</span></div>
+      </div>
+    </a>
+
+    <a class="card" href="05-almanac.html" target="_blank">
+      <div class="card-frame"><iframe src="05-almanac.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 05 · NATURALIST</span>
+        <h2 class="card-name">Almanac &amp; Logbook</h2>
+        <p class="card-desc">Cream paper, sepia serif throughout, marginalia in the gutter, drop caps, hand-set ornaments. A 19th-century observer's journal.</p>
+        <div class="card-tags"><span class="tag">cormorant</span><span class="tag">marginalia</span><span class="tag">drop caps</span></div>
+      </div>
+    </a>
+
+    <a class="card" href="06-industrial-scada.html" target="_blank">
+      <div class="card-frame"><iframe src="06-industrial-scada.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 06 · INDUSTRIAL</span>
+        <h2 class="card-name">SCADA Control Panel</h2>
+        <p class="card-desc">Brushed steel bezels, rivets in the corners, segmented LCD readouts glowing amber. Looks like a power plant console.</p>
+        <div class="card-tags"><span class="tag">brushed metal</span><span class="tag">LCD glow</span><span class="tag">rivets</span></div>
+      </div>
+    </a>
+
+    <a class="card" href="07-crt-terminal.html" target="_blank">
+      <div class="card-frame"><iframe src="07-crt-terminal.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 07 · CRT</span>
+        <h2 class="card-name">Retrofuturist CRT</h2>
+        <p class="card-desc">Green phosphor on black, scanlines, vignette, ASCII art borders, VT323 font, blinking cursor. Boot-screen aesthetic, kept legible.</p>
+        <div class="card-tags"><span class="tag">vt323</span><span class="tag">scanlines</span><span class="tag">ascii art</span></div>
+      </div>
+    </a>
+
+    <a class="card" href="08-newspaper.html" target="_blank">
+      <div class="card-frame"><iframe src="08-newspaper.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 08 · BROADSHEET</span>
+        <h2 class="card-name">Newspaper Broadsheet</h2>
+        <p class="card-desc">Newsprint paper, ornate Playfair masthead, multi-column classified notices, bylines, drop caps on the lede. The Financial Times of queue dashboards.</p>
+        <div class="card-tags"><span class="tag">playfair</span><span class="tag">multi-column</span><span class="tag">masthead</span></div>
+      </div>
+    </a>
+
+    <a class="card" href="09-japanese-modernist.html" target="_blank">
+      <div class="card-frame"><iframe src="09-japanese-modernist.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 09 · ZEN</span>
+        <h2 class="card-name">Japanese Modernist</h2>
+        <p class="card-desc">Pure white, single red dot accent, Noto Serif JP at 200 weight, vertical writing for the section index, hairline rules, generous breathing room.</p>
+        <div class="card-tags"><span class="tag">noto serif jp</span><span class="tag">hairlines</span><span class="tag">日の丸</span></div>
+      </div>
+    </a>
+
+    <a class="card" href="10-swiss-rams.html" target="_blank">
+      <div class="card-frame"><iframe src="10-swiss-rams.html" loading="lazy"></iframe></div>
+      <span class="card-cta">open ↗</span>
+      <div class="card-meta">
+        <span class="card-num">№ 10 · MODERNIST</span>
+        <h2 class="card-name">Swiss · Dieter Rams</h2>
+        <p class="card-desc">Beige cream + primary colors (yellow, red, blue) as functional state coding. Strict 12-column grid, sharp 2px borders, Inter, zero decoration without purpose.</p>
+        <div class="card-tags"><span class="tag">inter</span><span class="tag">primary colors</span><span class="tag">grid</span></div>
+      </div>
+    </a>
+
+  </div>
+
+  <footer class="foot">
+    <span>Sunset · v1.3.0</span>
+    <span>· 10 themes</span>
+    <span class="right">tell me which feels right and i'll build the other 12 pages →</span>
+  </footer>
+</div>
+</body></html>

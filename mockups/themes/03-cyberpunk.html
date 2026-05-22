@@ -1,0 +1,166 @@
+<!doctype html><html><head><meta charset="utf-8"><title>03 · Cyberpunk Phosphor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #060014; color: #e0e0ff; font-family: 'Share Tech Mono', monospace; font-size: 13px; line-height: 1.6; min-height: 100vh; overflow-x: hidden; }
+body {
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(255, 0, 110, 0.18) 0, transparent 40%),
+    radial-gradient(circle at 80% 90%, rgba(0, 245, 255, 0.15) 0, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.10) 0, transparent 60%);
+  background-attachment: fixed;
+  position: relative;
+}
+/* Scanlines */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 100; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0, 0, 0, 0.15) 2px, rgba(0, 0, 0, 0.15) 3px);
+  mix-blend-mode: multiply;
+}
+/* Vignette */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 99; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+}
+
+.app { padding: 24px 32px 64px; position: relative; z-index: 1; }
+
+.top {
+  display: flex; align-items: center; gap: 24px; padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 0, 110, 0.4);
+  position: relative;
+}
+.top::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(to right, transparent, #ff006e 30%, #00f5ff 70%, transparent);
+  box-shadow: 0 0 8px #ff006e, 0 0 16px #00f5ff;
+}
+
+.brand {
+  font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 28px;
+  letter-spacing: 0.18em; color: #fff;
+  text-shadow: 0 0 8px #ff006e, 0 0 24px #ff006e, 2px 2px 0 #00f5ff;
+}
+.brand .glitch { color: #00f5ff; }
+.brand .sub {
+  display: block; font-family: 'Share Tech Mono'; font-size: 10px; font-weight: 400;
+  letter-spacing: 0.4em; color: #ff006e; margin-top: 2px; text-shadow: 0 0 6px #ff006e;
+}
+.status-strip { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: #00f5ff; text-shadow: 0 0 6px #00f5ff; }
+.status-strip .dot { width: 8px; height: 8px; background: #00f5ff; border-radius: 50%; box-shadow: 0 0 12px #00f5ff; animation: blink 1.5s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: 0.3; transform: scale(0.85); } }
+.btn {
+  font-family: 'Orbitron', sans-serif; font-size: 10px; padding: 6px 14px; letter-spacing: 0.2em; font-weight: 700; cursor: pointer;
+  background: transparent; color: #ff006e; border: 1px solid #ff006e; text-shadow: 0 0 6px #ff006e;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  text-transform: uppercase;
+}
+.btn:hover { background: #ff006e; color: #000; text-shadow: none; }
+.btn.cyan { color: #00f5ff; border-color: #00f5ff; text-shadow: 0 0 6px #00f5ff; }
+.btn.cyan:hover { background: #00f5ff; color: #000; }
+
+.title-row { margin: 36px 0 28px; display: flex; align-items: baseline; gap: 16px; }
+.title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 38px; letter-spacing: 0.06em; color: #fff; text-shadow: 0 0 12px #ff006e, 0 0 32px rgba(255, 0, 110, 0.6); }
+.title::before { content: '>>'; color: #ffd60a; margin-right: 12px; text-shadow: 0 0 8px #ffd60a; }
+.crumb { font-family: 'Share Tech Mono'; font-size: 11px; color: #888; letter-spacing: 0.1em; text-transform: uppercase; margin-left: auto; }
+.crumb span { color: #00f5ff; text-shadow: 0 0 4px #00f5ff; }
+
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.cell {
+  background: rgba(10, 5, 25, 0.7);
+  border: 1px solid #2a1f3d;
+  padding: 18px 20px 22px;
+  position: relative;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+.cell::before {
+  content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px;
+  background: linear-gradient(to bottom, #ff006e 0%, #00f5ff 100%);
+  box-shadow: 0 0 10px #ff006e;
+}
+.cell .l { font-family: 'Orbitron'; font-size: 9px; letter-spacing: 0.24em; color: #b1a1d0; margin-bottom: 8px; text-transform: uppercase; font-weight: 500; }
+.cell .n { font-family: 'Orbitron'; font-weight: 700; font-size: 44px; color: #fff; line-height: 1; letter-spacing: 0.02em; text-shadow: 0 0 14px rgba(255, 255, 255, 0.4); }
+.cell .n.pink { color: #ff006e; text-shadow: 0 0 18px #ff006e; }
+.cell .n.cyan { color: #00f5ff; text-shadow: 0 0 18px #00f5ff; }
+.cell .n.yellow { color: #ffd60a; text-shadow: 0 0 18px #ffd60a; }
+.cell .n sub { font-size: 13px; color: #888; font-weight: 500; letter-spacing: 0; }
+.cell .d { font-family: 'Share Tech Mono'; font-size: 11px; margin-top: 8px; letter-spacing: 0.06em; color: #888; }
+.cell .d.up { color: #00ff9f; text-shadow: 0 0 4px #00ff9f; }
+.cell .d.down { color: #ff3057; text-shadow: 0 0 4px #ff3057; }
+
+.section-bar { display: flex; align-items: center; gap: 12px; margin: 40px 0 16px; }
+.section-bar .label { font-family: 'Orbitron'; font-size: 11px; letter-spacing: 0.3em; color: #00f5ff; text-transform: uppercase; text-shadow: 0 0 6px #00f5ff; }
+.section-bar .rule { flex: 1; height: 1px; background: linear-gradient(to right, #00f5ff, transparent); box-shadow: 0 0 6px #00f5ff; }
+.section-bar .chip { font-family: 'Share Tech Mono'; font-size: 10px; padding: 2px 8px; border: 1px solid #ff006e; color: #ff006e; text-shadow: 0 0 4px #ff006e; letter-spacing: 0.12em; }
+
+.tbl { background: rgba(10, 5, 25, 0.6); border: 1px solid #2a1f3d; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tbl th { text-align: left; font-family: 'Orbitron'; font-weight: 500; font-size: 10px; letter-spacing: 0.18em; color: #b1a1d0; padding: 10px 14px; text-transform: uppercase; border-bottom: 1px solid #2a1f3d; }
+.tbl th.r { text-align: right; }
+.tbl td { padding: 9px 14px; border-bottom: 1px solid rgba(42, 31, 61, 0.5); color: #e0e0ff; }
+.tbl td.r { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: rgba(255, 0, 110, 0.06); }
+.tbl .q { color: #00f5ff; text-shadow: 0 0 4px rgba(0, 245, 255, 0.6); }
+.tbl .c { color: #b1a1d0; font-size: 11px; }
+.tag {
+  display: inline-block; padding: 2px 8px; font-family: 'Orbitron'; font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+.tag.ok { color: #00ff9f; text-shadow: 0 0 4px #00ff9f; }
+.tag.warn { color: #ffd60a; text-shadow: 0 0 4px #ffd60a; }
+.tag.err { color: #ff3057; text-shadow: 0 0 4px #ff3057; }
+.tag.info { color: #00f5ff; text-shadow: 0 0 4px #00f5ff; }
+
+.events .e { padding: 12px 14px; border-bottom: 1px solid rgba(42, 31, 61, 0.5); display: grid; grid-template-columns: 90px 100px 1fr 60px; gap: 14px; align-items: center; font-size: 12px; }
+.events .ts { color: #00f5ff; text-shadow: 0 0 4px rgba(0, 245, 255, 0.5); font-family: 'Share Tech Mono'; letter-spacing: 0.04em; }
+.events .body { color: #e0e0ff; }
+.events .body strong { color: #ff006e; text-shadow: 0 0 4px rgba(255, 0, 110, 0.6); }
+.events .body em { font-style: normal; color: #ffd60a; }
+.events .id { text-align: right; color: #666; font-size: 10px; letter-spacing: 0.08em; }
+
+</style>
+</head><body>
+<div class="app">
+  <header class="top">
+    <div class="brand">SUN<span class="glitch">SET</span><span class="sub">Q · OBSERVER · NIGHT WATCH</span></div>
+    <div class="status-strip"><span class="dot"></span> all systems online</div>
+    <button class="btn cyan">⌘ JUMP</button>
+    <button class="btn">/ THEME</button>
+  </header>
+
+  <div class="title-row">
+    <div class="title">OVERVIEW</div>
+    <div class="crumb">node: <span>prod-east-01</span> · uplink: <span>3 ms</span> · 04:22:18 utc</div>
+  </div>
+
+  <div class="grid">
+    <div class="cell"><div class="l">queue depth</div><div class="n">3,847</div><div class="d down">▼ 412 / hr</div></div>
+    <div class="cell"><div class="l">supervisors</div><div class="n cyan">04<sub>/04</sub></div><div class="d">28 / 46 procs</div></div>
+    <div class="cell"><div class="l">throughput</div><div class="n yellow">1,247<sub>/min</sub></div><div class="d up">▲ 8.2 %</div></div>
+    <div class="cell"><div class="l">failure rate</div><div class="n pink">0.84<sub>%</sub></div><div class="d down">5 in last hour</div></div>
+  </div>
+
+  <div class="section-bar"><span class="label">▣ workload</span><span class="rule"></span><span class="chip">5 queues</span></div>
+  <div class="tbl"><table>
+    <thead><tr><th>queue</th><th>transport</th><th class="r">len</th><th class="r">proc</th><th class="r">wait</th><th>state</th></tr></thead>
+    <tbody>
+      <tr><td><span class="q">emails</span></td><td><span class="c">redis</span></td><td class="r">128</td><td class="r">8</td><td class="r">2 s</td><td><span class="tag ok">▶ run</span></td></tr>
+      <tr><td><span class="q">webhooks</span></td><td><span class="c">sqs</span></td><td class="r">2,431</td><td class="r">16</td><td class="r">14 s</td><td><span class="tag ok">▶ run</span></td></tr>
+      <tr><td><span class="q">indexing</span></td><td><span class="c">redis</span></td><td class="r">901</td><td class="r">4</td><td class="r">48 s</td><td><span class="tag warn">▲ backlog</span></td></tr>
+      <tr><td><span class="q">geocode</span></td><td><span class="c">redis</span></td><td class="r">312</td><td class="r">0</td><td class="r">—</td><td><span class="tag warn">∥ paused</span></td></tr>
+      <tr><td><span class="q">nightly-rollup</span></td><td><span class="c">rabbitmq</span></td><td class="r">75</td><td class="r">2</td><td class="r">5 s</td><td><span class="tag ok">▶ run</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="section-bar"><span class="label">▣ event stream</span><span class="rule"></span><span class="chip">live</span></div>
+  <div class="tbl events">
+    <div class="e"><span class="ts">04:18:42</span><span class="tag ok" style="justify-self:start;">▶ deploy</span><span class="body"><strong>master-1</strong> · supervisors loaded from <em>sunset.environments[]</em></span><span class="id">#48201</span></div>
+    <div class="e"><span class="ts">04:17:11</span><span class="tag warn" style="justify-self:start;">⚠ long-wait</span><span class="body"><strong>sqs:webhooks</strong> · idle <em>48 s</em> over threshold</span><span class="id">#48198</span></div>
+    <div class="e"><span class="ts">04:15:08</span><span class="tag info" style="justify-self:start;">∥ paused</span><span class="body"><strong>redis:geocode</strong> · paused by <em>dashboard</em></span><span class="id">#48192</span></div>
+    <div class="e"><span class="ts">04:14:32</span><span class="tag warn" style="justify-self:start;">▲ hi-mem</span><span class="body">worker <strong>pid 91824</strong> · RSS <em>112.3 MB</em> approaching limit</span><span class="id">#48188</span></div>
+    <div class="e"><span class="ts">04:13:01</span><span class="tag err" style="justify-self:start;">✖ failed</span><span class="body"><strong>App\Jobs\IndexProduct</strong> · <em>Elastic\ClientResponseException 429</em></span><span class="id">#48184</span></div>
+  </div>
+</div>
+</body></html>

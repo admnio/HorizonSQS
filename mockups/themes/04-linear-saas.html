@@ -1,0 +1,238 @@
+<!doctype html><html><head><meta charset="utf-8"><title>04 · Linear SaaS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #08080b;
+  --bg-2: #0e0e12;
+  --bg-3: #16161c;
+  --card: #14141a;
+  --border: #23232c;
+  --border-light: #1c1c24;
+  --text: #ededf2;
+  --muted: #9c9ca8;
+  --dim: #5c5c68;
+  --violet: #a78bfa;
+  --violet-deep: #7c3aed;
+  --green: #4ade80;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --blue: #60a5fa;
+}
+html, body { background: var(--bg); color: var(--text); font-family: 'Geist', -apple-system, sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(167, 139, 250, 0.12), transparent),
+    radial-gradient(ellipse 60% 50% at 50% 110%, rgba(96, 165, 250, 0.06), transparent);
+  background-attachment: fixed;
+}
+.mono { font-family: 'Geist Mono', monospace; }
+.app { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+.top { display: flex; align-items: center; gap: 16px; height: 56px; border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+.brand-mark {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
+  display: grid; place-items: center;
+  box-shadow: 0 4px 12px -2px rgba(167, 139, 250, 0.4);
+}
+.brand-mark::before { content: ''; width: 8px; height: 8px; background: #fff; border-radius: 2px; transform: rotate(45deg); }
+.dot-sep { color: var(--dim); font-size: 11px; }
+.env { font-family: 'Geist Mono'; font-size: 12px; color: var(--muted); padding: 3px 8px; background: var(--bg-3); border-radius: 6px; border: 1px solid var(--border); }
+.env::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 6px; vertical-align: middle; box-shadow: 0 0 6px var(--green); }
+.search { margin-left: auto; display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--muted); width: 240px; }
+.search .kbd { margin-left: auto; font-family: 'Geist Mono'; font-size: 10px; padding: 1px 5px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--dim); }
+.av { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ec4899); }
+
+.layout { display: grid; grid-template-columns: 220px 1fr; gap: 24px; padding: 24px 0; min-height: calc(100vh - 56px); }
+
+.nav .group { padding: 10px 0; }
+.nav .heading { font-family: 'Geist Mono'; font-size: 11px; color: var(--dim); letter-spacing: 0.04em; padding: 0 10px 8px; text-transform: uppercase; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 6px 10px; color: var(--muted); font-size: 13px; border-radius: 6px; text-decoration: none; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.nav a:hover { background: var(--bg-3); color: var(--text); }
+.nav a.active { background: linear-gradient(to right, rgba(167, 139, 250, 0.12), transparent); color: var(--violet); border-left: 2px solid var(--violet); padding-left: 8px; }
+.nav a .ico { width: 14px; height: 14px; opacity: 0.7; }
+.nav a .badge { margin-left: auto; font-size: 10px; font-family: 'Geist Mono'; padding: 1px 6px; background: var(--bg-3); color: var(--muted); border-radius: 10px; }
+.nav a.alert .badge { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+
+main { padding-right: 24px; }
+
+.page-head { padding-bottom: 24px; border-bottom: 1px solid var(--border-light); margin-bottom: 28px; display: flex; align-items: baseline; gap: 14px; }
+.title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.subtitle { font-size: 13px; color: var(--muted); }
+.subtitle::before { content: '·'; margin: 0 8px; color: var(--dim); }
+.head-actions { margin-left: auto; display: flex; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; font-size: 13px; font-weight: 500;
+  background: var(--bg-3); color: var(--text); border: 1px solid var(--border); border-radius: 7px; cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.btn:hover { background: var(--card); border-color: var(--violet); }
+.btn.primary { background: var(--violet-deep); border-color: var(--violet); color: #fff; box-shadow: 0 4px 12px -4px rgba(124, 58, 237, 0.5), inset 0 1px 0 rgba(255,255,255,0.15); }
+
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.card {
+  background: var(--card); border: 1px solid var(--border-light);
+  border-radius: 10px; padding: 16px 18px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.15s;
+}
+.card:hover { border-color: var(--border); }
+.card .l { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 500; }
+.card .l .help { width: 12px; height: 12px; border-radius: 50%; background: var(--bg-3); color: var(--dim); font-size: 9px; display: grid; place-items: center; }
+.card .n { font-size: 28px; font-weight: 600; margin-top: 8px; letter-spacing: -0.02em; font-feature-settings: 'tnum'; }
+.card .n .unit { color: var(--muted); font-size: 14px; font-weight: 500; margin-left: 4px; }
+.card .delta { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.card .delta.up { color: var(--green); }
+.card .delta.down { color: var(--red); }
+.card .spark {
+  position: absolute; right: 14px; bottom: 14px; width: 80px; height: 28px;
+}
+
+.section { margin-top: 36px; }
+.section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.section-head h2 { font-size: 14px; font-weight: 600; }
+.section-head .meta { font-size: 12px; color: var(--muted); }
+.section-head .meta::before { content: '·'; margin-right: 8px; color: var(--dim); }
+.section-head .link { margin-left: auto; font-size: 12px; color: var(--violet); cursor: pointer; }
+
+.tbl { background: var(--card); border: 1px solid var(--border-light); border-radius: 10px; overflow: hidden; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 0.02em; border-bottom: 1px solid var(--border-light); background: rgba(255, 255, 255, 0.01); }
+.tbl th.r { text-align: right; }
+.tbl td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); color: var(--text); }
+.tbl td.r { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: rgba(167, 139, 250, 0.03); }
+.q { font-weight: 500; }
+.q-conn { color: var(--dim); font-family: 'Geist Mono'; font-size: 11px; margin-left: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; line-height: 1.5; }
+.pill .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: rgba(74, 222, 128, 0.1); color: var(--green); }
+.pill.warn { background: rgba(251, 191, 36, 0.1); color: var(--amber); }
+.pill.err { background: rgba(248, 113, 113, 0.1); color: var(--red); }
+.pill.info { background: rgba(167, 139, 250, 0.1); color: var(--violet); }
+
+.events .e { padding: 12px 16px; border-bottom: 1px solid var(--border-light); display: grid; grid-template-columns: 80px 86px 1fr 50px; gap: 14px; align-items: center; font-size: 13px; }
+.events .e:last-child { border-bottom: none; }
+.events .ts { font-family: 'Geist Mono'; font-size: 12px; color: var(--muted); }
+.events .body { color: var(--text); }
+.events .body .who { color: var(--violet); font-weight: 500; }
+.events .body .what { color: var(--muted); }
+.events .id { text-align: right; font-family: 'Geist Mono'; font-size: 10px; color: var(--dim); }
+
+</style>
+</head><body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="brand-mark"></div>Sunset</div>
+    <span class="dot-sep">/</span>
+    <span class="env">prod · cluster-east</span>
+    <div class="search">⌕ <span>Search jobs, supervisors, queues...</span><span class="kbd">⌘ K</span></div>
+    <div class="av"></div>
+  </header>
+
+  <div class="layout">
+    <nav class="nav">
+      <div class="group">
+        <div class="heading">Overview</div>
+        <a class="active">▤ Home</a>
+        <a class="alert">⚡ Activity <span class="badge">12</span></a>
+        <a>≡ Workload</a>
+        <a>▭ Metrics</a>
+      </div>
+      <div class="group">
+        <div class="heading">Jobs</div>
+        <a>↻ Recent</a>
+        <a class="alert">✖ Failed <span class="badge">5</span></a>
+        <a>◷ Pending</a>
+        <a>✓ Completed</a>
+        <a>☷ Batches</a>
+      </div>
+      <div class="group">
+        <div class="heading">Operations</div>
+        <a>◉ Supervisors</a>
+        <a>⚖ Rate limits</a>
+        <a># Monitoring</a>
+        <a>♥ Health</a>
+      </div>
+    </nav>
+
+    <main>
+      <div class="page-head">
+        <div class="title">Overview</div>
+        <div class="subtitle">Real-time queue observability</div>
+        <div class="head-actions">
+          <button class="btn">↻ Refresh</button>
+          <button class="btn primary">+ New limit</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="l">Queue depth <span class="help">?</span></div>
+          <div class="n">3,847</div>
+          <div class="delta down">▼ 412 vs last hour</div>
+          <svg class="spark" viewBox="0 0 80 28" preserveAspectRatio="none">
+            <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#a78bfa" stop-opacity="0.4"/><stop offset="1" stop-color="#a78bfa" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0,8 L10,10 L20,14 L30,12 L40,16 L50,18 L60,20 L70,22 L80,24 L80,28 L0,28 Z" fill="url(#g1)"/>
+            <path d="M0,8 L10,10 L20,14 L30,12 L40,16 L50,18 L60,20 L70,22 L80,24" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="card">
+          <div class="l">Supervisors</div>
+          <div class="n">4 <span class="unit">/ 4 active</span></div>
+          <div class="delta">28 of 46 processes</div>
+        </div>
+        <div class="card">
+          <div class="l">Throughput</div>
+          <div class="n">1.2k <span class="unit">jobs / min</span></div>
+          <div class="delta up">▲ 8.2% vs last hour</div>
+          <svg class="spark" viewBox="0 0 80 28" preserveAspectRatio="none">
+            <path d="M0,20 L10,18 L20,16 L30,14 L40,12 L50,10 L60,8 L70,6 L80,4" fill="none" stroke="#4ade80" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="card">
+          <div class="l">Failure rate</div>
+          <div class="n" style="color:var(--red)">0.84% </div>
+          <div class="delta">5 failures in last hour</div>
+          <svg class="spark" viewBox="0 0 80 28" preserveAspectRatio="none">
+            <path d="M0,18 L10,20 L20,16 L30,22 L40,14 L50,20 L60,12 L70,18 L80,8" fill="none" stroke="#f87171" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h2>Workload</h2><span class="meta">5 queues, 3 transports</span>
+          <a class="link">View all →</a>
+        </div>
+        <div class="tbl"><table>
+          <thead><tr><th>Queue</th><th class="r">Length</th><th class="r">Workers</th><th class="r">Wait</th><th class="r">Throughput</th><th>State</th></tr></thead>
+          <tbody>
+            <tr><td><span class="q">emails</span><span class="q-conn">redis</span></td><td class="r">128</td><td class="r">8</td><td class="r">2 s</td><td class="r">412 /min</td><td><span class="pill ok"><span class="dot"></span>Running</span></td></tr>
+            <tr><td><span class="q">webhooks</span><span class="q-conn">sqs</span></td><td class="r">2,431</td><td class="r">16</td><td class="r">14 s</td><td class="r">605 /min</td><td><span class="pill ok"><span class="dot"></span>Running</span></td></tr>
+            <tr><td><span class="q">indexing</span><span class="q-conn">redis</span></td><td class="r">901</td><td class="r">4</td><td class="r">48 s</td><td class="r">196 /min</td><td><span class="pill warn"><span class="dot"></span>Backlog</span></td></tr>
+            <tr><td><span class="q">geocode</span><span class="q-conn">redis</span></td><td class="r">312</td><td class="r">0</td><td class="r">—</td><td class="r">—</td><td><span class="pill warn"><span class="dot"></span>Paused</span></td></tr>
+            <tr><td><span class="q">nightly-rollup</span><span class="q-conn">rabbitmq</span></td><td class="r">75</td><td class="r">2</td><td class="r">5 s</td><td class="r">34 /min</td><td><span class="pill ok"><span class="dot"></span>Running</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><h2>Recent activity</h2><span class="meta">Live, last 10 minutes</span><a class="link">View all →</a></div>
+        <div class="tbl events">
+          <div class="e"><span class="ts">04:18:42</span><span class="pill ok">Deployed</span><span class="body"><span class="who">master-1</span> · <span class="what">supervisors loaded from sunset.environments[]</span></span><span class="id">48201</span></div>
+          <div class="e"><span class="ts">04:17:11</span><span class="pill warn">Long-wait</span><span class="body"><span class="who">sqs:webhooks</span> idle <span class="what">48s</span> over wait threshold</span><span class="id">48198</span></div>
+          <div class="e"><span class="ts">04:15:08</span><span class="pill info">Paused</span><span class="body"><span class="who">redis:geocode</span> · <span class="what">paused by dashboard</span></span><span class="id">48192</span></div>
+          <div class="e"><span class="ts">04:14:32</span><span class="pill warn">High mem</span><span class="body">Worker <span class="who">pid 91824</span> · <span class="what">RSS 112.3MB approaching 128MB limit</span></span><span class="id">48188</span></div>
+          <div class="e"><span class="ts">04:13:01</span><span class="pill err">Failed</span><span class="body"><span class="who">App\Jobs\IndexProduct</span> · <span class="what">Elastic\ClientResponseException 429</span></span><span class="id">48184</span></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</body></html>

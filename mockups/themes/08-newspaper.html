@@ -1,0 +1,221 @@
+<!doctype html><html><head><meta charset="utf-8"><title>08 · Newspaper Broadsheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=Old+Standard+TT:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --paper: #f7efe1;
+  --paper-2: #ede4cf;
+  --ink: #1a1410;
+  --ink-2: #443c34;
+  --ink-3: #7a6f63;
+  --red: #a91d2f;
+  --rule: #1a1410;
+  --rule-soft: #b8aa92;
+}
+html, body { background: var(--paper); color: var(--ink); font-family: 'Source Serif 4', 'Georgia', serif; font-size: 15px; line-height: 1.5; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+body {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.2  0 0 0 0 0.15  0 0 0 0 0.05  0 0 0 0.12 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-attachment: fixed;
+}
+.mono { font-family: 'Old Standard TT', 'Courier New', monospace; }
+
+.app { max-width: 1280px; margin: 0 auto; padding: 28px 56px 80px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='nb'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.04  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23nb)'/></svg>"); }
+
+.banner-rule { border-top: 1px solid var(--rule); border-bottom: 4px double var(--rule); padding: 4px 0; font-family: 'Old Standard TT', serif; font-size: 11px; color: var(--ink-2); letter-spacing: 0.06em; display: flex; gap: 24px; }
+.banner-rule .left { font-style: italic; }
+.banner-rule .right { margin-left: auto; font-variant: small-caps; letter-spacing: 0.12em; }
+.banner-rule .sep { color: var(--rule-soft); }
+
+.masthead { text-align: center; padding: 22px 0 12px; border-bottom: 4px double var(--rule); }
+.masthead .above { font-family: 'Playfair Display', serif; font-style: italic; font-size: 13px; color: var(--ink-2); letter-spacing: 0.1em; }
+.masthead .name { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 96px; line-height: 0.9; letter-spacing: 0.01em; margin: 6px 0 4px; }
+.masthead .name .amp { color: var(--red); font-style: italic; font-weight: 400; }
+.masthead .below { font-family: 'Playfair Display', serif; font-style: italic; font-size: 16px; color: var(--ink-2); }
+.below-deck { display: flex; padding: 10px 0; border-bottom: 1px solid var(--rule); font-family: 'Old Standard TT', serif; font-size: 12px; color: var(--ink-2); letter-spacing: 0.04em; }
+.below-deck .item { padding: 0 14px; border-right: 1px solid var(--rule-soft); }
+.below-deck .item:last-child { border: none; }
+.below-deck .item .l { font-variant: small-caps; letter-spacing: 0.12em; margin-right: 6px; color: var(--ink-3); }
+.below-deck .item .v { font-weight: 600; }
+
+.section-rule { border-top: 1px solid var(--rule); border-bottom: 3px double var(--rule); padding: 6px 0 8px; margin: 36px 0 22px; display: flex; align-items: baseline; gap: 12px; }
+.section-rule .kicker { font-family: 'Playfair Display', serif; font-weight: 700; font-style: italic; font-size: 13px; color: var(--red); letter-spacing: 0.16em; text-transform: uppercase; }
+.section-rule .meta { margin-left: auto; font-family: 'Old Standard TT', serif; font-style: italic; font-size: 11px; color: var(--ink-3); letter-spacing: 0.06em; }
+
+.lead { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; padding-top: 16px; }
+.lead .headline {
+  font-family: 'Playfair Display', serif; font-weight: 600; font-size: 64px; line-height: 1; letter-spacing: -0.02em; margin-bottom: 12px;
+}
+.lead .deck {
+  font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; font-size: 21px; color: var(--ink-2); line-height: 1.35; margin-bottom: 22px;
+}
+.lead .byline { font-family: 'Old Standard TT', serif; font-size: 12px; color: var(--ink-3); letter-spacing: 0.06em; padding-bottom: 12px; border-bottom: 1px solid var(--rule-soft); margin-bottom: 18px; font-variant: small-caps; }
+.lead .byline .name { color: var(--red); font-weight: 700; }
+.lead p { margin-bottom: 14px; }
+.lead p:first-of-type::first-letter {
+  font-family: 'Playfair Display', serif; font-weight: 900; font-size: 64px; line-height: 0.85; float: left; padding: 6px 8px 0 0; color: var(--red);
+}
+
+.sidebar {
+  background: var(--paper-2); padding: 18px; border: 1px solid var(--rule);
+  position: relative;
+}
+.sidebar::before { content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 4px; background: var(--red); }
+.sidebar h3 {
+  font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22px; line-height: 1.1; margin-bottom: 12px;
+}
+.sidebar .item { padding: 10px 0; border-bottom: 1px dotted var(--rule-soft); }
+.sidebar .item:last-child { border: none; }
+.sidebar .item .l { font-family: 'Old Standard TT', serif; font-style: italic; color: var(--ink-3); font-size: 12px; }
+.sidebar .item .n {
+  font-family: 'Playfair Display', serif; font-weight: 600; font-size: 32px; line-height: 1; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.sidebar .item .n.red { color: var(--red); }
+.sidebar .item .n sub { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; font-size: 13px; color: var(--ink-3); margin-left: 4px; letter-spacing: 0; }
+.sidebar .item .d { font-family: 'Old Standard TT', serif; font-size: 11px; color: var(--ink-3); margin-top: 3px; font-style: italic; }
+
+.table-section { margin-top: 38px; }
+.table-section h2 {
+  font-family: 'Playfair Display', serif; font-weight: 700; font-size: 28px; margin-bottom: 4px; letter-spacing: -0.01em;
+}
+.table-section .sub { font-family: 'Playfair Display', serif; font-style: italic; font-size: 14px; color: var(--ink-3); margin-bottom: 16px; }
+.tbl { border-top: 1px solid var(--rule); border-bottom: 3px double var(--rule); }
+.tbl table { width: 100%; border-collapse: collapse; }
+.tbl th {
+  text-align: left; padding: 10px 14px;
+  font-family: 'Old Standard TT', serif; font-variant: small-caps; letter-spacing: 0.12em; font-weight: 700; font-size: 13px;
+  border-bottom: 1px solid var(--rule);
+}
+.tbl th.r { text-align: right; }
+.tbl td {
+  padding: 14px; border-bottom: 1px solid var(--rule-soft); font-size: 16px; vertical-align: baseline;
+}
+.tbl td.r { text-align: right; font-family: 'Old Standard TT', serif; font-size: 14px; font-variant-numeric: tabular-nums; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl .q { font-weight: 600; }
+.tbl .conn { font-style: italic; color: var(--ink-3); margin-left: 6px; font-size: 14px; }
+.tbl .status { font-family: 'Playfair Display', serif; font-style: italic; font-size: 14px; font-weight: 500; }
+.tbl .status.ok { color: #15803d; }
+.tbl .status.warn { color: var(--red); }
+
+.classifieds { margin-top: 38px; }
+.classifieds h2 { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 28px; margin-bottom: 4px; }
+.classifieds .sub { font-family: 'Playfair Display', serif; font-style: italic; font-size: 14px; color: var(--ink-3); margin-bottom: 16px; }
+.columns { columns: 3; column-gap: 36px; column-rule: 1px solid var(--rule-soft); }
+.notice { break-inside: avoid; padding: 12px 0; border-bottom: 1px dotted var(--rule-soft); display: block; }
+.notice .kicker { font-family: 'Old Standard TT', serif; font-variant: small-caps; letter-spacing: 0.12em; font-weight: 700; font-size: 11px; color: var(--red); }
+.notice .ts { font-family: 'Old Standard TT', serif; font-style: italic; font-size: 11px; color: var(--ink-3); margin-bottom: 4px; }
+.notice .body { font-family: 'Source Serif 4', serif; font-size: 14px; line-height: 1.45; }
+.notice .body strong { font-weight: 700; }
+.notice .body em { font-style: italic; color: var(--ink-2); }
+
+.footer {
+  margin-top: 64px; padding-top: 10px; border-top: 4px double var(--rule);
+  display: flex; gap: 16px; font-family: 'Old Standard TT', serif; font-style: italic; font-size: 11px; color: var(--ink-3); letter-spacing: 0.04em;
+}
+.footer .right { margin-left: auto; font-variant: small-caps; }
+</style>
+</head><body>
+<div class="app">
+  <div class="banner-rule">
+    <span class="left">All the queues fit to observe</span>
+    <span class="sep">·</span>
+    <span>Late Edition</span>
+    <span class="sep">·</span>
+    <span>Twelve pages</span>
+    <span class="right">$0.00 · Free to operators</span>
+  </div>
+
+  <div class="masthead">
+    <div class="above">Established MMXXVI · Anthropic Plant, North Wing</div>
+    <div class="name">The Sunset <span class="amp">&amp;</span> Almanac</div>
+    <div class="below">A daily account of background labour, observed in good faith</div>
+  </div>
+
+  <div class="below-deck">
+    <span class="item"><span class="l">Vol.</span><span class="v">i</span></span>
+    <span class="item"><span class="l">No.</span><span class="v">3</span></span>
+    <span class="item"><span class="l">Date</span><span class="v">Thurs · 21 May 2026</span></span>
+    <span class="item"><span class="l">Cluster</span><span class="v">prod-east</span></span>
+    <span class="item"><span class="l">Uptime</span><span class="v">8d 14h</span></span>
+    <span class="item"><span class="l">Pages</span><span class="v">I – XIII</span></span>
+    <span class="item" style="margin-left:auto; border-right:none;"><span class="l">Wire</span><span class="v">Sunset-Wire · 04:22 utc</span></span>
+  </div>
+
+  <div class="section-rule"><span class="kicker">Lead Story · Page I</span><span class="meta">Compiled at 04:22 UTC · polled every three seconds</span></div>
+
+  <div class="lead">
+    <article>
+      <h1 class="headline">Queues hold steady through dawn watch</h1>
+      <p class="deck">Five queues remain in motion across three transports — one paused for upstream maintenance; throughput trends upward over the prior hour.</p>
+      <div class="byline">By <span class="name">Sunset Observer</span> · prod-cluster-east · 04:22 UTC</div>
+      <p>The shift began at midnight without incident. By dawn, three thousand eight hundred and forty-seven jobs awaited their workers — a figure four hundred twelve lower than the prior hour, owing largely to faster turnover on the <em>webhooks</em> queue, which has cleared its overnight backlog ahead of schedule.</p>
+      <p>The <em>indexing</em> queue continues to lag, having accumulated forty-eight seconds of wait against an Elasticsearch endpoint that has returned a dozen 429 responses since 04:00 UTC. Operators on duty are advised to consult the rate-limit ledger on Page VII before requesting additional capacity.</p>
+      <p>A single queue — <em>geocode</em> — has been paused at the operator's discretion, pending coordination with the upstream Google Maps quota window. Eight workers will cease popping at the next loop iteration. Producers continue to enqueue; the volume now stands at three hundred twelve pending jobs.</p>
+    </article>
+
+    <aside class="sidebar">
+      <h3>At a glance</h3>
+      <div class="item">
+        <div class="l">Queue depth</div>
+        <div class="n">3,847</div>
+        <div class="d">↘ 412 fewer than the prior hour</div>
+      </div>
+      <div class="item">
+        <div class="l">Supervisors</div>
+        <div class="n">IV</div>
+        <div class="d">twenty-eight workers in forty-six slots</div>
+      </div>
+      <div class="item">
+        <div class="l">Throughput</div>
+        <div class="n">1,247<sub>/min</sub></div>
+        <div class="d">↗ 8.2 % over the hour</div>
+      </div>
+      <div class="item">
+        <div class="l">Failure rate</div>
+        <div class="n red">0.84<sub>%</sub></div>
+        <div class="d">five sorrows in the last hour</div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="section-rule"><span class="kicker">Tables · Page I</span><span class="meta">Five queues, three transports</span></div>
+
+  <div class="table-section">
+    <h2>The workload, in full</h2>
+    <p class="sub">Length, workers, and current condition of each queue under observation</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Queue</th><th class="r">Length</th><th class="r">Workers</th><th class="r">Wait</th><th class="r">Throughput</th><th>Condition</th></tr></thead>
+      <tbody>
+        <tr><td><span class="q">Emails</span><span class="conn">redis</span></td><td class="r">128</td><td class="r">8</td><td class="r">2 s</td><td class="r">412 /min</td><td><span class="status ok">running</span></td></tr>
+        <tr><td><span class="q">Webhooks</span><span class="conn">sqs</span></td><td class="r">2,431</td><td class="r">16</td><td class="r">14 s</td><td class="r">605 /min</td><td><span class="status ok">running</span></td></tr>
+        <tr><td><span class="q">Indexing</span><span class="conn">redis</span></td><td class="r">901</td><td class="r">4</td><td class="r">48 s</td><td class="r">196 /min</td><td><span class="status warn">backlog</span></td></tr>
+        <tr><td><span class="q">Geocode</span><span class="conn">redis</span></td><td class="r">312</td><td class="r">0</td><td class="r">—</td><td class="r">—</td><td><span class="status warn">paused</span></td></tr>
+        <tr><td><span class="q">Nightly rollup</span><span class="conn">rabbitmq</span></td><td class="r">75</td><td class="r">2</td><td class="r">5 s</td><td class="r">34 /min</td><td><span class="status ok">running</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section-rule"><span class="kicker">Notices · Page I</span><span class="meta">Recent events from the wire</span></div>
+  <div class="classifieds">
+    <h2>Notices &amp; sundry events</h2>
+    <p class="sub">Filed since midnight by the supervisor &amp; rate-limit correspondents</p>
+    <div class="columns">
+      <div class="notice"><div class="kicker">Deployed · master-1</div><div class="ts">04:18:42 UTC</div><div class="body">Supervisors loaded from <em>sunset.environments[]</em>. Four supervisors brought into service across redis, sqs, and rabbitmq.</div></div>
+      <div class="notice"><div class="kicker">Long-wait · sqs:webhooks</div><div class="ts">04:17:11 UTC</div><div class="body">The webhooks queue sat idle for <em>48 seconds</em>, exceeding the configured threshold. The auto-scaler will dispatch <strong>two</strong> additional workers.</div></div>
+      <div class="notice"><div class="kicker">Paused · redis:geocode</div><div class="ts">04:15:08 UTC</div><div class="body">Queue paused by <em>dashboard</em>. Eight workers will cease popping on their next loop iteration. Producers continue unaffected.</div></div>
+      <div class="notice"><div class="kicker">High mem · worker 91824</div><div class="ts">04:14:32 UTC</div><div class="body">Worker process climbing toward its <em>128 MB</em> ceiling. RSS now <strong>112.3 MB</strong>. Auto-restart expected within the hour.</div></div>
+      <div class="notice"><div class="kicker">Failed · App\Jobs\IndexProduct</div><div class="ts">04:13:01 UTC</div><div class="body"><strong>Elastic\ClientResponseException</strong> — 429 Too Many Requests. Three of three attempts exhausted; job consigned to the failed ledger.</div></div>
+      <div class="notice"><div class="kicker">Limited · App\Jobs\GeocodeAddress</div><div class="ts">04:12:09 UTC</div><div class="body">Hit limit <em>gmaps</em> with strategy <strong>release-computed</strong>. Job released for retry in four seconds.</div></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>The Sunset &amp; Almanac</span>
+    <span>·</span>
+    <span>Continued on Page II — Activity log in full</span>
+    <span class="right">Page i of xiii</span>
+  </footer>
+</div>
+</body></html>
